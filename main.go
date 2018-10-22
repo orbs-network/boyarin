@@ -10,8 +10,11 @@ import (
 	"github.com/docker/docker/runconfig"
 	"golang.org/x/net/context"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 )
 
 func pullImage(ctx context.Context, cli *client.Client, imageName string) {
@@ -31,17 +34,85 @@ type portBinding struct {
 	HostPort string
 }
 
+type node struct {
+	Key string
+	IP string
+	Port int64
+}
+
+func getNetworkConfig(containerName string, peers string, peerKeys string) string {
+	jsonMap := make(map[string]interface{})
+
+	keys := strings.Split(peerKeys, ",")
+
+	var nodes []node
+	for i, peer := range strings.Split(peers, ",") {
+		tokens := strings.Split(peer, ":")
+		port, _ := strconv.ParseInt(tokens[1], 10, 16)
+
+		nodes = append(nodes, node{keys[i], tokens[0], port})
+	}
+
+	jsonMap["federation-nodes"] = nodes
+
+
+		os.MkdirAll("_tmp", 0755)
+
+	path, _ := filepath.Abs("_tmp/"+containerName+".json")
+	json, _ := json.Marshal(jsonMap)
+
+	ioutil.WriteFile(path, json, 0644)
+
+	return path
+}
+
+func buildJSONConfig(containerName string, imageName string, vchain string, httpPort string, gossipPort string, pathToConfig string, peers string, peerKeys string) ([]byte, error) {
+	exposedPorts := make(map[string]interface{})
+	exposedPorts["8080/tcp"] = struct {}{}
+	exposedPorts["4400/tcp"] = struct {}{}
+
+	portBindings := make(map[string][]portBinding)
+	portBindings["8080/tcp"] = []portBinding{{"0.0.0.0", httpPort}}
+	portBindings["4400/tcp"] = []portBinding{{"0.0.0.0", gossipPort}}
+
+	configMap := make(map[string]interface{})
+	configMap["Image"] = imageName
+	configMap["ExposedPorts"] = exposedPorts
+	configMap["CMD"] = []string{
+		"/opt/orbs/orbs-node",
+		"--config", "/opt/orbs/config/node.json",
+		"--config", "/opt/orbs/config/network.json",
+		//"--log", "/opt/orbs/logs/node.log",
+	}
+
+	hostConfigMap := make(map[string]interface{})
+	configMap["HostConfig"] = hostConfigMap
+
+	absoluteConfigPath, err := filepath.Abs(pathToConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	absoluteNetworkConfigPath := getNetworkConfig(containerName, peers, peerKeys)
+	hostConfigMap["Binds"] = []string{
+		absoluteConfigPath + ":/opt/orbs/config/node.json",
+		absoluteNetworkConfigPath+":/opt/orbs/config/network.json",
+	}
+	hostConfigMap["PortBindings"] = portBindings
+
+	return json.Marshal(configMap)
+}
+
 func main() {
 	vchainPtr := flag.String("vchain", "42", "virtual chain id")
 	prefixPtr := flag.String("prefix", "orbs-network", "container prefix")
 	httpPortPtr := flag.String("http-port", "8080", "http port")
 	gossipPortPtr := flag.String("gossip-port", "4400", "gossip port")
 	pathToConfig := flag.String("config", "", "path to node config")
+	peersPtr := flag.String("peers", "", "list of peers ips and ports")
+	peerKeys := flag.String("peerKeys", "", "list of peer keys")
 
 	flag.Parse()
-
-	//peersPtr := flag.String("peers", "", "list of peers ips and ports")
-	//peerKeys := flag.String("peerKeys", "", "list of peer keys")
 
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.WithVersion("1.38"))
@@ -54,41 +125,16 @@ func main() {
 
 	//pullImage(ctx, cli, imageName)
 
-	exposedPorts := make(map[string]interface{})
-	exposedPorts["8080/tcp"] = struct {}{}
-	exposedPorts["4400/tcp"] = struct {}{}
+	containerName := getContainerName(*prefixPtr, *vchainPtr)
 
-	portBindings := make(map[string][]portBinding)
-	portBindings["8080/tcp"] = []portBinding{{"0.0.0.0", *httpPortPtr}}
-	portBindings["4400/tcp"] = []portBinding{{"0.0.0.0", *gossipPortPtr}}
-
-	configMap := make(map[string]interface{})
-	configMap["Image"] = imageName
-	configMap["ExposedPorts"] = exposedPorts
-	configMap["CMD"] = []string{
-		"/opt/orbs/orbs-node",
-		"--config", "/opt/orbs/config/node.json",
-		//"--log", "/opt/orbs/logs/node.log",
-	}
-
-	hostConfigMap := make(map[string]interface{})
-	configMap["HostConfig"] = hostConfigMap
-
-	absoluteConfigPath, err := filepath.Abs(*pathToConfig)
-
-	hostConfigMap["Binds"] = []string{absoluteConfigPath + ":/opt/orbs/config/node.json"}
-	hostConfigMap["PortBindings"] = portBindings
-
-
-	jsonConfig, _ := json.Marshal(configMap)
-
+	jsonConfig, _ := buildJSONConfig(containerName, imageName, *vchainPtr, *httpPortPtr, *gossipPortPtr, *pathToConfig, *peersPtr, *peerKeys)
 	fmt.Println(string(jsonConfig))
 
 	decoder := runconfig.ContainerDecoder{}
 	config, hostConfig, networkConfig, err := decoder.DecodeConfig(bytes.NewReader(jsonConfig))
 	fmt.Println(config, hostConfig, networkConfig, err)
 
-	resp, err := cli.ContainerCreate(ctx, config, hostConfig, networkConfig, getContainerName(*prefixPtr, *vchainPtr))
+	resp, err := cli.ContainerCreate(ctx, config, hostConfig, networkConfig, containerName)
 	if err != nil {
 		panic(err)
 	}

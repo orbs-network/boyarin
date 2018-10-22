@@ -2,13 +2,13 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/runconfig"
-	"golang.org/x/net/context"
 	"io"
 	"io/ioutil"
 	"os"

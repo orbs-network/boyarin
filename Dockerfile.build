@@ -1,0 +1,11 @@
+FROM golang:1.10-alpine
+
+WORKDIR /go/src/github.com/orbs-network/boyarin/
+
+ADD . /go/src/github.com/orbs-network/boyarin/
+
+RUN env
+
+RUN go env
+
+RUN sh -x build-binaries.sh

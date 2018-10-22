@@ -132,7 +132,9 @@ func main() {
 
 	decoder := runconfig.ContainerDecoder{}
 	config, hostConfig, networkConfig, err := decoder.DecodeConfig(bytes.NewReader(jsonConfig))
-	fmt.Println(config, hostConfig, networkConfig, err)
+	if err != nil {
+		panic(err)
+	}
 
 	resp, err := cli.ContainerCreate(ctx, config, hostConfig, networkConfig, containerName)
 	if err != nil {

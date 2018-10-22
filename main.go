@@ -30,13 +30,13 @@ func getContainerName(prefix string, vchain string) string {
 }
 
 type portBinding struct {
-	HostIp string
+	HostIp   string
 	HostPort string
 }
 
 type node struct {
-	Key string
-	IP string
+	Key  string
+	IP   string
 	Port int64
 }
 
@@ -55,10 +55,9 @@ func getNetworkConfig(containerName string, peers string, peerKeys string) strin
 
 	jsonMap["federation-nodes"] = nodes
 
+	os.MkdirAll("_tmp", 0755)
 
-		os.MkdirAll("_tmp", 0755)
-
-	path, _ := filepath.Abs("_tmp/"+containerName+".json")
+	path, _ := filepath.Abs("_tmp/" + containerName + ".json")
 	json, _ := json.Marshal(jsonMap)
 
 	ioutil.WriteFile(path, json, 0644)
@@ -68,8 +67,8 @@ func getNetworkConfig(containerName string, peers string, peerKeys string) strin
 
 func buildJSONConfig(containerName string, imageName string, vchain string, httpPort string, gossipPort string, pathToConfig string, peers string, peerKeys string) ([]byte, error) {
 	exposedPorts := make(map[string]interface{})
-	exposedPorts["8080/tcp"] = struct {}{}
-	exposedPorts["4400/tcp"] = struct {}{}
+	exposedPorts["8080/tcp"] = struct{}{}
+	exposedPorts["4400/tcp"] = struct{}{}
 
 	portBindings := make(map[string][]portBinding)
 	portBindings["8080/tcp"] = []portBinding{{"0.0.0.0", httpPort}}
@@ -96,7 +95,7 @@ func buildJSONConfig(containerName string, imageName string, vchain string, http
 	absoluteNetworkConfigPath := getNetworkConfig(containerName, peers, peerKeys)
 	hostConfigMap["Binds"] = []string{
 		absoluteConfigPath + ":/opt/orbs/config/node.json",
-		absoluteNetworkConfigPath+":/opt/orbs/config/network.json",
+		absoluteNetworkConfigPath + ":/opt/orbs/config/network.json",
 	}
 	hostConfigMap["PortBindings"] = portBindings
 

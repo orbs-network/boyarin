@@ -111,6 +111,10 @@ func main() {
 	peersPtr := flag.String("peers", "", "list of peers ips and ports")
 	peerKeys := flag.String("peerKeys", "", "list of peer keys")
 
+	dockerImagePtr := flag.String("docker-image", "orbs", "docker image name")
+	dockerTagPtr := flag.String("docker-tag", "export", "docker image tag")
+	dockerPullPtr := flag.Bool("pull-docker-image", false, "pull docker image from docker registry")
+
 	flag.Parse()
 
 	ctx := context.Background()
@@ -120,9 +124,11 @@ func main() {
 		panic(err)
 	}
 
-	imageName := "orbs:export"
+	imageName := *dockerImagePtr + ":" + *dockerTagPtr
 
-	//pullImage(ctx, cli, imageName)
+	if *dockerPullPtr {
+		pullImage(ctx, cli, imageName)
+	}
 
 	containerName := getContainerName(*prefixPtr, *vchainPtr)
 

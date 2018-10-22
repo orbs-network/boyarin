@@ -55,24 +55,30 @@ func main() {
 	//pullImage(ctx, cli, imageName)
 
 	exposedPorts := make(map[string]interface{})
-	exposedPorts[*httpPortPtr+"/tcp"] = struct {}{}
-	exposedPorts[*gossipPortPtr+"/tcp"] = struct {}{}
+	exposedPorts["8080/tcp"] = struct {}{}
+	exposedPorts["4400/tcp"] = struct {}{}
 
 	portBindings := make(map[string][]portBinding)
-	portBindings[*httpPortPtr+"/tcp"] = []portBinding{{"0.0.0.0", "8080"}}
-	portBindings[*gossipPortPtr+"/tcp"] = []portBinding{{"0.0.0.0", "4040"}}
+	portBindings["8080/tcp"] = []portBinding{{"0.0.0.0", *httpPortPtr}}
+	portBindings["4400/tcp"] = []portBinding{{"0.0.0.0", *gossipPortPtr}}
 
 	configMap := make(map[string]interface{})
 	configMap["Image"] = imageName
 	configMap["ExposedPorts"] = exposedPorts
-	configMap["PortBindings"] = portBindings
+	configMap["CMD"] = []string{
+		"/opt/orbs/orbs-node",
+		"--config", "/opt/orbs/config/node.json",
+		//"--log", "/opt/orbs/logs/node.log",
+	}
 
 	hostConfigMap := make(map[string]interface{})
+	configMap["HostConfig"] = hostConfigMap
+
 	absoluteConfigPath, err := filepath.Abs(*pathToConfig)
 
 	hostConfigMap["Binds"] = []string{absoluteConfigPath + ":/opt/orbs/config/node.json"}
+	hostConfigMap["PortBindings"] = portBindings
 
-	//configMap["HostConfig"] = hostConfigMap
 
 	jsonConfig, _ := json.Marshal(configMap)
 

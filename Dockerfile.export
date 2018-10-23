@@ -1,6 +1,6 @@
 FROM busybox
 
-ADD ./boyarin ./test.local.sh /opt/orbs/
+ADD ./boyarin /opt/orbs/
 
 WORKDIR /opt/orbs
 

@@ -37,3 +37,5 @@ export PEER_KEYS=dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec17
     --gossip-port 4402 \
     --peers $PEERS \
     --peerKeys $PEER_KEYS
+
+python test/e2e_test.py

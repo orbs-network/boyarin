@@ -40,7 +40,7 @@ type node struct {
 	Port int64
 }
 
-func getNetworkConfig(containerName string, peers string, peerKeys string) string {
+func getNetworkConfig(configDir string, peers string, peerKeys string) string {
 	jsonMap := make(map[string]interface{})
 
 	keys := strings.Split(peerKeys, ",")
@@ -55,9 +55,7 @@ func getNetworkConfig(containerName string, peers string, peerKeys string) strin
 
 	jsonMap["federation-nodes"] = nodes
 
-	os.MkdirAll("_tmp", 0755)
-
-	path, _ := filepath.Abs("_tmp/" + containerName + ".json")
+	path, _ := filepath.Abs(filepath.Join(configDir, "network.json"))
 	json, _ := json.Marshal(jsonMap)
 
 	ioutil.WriteFile(path, json, 0644)
@@ -65,49 +63,87 @@ func getNetworkConfig(containerName string, peers string, peerKeys string) strin
 	return path
 }
 
-func buildJSONConfig(containerName string, imageName string, vchain string, httpPort string, gossipPort string, pathToConfig string, peers string, peerKeys string) ([]byte, error) {
-	exposedPorts := make(map[string]interface{})
+func copyNodeConfig(configDir string, pathToConfig string) (string, error) {
+	data, err := ioutil.ReadFile(pathToConfig)
+
+	if err != nil {
+		return "", err
+	}
+
+	absolutePathToConfig, _ := filepath.Abs(filepath.Join(configDir, "config.json"))
+	ioutil.WriteFile(absolutePathToConfig, data, 0600)
+
+	return absolutePathToConfig, nil
+}
+
+func createConfigDir(root string, containerName string) string {
+	configDir := filepath.Join(root, containerName, "config")
+	os.MkdirAll(configDir, 0755)
+	return configDir
+}
+
+func createLogsDir(root string, containerName string) string {
+	absoluteLogPath, _ := filepath.Abs(filepath.Join(root, containerName, "logs"))
+	os.MkdirAll(absoluteLogPath, 0755)
+	return absoluteLogPath
+}
+
+func getDockerNetworkOptions(httpPort string, gossipPort string) (exposedPorts map[string]interface{}, portBindings map[string][]portBinding){
+	exposedPorts = make(map[string]interface{})
 	exposedPorts["8080/tcp"] = struct{}{}
 	exposedPorts["4400/tcp"] = struct{}{}
 
-	portBindings := make(map[string][]portBinding)
+	portBindings = make(map[string][]portBinding)
 	portBindings["8080/tcp"] = []portBinding{{"0.0.0.0", httpPort}}
 	portBindings["4400/tcp"] = []portBinding{{"0.0.0.0", gossipPort}}
+
+	return
+}
+
+func buildJSONConfig(
+	imageName string,
+	httpPort string,
+	gossipPort string,
+	absolutePathToConfig string,
+	absolutePathToLogs string,
+	absoluteNetworkConfigPath string,
+	) ([]byte, error) {
+
+	exposedPorts, portBindings := getDockerNetworkOptions(httpPort, gossipPort)
 
 	configMap := make(map[string]interface{})
 	configMap["Image"] = imageName
 	configMap["ExposedPorts"] = exposedPorts
 	configMap["CMD"] = []string{
 		"/opt/orbs/orbs-node",
+		"--silent",
 		"--config", "/opt/orbs/config/node.json",
 		"--config", "/opt/orbs/config/network.json",
-		//"--log", "/opt/orbs/logs/node.log",
+		"--log", "/opt/orbs/logs/node.log",
 	}
 
 	hostConfigMap := make(map[string]interface{})
-	configMap["HostConfig"] = hostConfigMap
-
-	absoluteConfigPath, err := filepath.Abs(pathToConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	absoluteNetworkConfigPath := getNetworkConfig(containerName, peers, peerKeys)
 	hostConfigMap["Binds"] = []string{
-		absoluteConfigPath + ":/opt/orbs/config/node.json",
+		absolutePathToConfig + ":/opt/orbs/config/node.json",
 		absoluteNetworkConfigPath + ":/opt/orbs/config/network.json",
+		absolutePathToLogs + ":/opt/orbs/logs/",
 	}
 	hostConfigMap["PortBindings"] = portBindings
+
+	configMap["HostConfig"] = hostConfigMap
 
 	return json.Marshal(configMap)
 }
 
 func main() {
+	root := "_tmp"
+
 	vchainPtr := flag.String("vchain", "42", "virtual chain id")
 	prefixPtr := flag.String("prefix", "orbs-network", "container prefix")
 	httpPortPtr := flag.String("http-port", "8080", "http port")
 	gossipPortPtr := flag.String("gossip-port", "4400", "gossip port")
 	pathToConfig := flag.String("config", "", "path to node config")
+	pathToLogsPtr := flag.String("logs", root, "path to logs for the virtual chain")
 	peersPtr := flag.String("peers", "", "list of peers ips and ports")
 	peerKeys := flag.String("peerKeys", "", "list of peer keys")
 
@@ -131,8 +167,18 @@ func main() {
 	}
 
 	containerName := getContainerName(*prefixPtr, *vchainPtr)
+	configDir := createConfigDir(root, containerName)
 
-	jsonConfig, _ := buildJSONConfig(containerName, imageName, *vchainPtr, *httpPortPtr, *gossipPortPtr, *pathToConfig, *peersPtr, *peerKeys)
+	absolutePathToLogs := createLogsDir(*pathToLogsPtr, containerName)
+	absoluteNetworkConfigPath := getNetworkConfig(configDir, *peersPtr, *peerKeys)
+	absolutePathToConfig, err := copyNodeConfig(configDir, *pathToConfig)
+	if err != nil {
+		panic(err)
+	}
+
+	jsonConfig, _ := buildJSONConfig(imageName, *httpPortPtr,
+		*gossipPortPtr, absolutePathToConfig, absolutePathToLogs, absoluteNetworkConfigPath)
+
 	fmt.Println(string(jsonConfig))
 
 	decoder := runconfig.ContainerDecoder{}

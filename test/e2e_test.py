@@ -3,28 +3,28 @@
 import urllib
 import json
 import time
-import sys
+import unittest
 
 def get_metrics(url):
     return json.loads(urllib.urlopen(url).read())
 
-def TestE2E():
-    for i in range(20):
-        try:
-            time.sleep(0.5)
-            metrics = get_metrics('http://localhost:8080/metrics')
+class TestSuite(unittest.TestCase):
+    def testE2E(self):
+        for i in range(20):
+            try:
+                time.sleep(0.5)
+                metrics = get_metrics('http://localhost:8080/metrics')
 
-            blockHeight = metrics['BlockStorage.BlockHeight']['Value']
-            print 'network block height', blockHeight
+                blockHeight = metrics['BlockStorage.BlockHeight']['Value']
+                print 'network block height', blockHeight
 
-            if blockHeight >= 3:
-                print 'Pass'
-                return
-        except:
-            pass
+                if blockHeight > 0:
+                    break
+            except:
+                pass
 
-    sys.exit(1)
+        assert(blockHeight != 0)
 
 
 if __name__ == '__main__':
-    TestE2E()
+    unittest.main()

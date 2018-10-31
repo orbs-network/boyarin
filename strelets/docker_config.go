@@ -2,7 +2,6 @@ package strelets
 
 import (
 	"encoding/json"
-	"fmt"
 	"strconv"
 )
 
@@ -15,10 +14,6 @@ type DockerImageConfig struct {
 
 func (c *DockerImageConfig) FullImageName() string {
 	return c.Image + ":" + c.Tag
-}
-
-func getContainerName(prefix string, vchain VirtualChainId) string {
-	return fmt.Sprintf("%s-vchain-%d", prefix, vchain)
 }
 
 func getDockerNetworkOptions(httpPort int, gossipPort int) (exposedPorts map[string]interface{}, portBindings map[string][]portBinding) {
@@ -70,4 +65,3 @@ type portBinding struct {
 	HostIp   string
 	HostPort string
 }
-

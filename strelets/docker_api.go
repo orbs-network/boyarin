@@ -19,10 +19,7 @@ func pullImage(ctx context.Context, cli *client.Client, imageName string) {
 	io.Copy(os.Stdout, out)
 }
 
-func (s *strelets) runContainer(ctx context.Context, cli *client.Client, imageName string, v *vchain, configPath string) (string, error) {
-	containerName := getContainerName(v.dockerConfig.Prefix, v.id)
-	vchainVolumes := s.prepareVirtualChainConfig(containerName, configPath)
-
+func (s *strelets) runContainer(ctx context.Context, cli *client.Client, containerName string, imageName string, v *vchain, vchainVolumes *virtualChainVolumes) (string, error) {
 	jsonConfig, _ := buildDockerJSONConfig(imageName, v.httpPort, v.gossipPort, vchainVolumes)
 
 	fmt.Println(string(jsonConfig))

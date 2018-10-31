@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/pkg/errors"
+	"io/ioutil"
 )
 
 type VirtualChainId uint32
@@ -22,13 +23,6 @@ type strelets struct {
 	peers   map[PublicKey]*Peer
 
 	root string
-}
-
-type vchain struct {
-	id           VirtualChainId
-	httpPort     int
-	gossipPort   int
-	dockerConfig *DockerImageConfig
 }
 
 type Peer struct {
@@ -56,7 +50,7 @@ func (s *strelets) UpdateFederation(peers map[PublicKey]*Peer) {
 	s.peers = peers
 }
 
-func (s *strelets) ProvisionVirtualChain(chain VirtualChainId, configPath string, httpPort int, gossipPort int, dockerConfig *DockerImageConfig) error {
+func (s *strelets) ProvisionVirtualChain(chain VirtualChainId, vchainConfigPath string, httpPort int, gossipPort int, dockerConfig *DockerImageConfig) error {
 	v := &vchain{
 		id:           chain,
 		httpPort:     httpPort,
@@ -76,7 +70,21 @@ func (s *strelets) ProvisionVirtualChain(chain VirtualChainId, configPath string
 		pullImage(ctx, cli, imageName)
 	}
 
-	containerId, err := s.runContainer(ctx, cli, imageName, v, configPath)
+	containerName := v.getContainerName()
+	vchainVolumes := s.prepareVirtualChainConfig(containerName)
+
+	createDir(vchainVolumes.configRoot)
+	createDir(vchainVolumes.logs)
+
+	if err := copyNodeConfig(vchainConfigPath, vchainVolumes.config); err != nil {
+		return err
+	}
+
+	if err := ioutil.WriteFile(vchainVolumes.network, getNetworkConfigJSON(s.peers), 0644); err != nil {
+		return err
+	}
+
+	containerId, err := s.runContainer(ctx, cli, containerName, imageName, v, vchainVolumes)
 	if err != nil {
 		return err
 	}

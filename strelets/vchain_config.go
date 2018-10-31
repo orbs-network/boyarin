@@ -2,34 +2,34 @@ package strelets
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 )
 
-func createConfigDir(root string, containerName string) string {
-	configDir := filepath.Join(root, containerName, "config")
-	os.MkdirAll(configDir, 0755)
-	return configDir
+type vchain struct {
+	id           VirtualChainId
+	httpPort     int
+	gossipPort   int
+	dockerConfig *DockerImageConfig
 }
 
-func createLogsDir(root string, containerName string) string {
-	absoluteLogPath, _ := filepath.Abs(filepath.Join(root, containerName, "logs"))
-	os.MkdirAll(absoluteLogPath, 0755)
-	return absoluteLogPath
+func (v *vchain) getContainerName() string {
+	return fmt.Sprintf("%s-vchain-%d", v.dockerConfig.Prefix, v.id)
 }
 
-func copyNodeConfig(configDir string, pathToConfig string) (string, error) {
-	data, err := ioutil.ReadFile(pathToConfig)
+func createDir(path string) error {
+	return os.MkdirAll(path, 0755)
+}
 
+func copyNodeConfig(source string, destination string) error {
+	data, err := ioutil.ReadFile(source)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	absolutePathToConfig, _ := filepath.Abs(filepath.Join(configDir, "config.json"))
-	ioutil.WriteFile(absolutePathToConfig, data, 0600)
-
-	return absolutePathToConfig, nil
+	return ioutil.WriteFile(destination, data, 0600)
 }
 
 type node struct {
@@ -38,7 +38,7 @@ type node struct {
 	Port int
 }
 
-func getNetworkConfig(configDir string, peers map[PublicKey]*Peer) string {
+func getNetworkConfigJSON(peers map[PublicKey]*Peer) []byte {
 	jsonMap := make(map[string]interface{})
 
 	var nodes []node
@@ -47,28 +47,26 @@ func getNetworkConfig(configDir string, peers map[PublicKey]*Peer) string {
 	}
 
 	jsonMap["federation-nodes"] = nodes
-
-	path, _ := filepath.Abs(filepath.Join(configDir, "network.json"))
 	json, _ := json.Marshal(jsonMap)
 
-	ioutil.WriteFile(path, json, 0644)
-
-	return path
+	return json
 }
 
 type virtualChainVolumes struct {
-	config string
-	network string
-	logs string
+	configRoot string
+	config     string
+	network    string
+	logs       string
 }
 
-func (s *strelets) prepareVirtualChainConfig(containerName string, configPath string) *virtualChainVolumes {
-	configDir := createConfigDir(s.root, containerName)
-	absolutePathToLogs := createLogsDir(filepath.Join(s.root, "logs"), containerName)
-	absolutePathToNetwork := getNetworkConfig(configDir, s.peers)
-	absolutePathToConfig, _ := copyNodeConfig(configDir, configPath)
+func (s *strelets) prepareVirtualChainConfig(containerName string) *virtualChainVolumes {
+	configDir := filepath.Join(s.root, containerName, "config")
+	absolutePathToLogs, _ := filepath.Abs(filepath.Join(s.root, containerName, "logs"))
+	absolutePathToNetwork, _ := filepath.Abs(filepath.Join(configDir, "network.json"))
+	absolutePathToConfig, _ := filepath.Abs(filepath.Join(configDir, "config.json"))
 
 	return &virtualChainVolumes{
+		configDir,
 		absolutePathToConfig,
 		absolutePathToNetwork,
 		absolutePathToLogs,

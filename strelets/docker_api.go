@@ -41,3 +41,11 @@ func (s *strelets) runContainer(ctx context.Context, cli *client.Client, contain
 
 	return resp.ID, nil
 }
+
+func (s *strelets) removeContainer(ctx context.Context, cli *client.Client, containerName string) error {
+	return cli.ContainerRemove(ctx, containerName, types.ContainerRemoveOptions{
+		Force:         true,
+		RemoveLinks:   false,
+		RemoveVolumes: false,
+	})
+}

@@ -33,36 +33,31 @@ func printHelp() {
 func main() {
 	root := "_tmp"
 
-	flagSet := flag.NewFlagSet("", flag.ExitOnError)
-
-	vchainPtr := flagSet.Int("chain", 42, "virtual chain id")
-	prefixPtr := flagSet.String("prefix", "orbs-network", "container prefix")
-	httpPortPtr := flagSet.Int("http-port", 8080, "http port")
-	gossipPortPtr := flagSet.Int("gossip-port", 4400, "gossip port")
-	pathToConfig := flagSet.String("config", "", "path to node config")
-	peersPtr := flagSet.String("peers", "", "list of peers ips and ports")
-	peerKeys := flagSet.String("peerKeys", "", "list of peer keys")
-
-	dockerImagePtr := flagSet.String("docker-image", "orbs", "docker image name")
-	dockerTagPtr := flagSet.String("docker-tag", "export", "docker image tag")
-	dockerPullPtr := flagSet.Bool("pull-docker-image", false, "pull docker image from docker registry")
-
 	if len(os.Args) < 2 {
 		printHelp()
 	}
 
-	flagSet.Parse(os.Args[2:])
-
-	vchainId := strelets.VirtualChainId(*vchainPtr)
-
 	switch os.Args[1] {
 	case "provision-virtual-chain":
+		flagSet := flag.NewFlagSet("", flag.ExitOnError)
+
+		vchainPtr := flagSet.Int("chain", 42, "virtual chain id")
+		prefixPtr := flagSet.String("prefix", "orbs-network", "container prefix")
+		httpPortPtr := flagSet.Int("http-port", 8080, "http port")
+		gossipPortPtr := flagSet.Int("gossip-port", 4400, "gossip port")
+		pathToConfig := flagSet.String("config", "", "path to node config")
+		peersPtr := flagSet.String("peers", "", "list of peers ips and ports")
+		peerKeys := flagSet.String("peerKeys", "", "list of peer keys")
+
+		dockerImagePtr := flagSet.String("docker-image", "orbs", "docker image name")
+		dockerTagPtr := flagSet.String("docker-tag", "export", "docker image tag")
+		dockerPullPtr := flagSet.Bool("pull-docker-image", false, "pull docker image from docker registry")
+
+		flagSet.Parse(os.Args[2:])
+		vchainId := strelets.VirtualChainId(*vchainPtr)
+
 		str := strelets.NewStrelets(root)
-
-		fmt.Println("ZZZ", *peersPtr, *peerKeys)
-
 		str.UpdateFederation(getPeersFromConfig(*peersPtr, *peerKeys))
-
 		err := str.ProvisionVirtualChain(vchainId, *pathToConfig, *httpPortPtr, *gossipPortPtr,
 			&strelets.DockerImageConfig{
 				Image:  *dockerImagePtr,
@@ -73,6 +68,17 @@ func main() {
 		)
 
 		if err != nil {
+			panic(err)
+		}
+	case "remove-virtual-chain":
+		flagSet := flag.NewFlagSet("", flag.ExitOnError)
+		vchainPtr := flagSet.Int("chain", 42, "virtual chain id")
+		prefixPtr := flagSet.String("prefix", "orbs-network", "container prefix")
+		flagSet.Parse(os.Args[2:])
+
+		vchainId := strelets.VirtualChainId(*vchainPtr)
+		str := strelets.NewStrelets(root)
+		if err := str.RemoveVirtualChain(vchainId, &strelets.DockerImageConfig{Prefix: *prefixPtr}); err != nil {
 			panic(err)
 		}
 	default:

@@ -16,6 +16,7 @@ type Strelets interface {
 	GetChain(chain VirtualChainId) (*vchain, error)
 	ProvisionVirtualChain(chain VirtualChainId, configPath string, httpPort int, gossipPort int, dockerConfig *DockerImageConfig) error
 	UpdateFederation(peers map[PublicKey]*Peer)
+	RemoveVirtualChain(chain VirtualChainId, config *DockerImageConfig) error
 }
 
 type strelets struct {
@@ -92,4 +93,20 @@ func (s *strelets) ProvisionVirtualChain(chain VirtualChainId, vchainConfigPath 
 	fmt.Println(containerId)
 
 	return nil
+}
+
+func (s *strelets) RemoveVirtualChain(chain VirtualChainId, dockerConfig *DockerImageConfig) error {
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.WithVersion("1.38"))
+	if err != nil {
+		return err
+	}
+
+	v := &vchain{
+		id:           chain,
+		dockerConfig: dockerConfig,
+	}
+
+	containerName := v.getContainerName()
+	return s.removeContainer(ctx, cli, containerName)
 }

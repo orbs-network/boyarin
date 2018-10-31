@@ -1,6 +1,6 @@
 FROM busybox
 
-ADD ./boyarin /opt/orbs/
+ADD ./strelets.bin /opt/orbs/strelets
 
 WORKDIR /opt/orbs
 

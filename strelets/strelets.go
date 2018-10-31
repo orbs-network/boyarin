@@ -32,8 +32,8 @@ type vchain struct {
 }
 
 type Peer struct {
-	ip   string
-	port int
+	IP   string
+	Port int
 }
 
 func NewStrelets(root string) Strelets {

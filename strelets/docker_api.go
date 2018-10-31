@@ -9,7 +9,6 @@ import (
 	"github.com/docker/docker/runconfig"
 	"io"
 	"os"
-	"path/filepath"
 )
 
 func pullImage(ctx context.Context, cli *client.Client, imageName string) {
@@ -22,17 +21,9 @@ func pullImage(ctx context.Context, cli *client.Client, imageName string) {
 
 func (s *strelets) runContainer(ctx context.Context, cli *client.Client, imageName string, v *vchain, configPath string) (string, error) {
 	containerName := getContainerName(v.dockerConfig.Prefix, v.id)
+	vchainVolumes := s.prepareVirtualChainConfig(containerName, configPath)
 
-	configDir := createConfigDir(s.root, containerName)
-	absolutePathToLogs := createLogsDir(filepath.Join(s.root, "logs"), containerName)
-	absoluteNetworkConfigPath := getNetworkConfig(configDir, s.peers)
-	absolutePathToConfig, err := copyNodeConfig(configDir, configPath)
-	if err != nil {
-		return "", err
-	}
-
-	jsonConfig, _ := buildJSONConfig(imageName, v.httpPort, v.gossipPort,
-		absolutePathToConfig, absolutePathToLogs, absoluteNetworkConfigPath)
+	jsonConfig, _ := buildDockerJSONConfig(imageName, v.httpPort, v.gossipPort, vchainVolumes)
 
 	fmt.Println(string(jsonConfig))
 

@@ -42,7 +42,8 @@ func main() {
 
 	str := strelets.NewStrelets(root)
 	str.UpdateFederation(getPeersFromConfig(*peersPtr, *peerKeys))
-	str.ProvisionVirtualChain(vchainId, *pathToConfig, *httpPortPtr, *gossipPortPtr,
+
+	err := str.ProvisionVirtualChain(vchainId, *pathToConfig, *httpPortPtr, *gossipPortPtr,
 		&strelets.DockerImageConfig{
 			Image:  *dockerImagePtr,
 			Tag:    *dockerTagPtr,
@@ -50,4 +51,8 @@ func main() {
 			Prefix: *prefixPtr,
 		},
 	)
+
+	if err != nil {
+		panic(err)
+	}
 }

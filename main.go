@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"github.com/orbs-network/boyarin/strelets"
@@ -49,17 +50,19 @@ func getProvisionVirtualChainInput() *strelets.ProvisionVirtualChainInput {
 	vchainId := strelets.VirtualChainId(*vchainPtr)
 
 	return &strelets.ProvisionVirtualChainInput{
-		Chain:            vchainId,
-		HttpPort:         *httpPortPtr,
-		GossipPort:       *gossipPortPtr,
-		VchainConfigPath: *pathToConfig,
-		Peers:            getPeersFromConfig(*peersPtr, *peerKeys),
-		DockerConfig: &strelets.DockerImageConfig{
-			Prefix: *prefixPtr,
-			Image:  *dockerImagePtr,
-			Tag:    *dockerTagPtr,
-			Pull:   *dockerPullPtr,
+		VirtualChain: &strelets.VirtualChain{
+			Id:         vchainId,
+			HttpPort:   *httpPortPtr,
+			GossipPort: *gossipPortPtr,
+			DockerConfig: &strelets.DockerImageConfig{
+				Prefix: *prefixPtr,
+				Image:  *dockerImagePtr,
+				Tag:    *dockerTagPtr,
+				Pull:   *dockerPullPtr,
+			},
 		},
+		VirtualChainConfigPath: *pathToConfig,
+		Peers: getPeersFromConfig(*peersPtr, *peerKeys),
 	}
 }
 
@@ -72,8 +75,10 @@ func getRemoveVirtualChainInput() *strelets.RemoveVirtualChainInput {
 	vchainId := strelets.VirtualChainId(*vchainPtr)
 
 	return &strelets.RemoveVirtualChainInput{
-		Chain:        vchainId,
-		DockerConfig: &strelets.DockerImageConfig{Prefix: *prefixPtr},
+		VirtualChain: &strelets.VirtualChain{
+			Id:           vchainId,
+			DockerConfig: &strelets.DockerImageConfig{Prefix: *prefixPtr},
+		},
 	}
 }
 
@@ -84,19 +89,21 @@ func main() {
 		printHelp()
 	}
 
+	ctx := context.Background()
+
 	switch os.Args[1] {
 	case "provision-virtual-chain":
 		input := getProvisionVirtualChainInput()
 
 		str := strelets.NewStrelets(root)
-		if err := str.ProvisionVirtualChain(input); err != nil {
+		if err := str.ProvisionVirtualChain(ctx, input); err != nil {
 			panic(err)
 		}
 	case "remove-virtual-chain":
 		input := getRemoveVirtualChainInput()
 
 		str := strelets.NewStrelets(root)
-		if err := str.RemoveVirtualChain(input); err != nil {
+		if err := str.RemoveVirtualChain(ctx, input); err != nil {
 			panic(err)
 		}
 	default:

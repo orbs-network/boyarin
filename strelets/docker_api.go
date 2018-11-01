@@ -3,6 +3,7 @@ package strelets
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -10,6 +11,8 @@ import (
 	"io"
 	"os"
 )
+
+const DOCKER_API_VERSION = "1.38"
 
 func pullImage(ctx context.Context, cli *client.Client, imageName string) {
 	out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
@@ -19,8 +22,8 @@ func pullImage(ctx context.Context, cli *client.Client, imageName string) {
 	io.Copy(os.Stdout, out)
 }
 
-func (s *strelets) runContainer(ctx context.Context, cli *client.Client, containerName string, imageName string, v *vchain, vchainVolumes *virtualChainVolumes) (string, error) {
-	jsonConfig, _ := buildDockerJSONConfig(imageName, v.httpPort, v.gossipPort, vchainVolumes)
+func (s *strelets) runContainer(ctx context.Context, cli *client.Client, containerName string, imageName string, dockerConfig map[string]interface{}) (string, error) {
+	jsonConfig, _ := json.Marshal(dockerConfig)
 
 	fmt.Println(string(jsonConfig))
 

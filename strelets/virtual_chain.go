@@ -8,22 +8,24 @@ import (
 	"path/filepath"
 )
 
-type vchain struct {
-	id           VirtualChainId
-	httpPort     int
-	gossipPort   int
-	dockerConfig *DockerImageConfig
+type VirtualChainId uint32
+
+type VirtualChain struct {
+	Id           VirtualChainId
+	HttpPort     int
+	GossipPort   int
+	DockerConfig *DockerImageConfig
 }
 
-func (v *vchain) getContainerName() string {
-	return fmt.Sprintf("%s-vchain-%d", v.dockerConfig.Prefix, v.id)
+func (v *VirtualChain) getContainerName() string {
+	return fmt.Sprintf("%s-VirtualChain-%d", v.DockerConfig.Prefix, v.Id)
 }
 
 func createDir(path string) error {
 	return os.MkdirAll(path, 0755)
 }
 
-func copyNodeConfig(source string, destination string) error {
+func copyVirtualChainConfig(source string, destination string) error {
 	data, err := ioutil.ReadFile(source)
 	if err != nil {
 		return err
@@ -59,9 +61,10 @@ type virtualChainVolumes struct {
 	logs       string
 }
 
-func (s *strelets) prepareVirtualChainConfig(containerName string) *virtualChainVolumes {
-	configDir := filepath.Join(s.root, containerName, "config")
-	absolutePathToLogs, _ := filepath.Abs(filepath.Join(s.root, containerName, "logs"))
+func (v *VirtualChain) getDockerVolumes(root string) *virtualChainVolumes {
+	containerName := v.getContainerName()
+	configDir := filepath.Join(root, containerName, "config")
+	absolutePathToLogs, _ := filepath.Abs(filepath.Join(root, containerName, "logs"))
 	absolutePathToNetwork, _ := filepath.Abs(filepath.Join(configDir, "network.json"))
 	absolutePathToConfig, _ := filepath.Abs(filepath.Join(configDir, "config.json"))
 

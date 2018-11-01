@@ -6,22 +6,15 @@ import (
 )
 
 type RemoveVirtualChainInput struct {
-	Chain        VirtualChainId
-	DockerConfig *DockerImageConfig
+	VirtualChain *VirtualChain
 }
 
-func (s *strelets) RemoveVirtualChain(input *RemoveVirtualChainInput) error {
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.WithVersion("1.38"))
+func (s *strelets) RemoveVirtualChain(ctx context.Context, input *RemoveVirtualChainInput) error {
+	cli, err := client.NewClientWithOpts(client.WithVersion(DOCKER_API_VERSION))
 	if err != nil {
 		return err
 	}
 
-	v := &vchain{
-		id:           input.Chain,
-		dockerConfig: input.DockerConfig,
-	}
-
-	containerName := v.getContainerName()
+	containerName := input.VirtualChain.getContainerName()
 	return s.removeContainer(ctx, cli, containerName)
 }

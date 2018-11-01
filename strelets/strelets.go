@@ -1,12 +1,10 @@
 package strelets
 
-type VirtualChainId uint32
-
-type PublicKey string
+import "context"
 
 type Strelets interface {
-	ProvisionVirtualChain(input *ProvisionVirtualChainInput) error
-	RemoveVirtualChain(input *RemoveVirtualChainInput) error
+	ProvisionVirtualChain(ctx context.Context, input *ProvisionVirtualChainInput) error
+	RemoveVirtualChain(ctx context.Context, input *RemoveVirtualChainInput) error
 }
 
 type strelets struct {

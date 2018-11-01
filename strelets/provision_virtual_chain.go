@@ -8,12 +8,9 @@ import (
 )
 
 type ProvisionVirtualChainInput struct {
-	Chain            VirtualChainId
-	VchainConfigPath string
-	HttpPort         int
-	GossipPort       int
-	DockerConfig     *DockerImageConfig
-	Peers            *PeersMap
+	VirtualChain           *VirtualChain
+	VirtualChainConfigPath string
+	Peers                  *PeersMap
 }
 
 type Peer struct {
@@ -21,34 +18,29 @@ type Peer struct {
 	Port int
 }
 
+type PublicKey string
+
 type PeersMap map[PublicKey]*Peer
 
-func (s *strelets) ProvisionVirtualChain(input *ProvisionVirtualChainInput) error {
-	v := &vchain{
-		id:           input.Chain,
-		httpPort:     input.HttpPort,
-		gossipPort:   input.GossipPort,
-		dockerConfig: input.DockerConfig,
-	}
-
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.WithVersion("1.38"))
+func (s *strelets) ProvisionVirtualChain(ctx context.Context, input *ProvisionVirtualChainInput) error {
+	cli, err := client.NewClientWithOpts(client.WithVersion(DOCKER_API_VERSION))
 	if err != nil {
 		return err
 	}
 
-	imageName := v.dockerConfig.FullImageName()
-	if v.dockerConfig.Pull {
+	chain := input.VirtualChain
+	imageName := chain.DockerConfig.FullImageName()
+	if chain.DockerConfig.Pull {
 		pullImage(ctx, cli, imageName)
 	}
 
-	containerName := v.getContainerName()
-	vchainVolumes := s.prepareVirtualChainConfig(containerName)
+	containerName := chain.getContainerName()
+	vchainVolumes := chain.getDockerVolumes(s.root)
 
 	createDir(vchainVolumes.configRoot)
 	createDir(vchainVolumes.logs)
 
-	if err := copyNodeConfig(input.VchainConfigPath, vchainVolumes.config); err != nil {
+	if err := copyVirtualChainConfig(input.VirtualChainConfigPath, vchainVolumes.config); err != nil {
 		return err
 	}
 
@@ -56,7 +48,10 @@ func (s *strelets) ProvisionVirtualChain(input *ProvisionVirtualChainInput) erro
 		return err
 	}
 
-	containerId, err := s.runContainer(ctx, cli, containerName, imageName, v, vchainVolumes)
+	exposedPorts, portBindings := buildDockerNetworkOptions(chain.HttpPort, chain.GossipPort)
+	dockerConfig := buildDockerConfig(imageName, exposedPorts, portBindings, vchainVolumes)
+
+	containerId, err := s.runContainer(ctx, cli, containerName, imageName, dockerConfig)
 	if err != nil {
 		return err
 	}

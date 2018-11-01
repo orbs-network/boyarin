@@ -1,7 +1,6 @@
 package strelets
 
 import (
-	"encoding/json"
 	"strconv"
 )
 
@@ -16,7 +15,7 @@ func (c *DockerImageConfig) FullImageName() string {
 	return c.Image + ":" + c.Tag
 }
 
-func getDockerNetworkOptions(httpPort int, gossipPort int) (exposedPorts map[string]interface{}, portBindings map[string][]portBinding) {
+func buildDockerNetworkOptions(httpPort int, gossipPort int) (exposedPorts map[string]interface{}, portBindings map[string][]portBinding) {
 	exposedPorts = make(map[string]interface{})
 	exposedPorts["8080/tcp"] = struct{}{}
 	exposedPorts["4400/tcp"] = struct{}{}
@@ -28,15 +27,12 @@ func getDockerNetworkOptions(httpPort int, gossipPort int) (exposedPorts map[str
 	return
 }
 
-func buildDockerJSONConfig(
+func buildDockerConfig(
 	imageName string,
-	httpPort int,
-	gossipPort int,
+	exposedPorts map[string]interface{},
+	portBindings map[string][]portBinding,
 	volumes *virtualChainVolumes,
-) ([]byte, error) {
-
-	exposedPorts, portBindings := getDockerNetworkOptions(httpPort, gossipPort)
-
+) map[string]interface{} {
 	configMap := make(map[string]interface{})
 	configMap["Image"] = imageName
 	configMap["ExposedPorts"] = exposedPorts
@@ -58,7 +54,7 @@ func buildDockerJSONConfig(
 
 	configMap["HostConfig"] = hostConfigMap
 
-	return json.Marshal(configMap)
+	return configMap
 }
 
 type portBinding struct {

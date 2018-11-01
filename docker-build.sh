@@ -6,7 +6,7 @@ docker build -f Dockerfile.build -t orbs:build .
 
 docker run --name orbs_build orbs:build sleep 1
 
-export SRC=/go/src/github.com/orbs-network/strelets
+export SRC=/go/src/github.com/orbs-network/boyarin
 
 docker cp orbs_build:$SRC/strelets.bin .
 docker build -f Dockerfile.export -t orbs:strelets .

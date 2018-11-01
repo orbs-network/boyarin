@@ -1,8 +1,8 @@
 FROM golang:1.10-alpine
 
-WORKDIR /go/src/github.com/orbs-network/strelets/
+WORKDIR /go/src/github.com/orbs-network/boyarin/
 
-ADD . /go/src/github.com/orbs-network/strelets/
+ADD . /go/src/github.com/orbs-network/boyarin/
 
 RUN env
 

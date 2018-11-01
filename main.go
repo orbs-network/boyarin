@@ -30,6 +30,53 @@ func printHelp() {
 	flag.Usage()
 }
 
+func getProvisionVirtualChainInput() *strelets.ProvisionVirtualChainInput {
+	flagSet := flag.NewFlagSet("", flag.ExitOnError)
+
+	vchainPtr := flagSet.Int("chain", 42, "virtual chain id")
+	prefixPtr := flagSet.String("prefix", "orbs-network", "container prefix")
+	httpPortPtr := flagSet.Int("http-port", 8080, "http port")
+	gossipPortPtr := flagSet.Int("gossip-port", 4400, "gossip port")
+	pathToConfig := flagSet.String("config", "", "path to node config")
+	peersPtr := flagSet.String("peers", "", "list of peers ips and ports")
+	peerKeys := flagSet.String("peerKeys", "", "list of peer keys")
+
+	dockerImagePtr := flagSet.String("docker-image", "orbs", "docker image name")
+	dockerTagPtr := flagSet.String("docker-tag", "export", "docker image tag")
+	dockerPullPtr := flagSet.Bool("pull-docker-image", false, "pull docker image from docker registry")
+
+	flagSet.Parse(os.Args[2:])
+	vchainId := strelets.VirtualChainId(*vchainPtr)
+
+	return &strelets.ProvisionVirtualChainInput{
+		Chain:            vchainId,
+		HttpPort:         *httpPortPtr,
+		GossipPort:       *gossipPortPtr,
+		VchainConfigPath: *pathToConfig,
+		Peers:            getPeersFromConfig(*peersPtr, *peerKeys),
+		DockerConfig: &strelets.DockerImageConfig{
+			Prefix: *prefixPtr,
+			Image:  *dockerImagePtr,
+			Tag:    *dockerTagPtr,
+			Pull:   *dockerPullPtr,
+		},
+	}
+}
+
+func getRemoveVirtualChainInput() *strelets.RemoveVirtualChainInput {
+	flagSet := flag.NewFlagSet("", flag.ExitOnError)
+	vchainPtr := flagSet.Int("chain", 42, "virtual chain id")
+	prefixPtr := flagSet.String("prefix", "orbs-network", "container prefix")
+	flagSet.Parse(os.Args[2:])
+
+	vchainId := strelets.VirtualChainId(*vchainPtr)
+
+	return &strelets.RemoveVirtualChainInput{
+		Chain:        vchainId,
+		DockerConfig: &strelets.DockerImageConfig{Prefix: *prefixPtr},
+	}
+}
+
 func main() {
 	root := "_tmp"
 
@@ -39,46 +86,21 @@ func main() {
 
 	switch os.Args[1] {
 	case "provision-virtual-chain":
-		flagSet := flag.NewFlagSet("", flag.ExitOnError)
-
-		vchainPtr := flagSet.Int("chain", 42, "virtual chain id")
-		prefixPtr := flagSet.String("prefix", "orbs-network", "container prefix")
-		httpPortPtr := flagSet.Int("http-port", 8080, "http port")
-		gossipPortPtr := flagSet.Int("gossip-port", 4400, "gossip port")
-		pathToConfig := flagSet.String("config", "", "path to node config")
-		peersPtr := flagSet.String("peers", "", "list of peers ips and ports")
-		peerKeys := flagSet.String("peerKeys", "", "list of peer keys")
-
-		dockerImagePtr := flagSet.String("docker-image", "orbs", "docker image name")
-		dockerTagPtr := flagSet.String("docker-tag", "export", "docker image tag")
-		dockerPullPtr := flagSet.Bool("pull-docker-image", false, "pull docker image from docker registry")
-
-		flagSet.Parse(os.Args[2:])
-		vchainId := strelets.VirtualChainId(*vchainPtr)
+		input := getProvisionVirtualChainInput()
 
 		str := strelets.NewStrelets(root)
-		str.UpdateFederation(getPeersFromConfig(*peersPtr, *peerKeys))
-		err := str.ProvisionVirtualChain(vchainId, *pathToConfig, *httpPortPtr, *gossipPortPtr,
-			&strelets.DockerImageConfig{
-				Image:  *dockerImagePtr,
-				Tag:    *dockerTagPtr,
-				Pull:   *dockerPullPtr,
-				Prefix: *prefixPtr,
-			},
-		)
+		str.UpdateFederation(input.Peers)
+
+		err := str.ProvisionVirtualChain(input)
 
 		if err != nil {
 			panic(err)
 		}
 	case "remove-virtual-chain":
-		flagSet := flag.NewFlagSet("", flag.ExitOnError)
-		vchainPtr := flagSet.Int("chain", 42, "virtual chain id")
-		prefixPtr := flagSet.String("prefix", "orbs-network", "container prefix")
-		flagSet.Parse(os.Args[2:])
+		input := getRemoveVirtualChainInput()
 
-		vchainId := strelets.VirtualChainId(*vchainPtr)
 		str := strelets.NewStrelets(root)
-		if err := str.RemoveVirtualChain(vchainId, &strelets.DockerImageConfig{Prefix: *prefixPtr}); err != nil {
+		if err := str.RemoveVirtualChain(input); err != nil {
 			panic(err)
 		}
 	default:

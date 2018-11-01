@@ -89,11 +89,7 @@ func main() {
 		input := getProvisionVirtualChainInput()
 
 		str := strelets.NewStrelets(root)
-		str.UpdateFederation(input.Peers)
-
-		err := str.ProvisionVirtualChain(input)
-
-		if err != nil {
+		if err := str.ProvisionVirtualChain(input); err != nil {
 			panic(err)
 		}
 	case "remove-virtual-chain":

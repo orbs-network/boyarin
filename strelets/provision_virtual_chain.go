@@ -23,7 +23,6 @@ func (s *strelets) ProvisionVirtualChain(input *ProvisionVirtualChainInput) erro
 		gossipPort:   input.GossipPort,
 		dockerConfig: input.DockerConfig,
 	}
-	s.vchains[input.Chain] = v
 
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.WithVersion("1.38"))
@@ -46,7 +45,7 @@ func (s *strelets) ProvisionVirtualChain(input *ProvisionVirtualChainInput) erro
 		return err
 	}
 
-	if err := ioutil.WriteFile(vchainVolumes.network, getNetworkConfigJSON(s.peers), 0644); err != nil {
+	if err := ioutil.WriteFile(vchainVolumes.network, getNetworkConfigJSON(input.Peers), 0644); err != nil {
 		return err
 	}
 

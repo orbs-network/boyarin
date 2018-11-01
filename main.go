@@ -9,8 +9,8 @@ import (
 	"strings"
 )
 
-func getPeersFromConfig(peers string, peerKeys string) map[strelets.PublicKey]*strelets.Peer {
-	peersMap := make(map[strelets.PublicKey]*strelets.Peer)
+func getPeersFromConfig(peers string, peerKeys string) *strelets.PeersMap {
+	peersMap := make(strelets.PeersMap)
 	keys := strings.Split(peerKeys, ",")
 
 	for i, peer := range strings.Split(peers, ",") {
@@ -20,7 +20,7 @@ func getPeersFromConfig(peers string, peerKeys string) map[strelets.PublicKey]*s
 		peersMap[strelets.PublicKey(keys[i])] = &strelets.Peer{tokens[0], int(port)}
 	}
 
-	return peersMap
+	return &peersMap
 }
 
 func printHelp() {

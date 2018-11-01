@@ -38,11 +38,11 @@ type node struct {
 	Port int
 }
 
-func getNetworkConfigJSON(peers map[PublicKey]*Peer) []byte {
+func getNetworkConfigJSON(peers *PeersMap) []byte {
 	jsonMap := make(map[string]interface{})
 
 	var nodes []node
-	for key, peer := range peers {
+	for key, peer := range *peers {
 		nodes = append(nodes, node{string(key), peer.IP, peer.Port})
 	}
 

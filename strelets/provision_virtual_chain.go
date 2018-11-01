@@ -13,8 +13,15 @@ type ProvisionVirtualChainInput struct {
 	HttpPort         int
 	GossipPort       int
 	DockerConfig     *DockerImageConfig
-	Peers            map[PublicKey]*Peer
+	Peers            *PeersMap
 }
+
+type Peer struct {
+	IP   string
+	Port int
+}
+
+type PeersMap map[PublicKey]*Peer
 
 func (s *strelets) ProvisionVirtualChain(input *ProvisionVirtualChainInput) error {
 	v := &vchain{

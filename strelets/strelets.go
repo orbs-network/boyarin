@@ -13,11 +13,6 @@ type strelets struct {
 	root string
 }
 
-type Peer struct {
-	IP   string
-	Port int
-}
-
 func NewStrelets(root string) Strelets {
 	return &strelets{
 		root: root,

@@ -2,7 +2,7 @@ package strelets
 
 import (
 	"context"
-	"github.com/docker/docker/client"
+	"github.com/orbs-network/boyarin/strelets/adapter"
 )
 
 type RemoveVirtualChainInput struct {
@@ -10,11 +10,11 @@ type RemoveVirtualChainInput struct {
 }
 
 func (s *strelets) RemoveVirtualChain(ctx context.Context, input *RemoveVirtualChainInput) error {
-	cli, err := client.NewClientWithOpts(client.WithVersion(DOCKER_API_VERSION))
+	docker, err := adapter.NewDockerAPI()
 	if err != nil {
 		return err
 	}
 
 	containerName := input.VirtualChain.getContainerName()
-	return s.removeContainer(ctx, cli, containerName)
+	return docker.RemoveContainer(ctx, containerName)
 }

@@ -8,4 +8,6 @@ RUN env
 
 RUN go env
 
+RUN ./test.sh
+
 RUN sh -x build-binaries.sh

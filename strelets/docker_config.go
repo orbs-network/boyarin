@@ -39,15 +39,15 @@ func buildDockerConfig(
 	configMap["CMD"] = []string{
 		"/opt/orbs/orbs-node",
 		"--silent",
-		"--config", "/opt/orbs/config/node.json",
+		"--config", "/opt/orbs/config/keys.json",
 		"--config", "/opt/orbs/config/network.json",
 		"--log", "/opt/orbs/logs/node.log",
 	}
 
 	hostConfigMap := make(map[string]interface{})
 	hostConfigMap["Binds"] = []string{
-		volumes.config + ":/opt/orbs/config/node.json",
-		volumes.network + ":/opt/orbs/config/network.json",
+		volumes.keysConfig + ":/opt/orbs/config/keys.json",
+		volumes.networkConfig + ":/opt/orbs/config/network.json",
 		volumes.logs + ":/opt/orbs/logs/",
 	}
 	hostConfigMap["PortBindings"] = portBindings

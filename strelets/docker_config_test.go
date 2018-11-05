@@ -11,7 +11,7 @@ const expectedDockerConfig = `{
       "/opt/orbs/orbs-node",
       "--silent",
       "--config",
-      "/opt/orbs/config/node.json",
+      "/opt/orbs/config/keys.json",
       "--config",
       "/opt/orbs/config/network.json",
       "--log",
@@ -24,7 +24,7 @@ const expectedDockerConfig = `{
    },
    "HostConfig":{
       "Binds":[
-         "/tmp/root/v1/config/config.json:/opt/orbs/config/node.json",
+         "/tmp/root/v1/config/keys.json:/opt/orbs/config/keys.json",
          "/tmp/root/v1/config/network.json:/opt/orbs/config/network.json",
          "/tmp/root/v1/logs:/opt/orbs/logs/"
       ],
@@ -48,10 +48,10 @@ func Test_buildDockerConfig(t *testing.T) {
 	portBindings["8080/tcp"] = []portBinding{{"0.0.0.0", "8080"}}
 
 	volumes := &virtualChainVolumes{
-		configRoot: "/tmp/root/",
-		config:     "/tmp/root/v1/config/config.json",
-		network:    "/tmp/root/v1/config/network.json",
-		logs:       "/tmp/root/v1/logs",
+		configRoot:    "/tmp/root/",
+		keysConfig:    "/tmp/root/v1/config/keys.json",
+		networkConfig: "/tmp/root/v1/config/network.json",
+		logs:          "/tmp/root/v1/logs",
 	}
 
 	cfg := buildDockerConfig("orbs:export", exposedPorts, portBindings, volumes)

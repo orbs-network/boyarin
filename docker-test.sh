@@ -1,6 +1,7 @@
 #!/bin/bash -x
 
 docker rm -f $(docker ps -aq)
+rm -rf _tmp
 
 export DOCKER_IMAGE=${DOCKER_IMAGE-orbs}
 export DOCKER_TAG=${DOCKER_TAG-export}

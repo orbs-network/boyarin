@@ -18,7 +18,7 @@ type VirtualChain struct {
 }
 
 func (v *VirtualChain) getContainerName() string {
-	return fmt.Sprintf("%s-VirtualChain-%d", v.DockerConfig.Prefix, v.Id)
+	return fmt.Sprintf("%s-chain-%d", v.DockerConfig.Prefix, v.Id)
 }
 
 func createDir(path string) error {
@@ -55,10 +55,10 @@ func getNetworkConfigJSON(peers *PeersMap) []byte {
 }
 
 type virtualChainVolumes struct {
-	configRoot string
-	config     string
-	network    string
-	logs       string
+	configRoot    string
+	keysConfig    string
+	networkConfig string
+	logs          string
 }
 
 func (v *VirtualChain) getDockerVolumes(root string) *virtualChainVolumes {
@@ -66,11 +66,11 @@ func (v *VirtualChain) getDockerVolumes(root string) *virtualChainVolumes {
 	configDir := filepath.Join(root, containerName, "config")
 	absolutePathToLogs, _ := filepath.Abs(filepath.Join(root, containerName, "logs"))
 	absolutePathToNetwork, _ := filepath.Abs(filepath.Join(configDir, "network.json"))
-	absolutePathToConfig, _ := filepath.Abs(filepath.Join(configDir, "config.json"))
+	absolutePathToKeys, _ := filepath.Abs(filepath.Join(configDir, "keys.json"))
 
 	return &virtualChainVolumes{
 		configDir,
-		absolutePathToConfig,
+		absolutePathToKeys,
 		absolutePathToNetwork,
 		absolutePathToLogs,
 	}

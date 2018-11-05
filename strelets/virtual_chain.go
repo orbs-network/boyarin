@@ -34,7 +34,7 @@ func copyFile(source string, destination string) error {
 	return ioutil.WriteFile(destination, data, 0600)
 }
 
-type node struct {
+type FederationNode struct {
 	Key  string
 	IP   string
 	Port int
@@ -43,9 +43,9 @@ type node struct {
 func getNetworkConfigJSON(peers *PeersMap) []byte {
 	jsonMap := make(map[string]interface{})
 
-	var nodes []node
+	var nodes []FederationNode
 	for key, peer := range *peers {
-		nodes = append(nodes, node{string(key), peer.IP, peer.Port})
+		nodes = append(nodes, FederationNode{string(key), peer.IP, peer.Port})
 	}
 
 	jsonMap["federation-nodes"] = nodes

@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"github.com/orbs-network/boyarin/strelets"
 	"io/ioutil"
 	"strconv"
@@ -14,8 +15,9 @@ func GetProvisionVirtualChainInput(input []string) (*strelets.ProvisionVirtualCh
 
 	vchainPtr := flagSet.Int("chain", 42, "virtual chain id")
 
-	chainConfig := flagSet.String("chain-config", "", "path to node config")
-	keysConfig := flagSet.String("keys-config", "", "path to public and private keys")
+	chainConfig := flagSet.String("chain-config", "", "path to node config in json")
+	keysConfig := flagSet.String("keys-config", "", "path to public and private keys in json")
+	peersConfig := flagSet.String("peers-config", "", "path to peers config in json")
 
 	prefixPtr := flagSet.String("prefix", "orbs-network", "container prefix")
 	httpPortPtr := flagSet.Int("http-port", 8080, "http port")
@@ -29,28 +31,22 @@ func GetProvisionVirtualChainInput(input []string) (*strelets.ProvisionVirtualCh
 
 	flagSet.Parse(input)
 
+	var v *strelets.VirtualChain
+
 	if *chainConfig != "" {
 		jsonConfig, err := ioutil.ReadFile(*chainConfig)
 		if err != nil {
 			return nil, err
 		}
 
-		v := &strelets.VirtualChain{}
+		v = &strelets.VirtualChain{}
 		if err := json.Unmarshal(jsonConfig, v); err != nil {
 			return nil, err
 		}
+	} else {
+		vchainId := strelets.VirtualChainId(*vchainPtr)
 
-		return &strelets.ProvisionVirtualChainInput{
-			VirtualChain:   v,
-			KeysConfigPath: *keysConfig,
-			Peers:          nil,
-		}, nil
-	}
-
-	vchainId := strelets.VirtualChainId(*vchainPtr)
-
-	return &strelets.ProvisionVirtualChainInput{
-		VirtualChain: &strelets.VirtualChain{
+		v = &strelets.VirtualChain{
 			Id:         vchainId,
 			HttpPort:   *httpPortPtr,
 			GossipPort: *gossipPortPtr,
@@ -60,9 +56,18 @@ func GetProvisionVirtualChainInput(input []string) (*strelets.ProvisionVirtualCh
 				Tag:    *dockerTagPtr,
 				Pull:   *dockerPullPtr,
 			},
-		},
+		}
+	}
+
+	peersMap, err := getPeersFromConfig(*peersPtr, *peerKeys, *peersConfig, v.GossipPort)
+	if err != nil {
+		return nil, err
+	}
+
+	return &strelets.ProvisionVirtualChainInput{
+		VirtualChain:   v,
 		KeysConfigPath: *keysConfig,
-		Peers:          getPeersFromConfig(*peersPtr, *peerKeys),
+		Peers:          peersMap,
 	}, nil
 }
 
@@ -82,16 +87,48 @@ func GetRemoveVirtualChainInput(input []string) *strelets.RemoveVirtualChainInpu
 	}
 }
 
-func getPeersFromConfig(peers string, peerKeys string) *strelets.PeersMap {
+func getPeersFromConfig(peers string, peerKeys string, peersConfig string, gossipPort int) (*strelets.PeersMap, error) {
 	peersMap := make(strelets.PeersMap)
-	keys := strings.Split(peerKeys, ",")
 
-	for i, peer := range strings.Split(peers, ",") {
+	if peersConfig != "" {
+		jsonConfig, err := ioutil.ReadFile(peersConfig)
+		if err != nil {
+			return nil, err
+		}
+
+		var nodes []strelets.FederationNode
+		if err := json.Unmarshal(jsonConfig, &nodes); err != nil {
+			return nil, err
+		}
+
+		peersMap = make(strelets.PeersMap)
+
+		for _, node := range nodes {
+			peersMap[strelets.PublicKey(node.Key)] = &strelets.Peer{
+				node.IP, gossipPort,
+			}
+		}
+
+		return &peersMap, nil
+	}
+
+	keys := strings.Split(peerKeys, ",")
+	ips := strings.Split(peers, ",")
+
+	if len(keys) != len(ips) {
+		return nil, fmt.Errorf("invalid peers input, expected both keys and ips to have same length")
+	}
+
+	if peerKeys == "" {
+		return &peersMap, nil
+	}
+
+	for i, peer := range ips {
 		tokens := strings.Split(peer, ":")
 		port, _ := strconv.ParseInt(tokens[1], 10, 16)
 
 		peersMap[strelets.PublicKey(keys[i])] = &strelets.Peer{tokens[0], int(port)}
 	}
 
-	return &peersMap
+	return &peersMap, nil
 }

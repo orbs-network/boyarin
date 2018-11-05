@@ -14,7 +14,7 @@ export PEER_KEYS=dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec17
     --docker-image $DOCKER_IMAGE \
     --docker-tag $DOCKER_TAG \
     --prefix node1 \
-    --config ./e2e-config/node1.json \
+    --keys-config ./e2e-config/node1/keys.json \
     --http-port 8080 \
     --gossip-port 4400 \
     --peers $PEERS \
@@ -24,7 +24,7 @@ export PEER_KEYS=dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec17
     --docker-image $DOCKER_IMAGE \
     --docker-tag $DOCKER_TAG \
     --prefix node2 \
-    --config ./e2e-config/node2.json \
+    --keys-config ./e2e-config/node2/keys.json \
     --http-port 8081 \
     --gossip-port 4401 \
     --peers $PEERS \
@@ -34,7 +34,7 @@ export PEER_KEYS=dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec17
     --docker-image $DOCKER_IMAGE \
     --docker-tag $DOCKER_TAG \
     --prefix node3 \
-    --config ./e2e-config/node3.json \
+    --keys-config ./e2e-config/node3/keys.json \
     --http-port 8082 \
     --gossip-port 4402 \
     --peers $PEERS \

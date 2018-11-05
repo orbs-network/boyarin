@@ -25,7 +25,7 @@ func createDir(path string) error {
 	return os.MkdirAll(path, 0755)
 }
 
-func copyVirtualChainConfig(source string, destination string) error {
+func copyFile(source string, destination string) error {
 	data, err := ioutil.ReadFile(source)
 	if err != nil {
 		return err

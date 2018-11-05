@@ -1,0 +1,11 @@
+{
+  "Id":        99,
+  "HttpPort":   8081,
+  "GossipPort": 4401,
+  "DockerConfig": {
+    "Prefix": "node1",
+    "Image":  "orbs",
+    "Tag":    "export",
+    "Pull":   false
+  }
+}

@@ -21,6 +21,7 @@ func main() {
 
 	if len(os.Args) < 2 {
 		printHelp()
+		return
 	}
 
 	ctx := context.Background()

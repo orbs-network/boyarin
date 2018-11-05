@@ -4,8 +4,8 @@
   "GossipPort": 4400,
   "DockerConfig": {
     "Prefix": "node1",
-    "Image":  "orbs",
-    "Tag":    "export",
+    "Image":  "506367651493.dkr.ecr.us-west-2.amazonaws.com/orbs-network-v1",
+    "Tag":    "master",
     "Pull":   false
   }
 }

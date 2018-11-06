@@ -46,9 +46,9 @@ func buildDockerConfig(
 
 	hostConfigMap := make(map[string]interface{})
 	hostConfigMap["Binds"] = []string{
-		volumes.keysConfig + ":/opt/orbs/config/keys.json",
-		volumes.networkConfig + ":/opt/orbs/config/network.json",
-		volumes.logs + ":/opt/orbs/logs/",
+		volumes.keyPairConfigFile + ":/opt/orbs/config/keys.json",
+		volumes.networkConfigFile + ":/opt/orbs/config/network.json",
+		volumes.logsDir + ":/opt/orbs/logs/",
 	}
 	hostConfigMap["PortBindings"] = portBindings
 

@@ -79,8 +79,11 @@ func newHarness() *harness {
 		configPath = configPathFromEnv
 	}
 
+	root := "_tmp"
+	os.RemoveAll(root)
+
 	return &harness{
-		s:          strelets.NewStrelets("_tmp"),
+		s:          strelets.NewStrelets(root),
 		configPath: configPath,
 	}
 }

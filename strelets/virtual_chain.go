@@ -55,10 +55,16 @@ func getNetworkConfigJSON(peers *PeersMap) []byte {
 }
 
 type virtualChainVolumes struct {
-	configRoot    string
-	keysConfig    string
-	networkConfig string
-	logs          string
+	configRootDir string
+	logsDir       string
+
+	keyPairConfigFile string
+	networkConfigFile string
+}
+
+func (v *virtualChainVolumes) createDirs() {
+	createDir(v.configRootDir)
+	createDir(v.logsDir)
 }
 
 func (v *VirtualChain) getDockerVolumes(root string) *virtualChainVolumes {

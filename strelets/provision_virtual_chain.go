@@ -39,14 +39,13 @@ func (s *strelets) ProvisionVirtualChain(ctx context.Context, input *ProvisionVi
 	containerName := chain.getContainerName()
 	vchainVolumes := chain.getDockerVolumes(s.root)
 
-	createDir(vchainVolumes.configRoot)
-	createDir(vchainVolumes.logs)
+	vchainVolumes.createDirs()
 
-	if err := copyFile(input.KeysConfigPath, vchainVolumes.keysConfig); err != nil {
+	if err := copyFile(input.KeysConfigPath, vchainVolumes.keyPairConfigFile); err != nil {
 		return err
 	}
 
-	if err := ioutil.WriteFile(vchainVolumes.networkConfig, getNetworkConfigJSON(input.Peers), 0644); err != nil {
+	if err := ioutil.WriteFile(vchainVolumes.networkConfigFile, getNetworkConfigJSON(input.Peers), 0644); err != nil {
 		return err
 	}
 

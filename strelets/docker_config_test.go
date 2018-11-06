@@ -48,10 +48,10 @@ func Test_buildDockerConfig(t *testing.T) {
 	portBindings["8080/tcp"] = []portBinding{{"0.0.0.0", "8080"}}
 
 	volumes := &virtualChainVolumes{
-		configRoot:    "/tmp/root/",
-		keysConfig:    "/tmp/root/v1/config/keys.json",
-		networkConfig: "/tmp/root/v1/config/network.json",
-		logs:          "/tmp/root/v1/logs",
+		configRootDir:     "/tmp/root/",
+		keyPairConfigFile: "/tmp/root/v1/config/keys.json",
+		networkConfigFile: "/tmp/root/v1/config/network.json",
+		logsDir:           "/tmp/root/v1/logs",
 	}
 
 	cfg := buildDockerConfig("orbs:export", exposedPorts, portBindings, volumes)

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/orbs-network/boyarin/strelets"
+	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"net"
@@ -73,7 +74,7 @@ type harness struct {
 	configPath string
 }
 
-func newHarness() *harness {
+func newHarness(t *testing.T) *harness {
 	configPath := "../../e2e-config/"
 	if configPathFromEnv := os.Getenv("E2E_CONFIG"); configPathFromEnv != "" {
 		configPath = configPathFromEnv
@@ -82,8 +83,11 @@ func newHarness() *harness {
 	root := "_tmp"
 	os.RemoveAll(root)
 
+	docker, err := adapter.NewDockerAPI()
+	require.NoError(t, err)
+
 	return &harness{
-		s:          strelets.NewStrelets(root),
+		s:          strelets.NewStrelets(root, docker),
 		configPath: configPath,
 	}
 }

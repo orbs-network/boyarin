@@ -1,6 +1,9 @@
 package strelets
 
-import "context"
+import (
+	"context"
+	"github.com/orbs-network/boyarin/strelets/adapter"
+)
 
 type Strelets interface {
 	ProvisionVirtualChain(ctx context.Context, input *ProvisionVirtualChainInput) error
@@ -8,11 +11,13 @@ type Strelets interface {
 }
 
 type strelets struct {
-	root string
+	root   string
+	docker adapter.DockerAPI
 }
 
-func NewStrelets(root string) Strelets {
+func NewStrelets(root string, docker adapter.DockerAPI) Strelets {
 	return &strelets{
-		root: root,
+		root:   root,
+		docker: docker,
 	}
 }

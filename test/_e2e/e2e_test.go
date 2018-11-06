@@ -8,7 +8,7 @@ import (
 )
 
 func TestE2E(t *testing.T) {
-	h := newHarness()
+	h := newHarness(t)
 
 	h.startChain(t)
 	defer h.stopChain(t)

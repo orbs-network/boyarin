@@ -3,7 +3,6 @@ package strelets
 import (
 	"context"
 	"fmt"
-	"github.com/orbs-network/boyarin/strelets/adapter"
 	"io/ioutil"
 )
 
@@ -23,15 +22,10 @@ type PublicKey string
 type PeersMap map[PublicKey]*Peer
 
 func (s *strelets) ProvisionVirtualChain(ctx context.Context, input *ProvisionVirtualChainInput) error {
-	docker, err := adapter.NewDockerAPI()
-	if err != nil {
-		return err
-	}
-
 	chain := input.VirtualChain
 	imageName := chain.DockerConfig.FullImageName()
 	if chain.DockerConfig.Pull {
-		if err := docker.PullImage(ctx, imageName); err != nil {
+		if err := s.docker.PullImage(ctx, imageName); err != nil {
 			return err
 		}
 	}
@@ -52,7 +46,7 @@ func (s *strelets) ProvisionVirtualChain(ctx context.Context, input *ProvisionVi
 	exposedPorts, portBindings := buildDockerNetworkOptions(chain.HttpPort, chain.GossipPort)
 	dockerConfig := buildDockerConfig(imageName, exposedPorts, portBindings, vchainVolumes)
 
-	containerId, err := docker.RunContainer(ctx, imageName, containerName, dockerConfig)
+	containerId, err := s.docker.RunContainer(ctx, imageName, containerName, dockerConfig)
 	if err != nil {
 		return err
 	}

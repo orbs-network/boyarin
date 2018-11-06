@@ -104,8 +104,8 @@ func (h *harness) startChain(t *testing.T) {
 				GossipPort:   4400 + i,
 				DockerConfig: getDockerConfigPerNode(fmt.Sprintf("node%d", i+1)),
 			},
-			Peers:          getPeers(localIP),
-			KeysConfigPath: fmt.Sprintf("%s/node%d/keys.json", h.configPath, i+1),
+			Peers:             getPeers(localIP),
+			KeyPairConfigPath: fmt.Sprintf("%s/node%d/keys.json", h.configPath, i+1),
 		})
 
 		require.NoError(t, err)

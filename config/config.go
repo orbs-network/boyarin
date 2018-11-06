@@ -65,9 +65,9 @@ func GetProvisionVirtualChainInput(input []string) (*strelets.ProvisionVirtualCh
 	}
 
 	return &strelets.ProvisionVirtualChainInput{
-		VirtualChain:   v,
-		KeysConfigPath: *keysConfig,
-		Peers:          peersMap,
+		VirtualChain:      v,
+		KeyPairConfigPath: *keysConfig,
+		Peers:             peersMap,
 	}, nil
 }
 

@@ -31,8 +31,8 @@ func TestGetProvisionVirtualChainInputFromJSON(t *testing.T) {
 				Pull:   false,
 			},
 		},
-		KeysConfigPath: "../e2e-config/node1-keys.json",
-		Peers:          &expectedPeers,
+		KeyPairConfigPath: "../e2e-config/node1-keys.json",
+		Peers:             &expectedPeers,
 	}
 
 	input, err := GetProvisionVirtualChainInput(args)

@@ -7,9 +7,9 @@ import (
 )
 
 type ProvisionVirtualChainInput struct {
-	VirtualChain   *VirtualChain
-	KeysConfigPath string
-	Peers          *PeersMap
+	VirtualChain      *VirtualChain
+	KeyPairConfigPath string
+	Peers             *PeersMap
 }
 
 type Peer struct {
@@ -35,7 +35,7 @@ func (s *strelets) ProvisionVirtualChain(ctx context.Context, input *ProvisionVi
 
 	vchainVolumes.createDirs()
 
-	if err := copyFile(input.KeysConfigPath, vchainVolumes.keyPairConfigFile); err != nil {
+	if err := copyFile(input.KeyPairConfigPath, vchainVolumes.keyPairConfigFile); err != nil {
 		return err
 	}
 

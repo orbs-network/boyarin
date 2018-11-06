@@ -25,3 +25,11 @@ To remove already provisioned virtual chain
 strelets remove-virtual-chain \
     --chain 42
 ```
+
+## Tips
+
+To remove all containers: `docker rm -f $(docker ps -aq)`
+
+## Testing
+
+`./build-binaries.sh && ./test.e2e.sh`

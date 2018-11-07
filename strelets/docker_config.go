@@ -5,10 +5,10 @@ import (
 )
 
 type DockerImageConfig struct {
-	Image  string
-	Tag    string
-	Pull   bool
-	Prefix string
+	Image               string
+	Tag                 string
+	Pull                bool
+	ContainerNamePrefix string
 }
 
 func (c *DockerImageConfig) FullImageName() string {

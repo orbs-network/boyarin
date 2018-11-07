@@ -19,7 +19,7 @@ func GetProvisionVirtualChainInput(input []string) (*strelets.ProvisionVirtualCh
 	keysConfig := flagSet.String("keys-config", "", "path to public and private keys in json")
 	peersConfig := flagSet.String("peers-config", "", "path to peers config in json")
 
-	prefixPtr := flagSet.String("prefix", "orbs-network", "container prefix")
+	prefixPtr := flagSet.String("ContainerNamePrefix", "orbs-network", "container prefix")
 	httpPortPtr := flagSet.Int("http-port", 8080, "http port")
 	gossipPortPtr := flagSet.Int("gossip-port", 4400, "gossip port")
 	peersPtr := flagSet.String("peers", "", "list of peers ips and ports")
@@ -51,10 +51,10 @@ func GetProvisionVirtualChainInput(input []string) (*strelets.ProvisionVirtualCh
 			HttpPort:   *httpPortPtr,
 			GossipPort: *gossipPortPtr,
 			DockerConfig: &strelets.DockerImageConfig{
-				Prefix: *prefixPtr,
-				Image:  *dockerImagePtr,
-				Tag:    *dockerTagPtr,
-				Pull:   *dockerPullPtr,
+				ContainerNamePrefix: *prefixPtr,
+				Image:               *dockerImagePtr,
+				Tag:                 *dockerTagPtr,
+				Pull:                *dockerPullPtr,
 			},
 		}
 	}
@@ -74,7 +74,7 @@ func GetProvisionVirtualChainInput(input []string) (*strelets.ProvisionVirtualCh
 func GetRemoveVirtualChainInput(input []string) *strelets.RemoveVirtualChainInput {
 	flagSet := flag.NewFlagSet("", flag.ExitOnError)
 	vchainPtr := flagSet.Int("chain", 42, "virtual chain id")
-	prefixPtr := flagSet.String("prefix", "orbs-network", "container prefix")
+	prefixPtr := flagSet.String("ContainerNamePrefix", "orbs-network", "container prefix")
 	flagSet.Parse(input)
 
 	vchainId := strelets.VirtualChainId(*vchainPtr)
@@ -82,7 +82,7 @@ func GetRemoveVirtualChainInput(input []string) *strelets.RemoveVirtualChainInpu
 	return &strelets.RemoveVirtualChainInput{
 		VirtualChain: &strelets.VirtualChain{
 			Id:           vchainId,
-			DockerConfig: &strelets.DockerImageConfig{Prefix: *prefixPtr},
+			DockerConfig: &strelets.DockerImageConfig{ContainerNamePrefix: *prefixPtr},
 		},
 	}
 }

@@ -24,7 +24,7 @@ func Test_prepareVirtualChainConfig(t *testing.T) {
 		VirtualChain: &VirtualChain{
 			Id: 42,
 			DockerConfig: &DockerImageConfig{
-				Prefix: "node1",
+				ContainerNamePrefix: "node1",
 			},
 		},
 		Peers:             &peers,

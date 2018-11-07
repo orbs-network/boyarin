@@ -112,10 +112,10 @@ func (h *harness) getMetrics() (map[string]interface{}, error) {
 
 func DockerConfig(node string) *strelets.DockerImageConfig {
 	return &strelets.DockerImageConfig{
-		Image:  "orbs",
-		Tag:    "export",
-		Pull:   false,
-		Prefix: node,
+		Image:               "orbs",
+		Tag:                 "export",
+		Pull:                false,
+		ContainerNamePrefix: node,
 	}
 }
 

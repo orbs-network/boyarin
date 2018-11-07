@@ -18,7 +18,7 @@ type VirtualChain struct {
 }
 
 func (v *VirtualChain) getContainerName() string {
-	return fmt.Sprintf("%s-chain-%d", v.DockerConfig.Prefix, v.Id)
+	return fmt.Sprintf("%s-chain-%d", v.DockerConfig.ContainerNamePrefix, v.Id)
 }
 
 func createDir(path string) error {

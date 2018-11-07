@@ -3,7 +3,7 @@
   "HttpPort":   8080,
   "GossipPort": 4400,
   "DockerConfig": {
-    "Prefix": "node1",
+    "ContainerNamePrefix": "node1",
     "Image":  "506367651493.dkr.ecr.us-west-2.amazonaws.com/orbs-network-v1",
     "Tag":    "master",
     "Pull":   false

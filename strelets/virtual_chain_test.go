@@ -30,7 +30,7 @@ func Test_getDockerVolumes(t *testing.T) {
 	chain := &VirtualChain{
 		Id: 42,
 		DockerConfig: &DockerImageConfig{
-			Prefix: "node1",
+			ContainerNamePrefix: "node1",
 		},
 	}
 

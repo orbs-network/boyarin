@@ -30,9 +30,22 @@ func (s *strelets) ProvisionVirtualChain(ctx context.Context, input *ProvisionVi
 		}
 	}
 
-	containerName := chain.getContainerName()
-	vchainVolumes := chain.getDockerVolumes(s.root)
+	if err := input.prepareVirtualChainConfig(s.root); err != nil {
+		return err
+	}
 
+	containerId, err := s.docker.RunContainer(ctx, chain.getContainerName(), chain.getContainerConfig(s.root))
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(containerId)
+
+	return nil
+}
+
+func (input *ProvisionVirtualChainInput) prepareVirtualChainConfig(root string) error {
+	vchainVolumes := input.VirtualChain.getContainerVolumes(root)
 	vchainVolumes.createDirs()
 
 	if err := copyFile(input.KeyPairConfigPath, vchainVolumes.keyPairConfigFile); err != nil {
@@ -42,16 +55,6 @@ func (s *strelets) ProvisionVirtualChain(ctx context.Context, input *ProvisionVi
 	if err := ioutil.WriteFile(vchainVolumes.networkConfigFile, getNetworkConfigJSON(input.Peers), 0644); err != nil {
 		return err
 	}
-
-	exposedPorts, portBindings := buildDockerNetworkOptions(chain.HttpPort, chain.GossipPort)
-	dockerConfig := buildDockerConfig(imageName, exposedPorts, portBindings, vchainVolumes)
-
-	containerId, err := s.docker.RunContainer(ctx, imageName, containerName, dockerConfig)
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(containerId)
 
 	return nil
 }

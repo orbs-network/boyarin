@@ -67,17 +67,19 @@ func (v *virtualChainVolumes) createDirs() {
 	createDir(v.logsDir)
 }
 
-func (v *VirtualChain) getDockerVolumes(root string) *virtualChainVolumes {
+func (v *VirtualChain) getContainerVolumes(root string) *virtualChainVolumes {
 	containerName := v.getContainerName()
-	configDir := filepath.Join(root, containerName, "config")
-	absolutePathToLogs, _ := filepath.Abs(filepath.Join(root, containerName, "logs"))
-	absolutePathToNetwork, _ := filepath.Abs(filepath.Join(configDir, "network.json"))
-	absolutePathToKeys, _ := filepath.Abs(filepath.Join(configDir, "keys.json"))
+
+	absolutePathToConfigDir := filepath.Join(root, containerName, "config")
+	absolutePathToLogDir, _ := filepath.Abs(filepath.Join(root, containerName, "logs"))
+
+	absolutePathToNetworkConfig, _ := filepath.Abs(filepath.Join(absolutePathToConfigDir, "network.json"))
+	absolutePathToKeyPairConfig, _ := filepath.Abs(filepath.Join(absolutePathToConfigDir, "keys.json"))
 
 	return &virtualChainVolumes{
-		configDir,
-		absolutePathToKeys,
-		absolutePathToNetwork,
-		absolutePathToLogs,
+		configRootDir:     absolutePathToConfigDir,
+		logsDir:           absolutePathToLogDir,
+		keyPairConfigFile: absolutePathToKeyPairConfig,
+		networkConfigFile: absolutePathToNetworkConfig,
 	}
 }

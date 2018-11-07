@@ -39,7 +39,7 @@ func (d *dockerAPI) PullImage(ctx context.Context, imageName string) error {
 	return nil
 }
 
-func (d *dockerAPI) RunContainer(ctx context.Context, imageName string, containerName string, dockerConfig map[string]interface{}) (string, error) {
+func (d *dockerAPI) RunContainer(ctx context.Context, containerName string, dockerConfig map[string]interface{}) (string, error) {
 	jsonConfig, _ := json.Marshal(dockerConfig)
 
 	fmt.Println(string(jsonConfig))

@@ -61,3 +61,8 @@ type portBinding struct {
 	HostIp   string
 	HostPort string
 }
+
+func (v *VirtualChain) getContainerConfig(root string) map[string]interface{} {
+	exposedPorts, portBindings := buildDockerNetworkOptions(v.HttpPort, v.GossipPort)
+	return buildDockerConfig(v.DockerConfig.FullImageName(), exposedPorts, portBindings, v.getContainerVolumes(root))
+}

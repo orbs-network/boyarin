@@ -11,7 +11,7 @@ import (
 )
 
 func GetProvisionVirtualChainInput(input []string) (*strelets.ProvisionVirtualChainInput, error) {
-	flagSet := flag.NewFlagSet("", flag.ExitOnError)
+	flagSet := flag.NewFlagSet("", flag.ContinueOnError)
 
 	vchainPtr := flagSet.Int("chain", 42, "virtual chain id")
 
@@ -19,7 +19,7 @@ func GetProvisionVirtualChainInput(input []string) (*strelets.ProvisionVirtualCh
 	keysConfig := flagSet.String("keys-config", "", "path to public and private keys in json")
 	peersConfig := flagSet.String("peers-config", "", "path to peers config in json")
 
-	prefixPtr := flagSet.String("ContainerNamePrefix", "orbs-network", "container prefix")
+	prefixPtr := flagSet.String("container-name-prefix", "orbs-network", "")
 	httpPortPtr := flagSet.Int("http-port", 8080, "http port")
 	gossipPortPtr := flagSet.Int("gossip-port", 4400, "gossip port")
 	peersPtr := flagSet.String("peers", "", "list of peers ips and ports")
@@ -29,14 +29,17 @@ func GetProvisionVirtualChainInput(input []string) (*strelets.ProvisionVirtualCh
 	dockerTagPtr := flagSet.String("docker-tag", "export", "docker image tag")
 	dockerPullPtr := flagSet.Bool("pull-docker-image", false, "pull docker image from docker registry")
 
-	flagSet.Parse(input)
+	if err := flagSet.Parse(input); err != nil {
+		flag.Usage()
+		return nil, err
+	}
 
 	var v *strelets.VirtualChain
 
 	if *chainConfig != "" {
 		jsonConfig, err := ioutil.ReadFile(*chainConfig)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("virtual chain config not found: %s at %s", err, *chainConfig)
 		}
 
 		v = &strelets.VirtualChain{}
@@ -71,12 +74,15 @@ func GetProvisionVirtualChainInput(input []string) (*strelets.ProvisionVirtualCh
 	}, nil
 }
 
-func GetRemoveVirtualChainInput(input []string) *strelets.RemoveVirtualChainInput {
-	flagSet := flag.NewFlagSet("", flag.ExitOnError)
+func GetRemoveVirtualChainInput(input []string) (*strelets.RemoveVirtualChainInput, error) {
+	flagSet := flag.NewFlagSet("", flag.ContinueOnError)
 	vchainPtr := flagSet.Int("chain", 42, "virtual chain id")
 	prefixPtr := flagSet.String("ContainerNamePrefix", "orbs-network", "container prefix")
-	flagSet.Parse(input)
 
+	if err := flagSet.Parse(input); err != nil {
+		flag.Usage()
+		return nil, err
+	}
 	vchainId := strelets.VirtualChainId(*vchainPtr)
 
 	return &strelets.RemoveVirtualChainInput{
@@ -84,7 +90,7 @@ func GetRemoveVirtualChainInput(input []string) *strelets.RemoveVirtualChainInpu
 			Id:           vchainId,
 			DockerConfig: &strelets.DockerImageConfig{ContainerNamePrefix: *prefixPtr},
 		},
-	}
+	}, nil
 }
 
 func getPeersFromConfig(peers string, peerKeys string, peersConfig string, gossipPort int) (*strelets.PeersMap, error) {
@@ -93,7 +99,7 @@ func getPeersFromConfig(peers string, peerKeys string, peersConfig string, gossi
 	if peersConfig != "" {
 		jsonConfig, err := ioutil.ReadFile(peersConfig)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("virtual chain network config not found: %s at %s", err, peersConfig)
 		}
 
 		var nodes []strelets.FederationNode

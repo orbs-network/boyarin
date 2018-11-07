@@ -43,7 +43,10 @@ func main() {
 			panic(err)
 		}
 	case "remove-virtual-chain":
-		input := config.GetRemoveVirtualChainInput(os.Args[2:])
+		input, err := config.GetRemoveVirtualChainInput(os.Args[2:])
+		if err != nil {
+			panic(err)
+		}
 
 		str := strelets.NewStrelets(root, docker)
 		if err := str.RemoveVirtualChain(ctx, input); err != nil {

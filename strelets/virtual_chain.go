@@ -27,7 +27,7 @@ func createDir(path string) error {
 func copyFile(source string, destination string) error {
 	data, err := ioutil.ReadFile(source)
 	if err != nil {
-		return err
+		return fmt.Errorf("%s: %s", err, source)
 	}
 
 	return ioutil.WriteFile(destination, data, 0600)

@@ -49,11 +49,11 @@ func (input *ProvisionVirtualChainInput) prepareVirtualChainConfig(root string) 
 	vchainVolumes.createDirs()
 
 	if err := copyFile(input.KeyPairConfigPath, vchainVolumes.keyPairConfigFile); err != nil {
-		return err
+		return fmt.Errorf("could not copy key pair config: %s at %s", err, input.KeyPairConfigPath)
 	}
 
 	if err := ioutil.WriteFile(vchainVolumes.networkConfigFile, getNetworkConfigJSON(input.Peers), 0644); err != nil {
-		return err
+		return fmt.Errorf("could not write network config: %s at %s", err, vchainVolumes.networkConfigFile)
 	}
 
 	return nil

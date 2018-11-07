@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"os"
 	"testing"
-	"time"
 )
 
 type harness struct {
@@ -20,7 +19,7 @@ type harness struct {
 	configPath string
 }
 
-func newHarness(t *testing.T) *harness {
+func newHarness(t *testing.T, docker adapter.DockerAPI) *harness {
 	configPath := "../../e2e-config/"
 	if configPathFromEnv := os.Getenv("E2E_CONFIG"); configPathFromEnv != "" {
 		configPath = configPathFromEnv
@@ -28,9 +27,6 @@ func newHarness(t *testing.T) *harness {
 
 	root := "_tmp"
 	os.RemoveAll(root)
-
-	docker, err := adapter.NewDockerAPI()
-	require.NoError(t, err)
 
 	return &harness{
 		s:          strelets.NewStrelets(root, docker),
@@ -69,8 +65,6 @@ func (h *harness) stopChain(t *testing.T) {
 			},
 		})
 	}
-
-	time.Sleep(1 * time.Second)
 }
 
 func (h *harness) getMetricsEndpoint() string {

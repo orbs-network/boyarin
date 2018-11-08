@@ -1,5 +1,7 @@
 # Boyar + Strelets
 
+[![CircleCI](https://circleci.com/gh/orbs-network/boyarin/tree/master.svg?style=svg)](https://circleci.com/gh/orbs-network/boyarin/tree/master)
+
 Management layer that provisions virtual chains.
 
 ## CLI

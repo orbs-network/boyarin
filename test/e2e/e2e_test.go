@@ -27,11 +27,36 @@ func TestE2E(t *testing.T) {
 }
 
 func TestE2EWithRealDocker(t *testing.T) {
-	if os.Getenv("REAL_DOCKER") != "true" {
+	if os.Getenv("ENABLE_DOCKER") != "true" {
 		t.Skip("skipping test, real docker disabled")
 	}
 
-	realDocker, err := adapter.NewDockerAPI()
+	realDocker, err := adapter.NewDockerSwarm()
+	require.NoError(t, err)
+	h := newHarness(t, realDocker)
+
+	h.startChain(t)
+	defer h.stopChain(t)
+
+	require.True(t, test.Eventually(10*time.Second, func() bool {
+		metrics, err := h.getMetrics()
+		if err != nil {
+			return false
+		}
+
+		blockHeight := metrics["BlockStorage.BlockHeight"].(map[string]interface{})["Value"].(float64)
+		fmt.Println("blockHeight", blockHeight)
+
+		return blockHeight == 3
+	}))
+}
+
+func TestE2EWithDockerSwarm(t *testing.T) {
+	//if os.Getenv("ENABLE_SWARM") != "true" {
+	//	t.Skip("skipping test, real docker disabled")
+	//}
+
+	realDocker, err := adapter.NewDockerSwarm()
 	require.NoError(t, err)
 	h := newHarness(t, realDocker)
 

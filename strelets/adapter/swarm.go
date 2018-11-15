@@ -11,6 +11,7 @@ import (
 	"github.com/docker/docker/runconfig"
 	"io"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -89,7 +90,14 @@ func (d *dockerSwarm) RemoveContainer(ctx context.Context, containerName string)
 }
 
 func (d *dockerSwarm) StoreConfiguration(ctx context.Context, containerName string, root string, config *AppConfig) error {
-	panic("not implemented")
+	if err := d.saveSwarmSecret(ctx, containerName, "keyPair", config.KeyPair); err != nil {
+		return err
+	}
+
+	if err := d.saveSwarmSecret(ctx, containerName, "network", config.Network); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -99,4 +107,21 @@ func (d *dockerSwarm) GetContainerConfiguration(imageName string, containerName 
 
 func getServiceId(input string) string {
 	return "stack-" + input
+}
+
+func (d *dockerSwarm) saveSwarmSecret(ctx context.Context, containerName string, secretName string, content []byte) error {
+	secretId := getSwarmSecretId(containerName, secretName)
+	d.client.SecretRemove(ctx, secretId)
+
+	secretSpec := swarm.SecretSpec{
+		Data: content,
+	}
+	secretSpec.Name = secretId
+
+	_, err := d.client.SecretCreate(ctx, secretSpec)
+	return err
+}
+
+func getSwarmSecretId(containerName string, secretName string) string {
+	return strings.Join([]string{containerName, secretName}, "-")
 }

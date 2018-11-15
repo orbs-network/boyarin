@@ -3,6 +3,7 @@ package strelets
 import (
 	"context"
 	"fmt"
+	"github.com/orbs-network/boyarin/strelets/adapter"
 	"io/ioutil"
 )
 
@@ -30,30 +31,23 @@ func (s *strelets) ProvisionVirtualChain(ctx context.Context, input *ProvisionVi
 		}
 	}
 
-	if err := input.prepareVirtualChainConfig(s.root); err != nil {
-		return err
-	}
-
-	containerId, err := s.docker.RunContainer(ctx, chain.getContainerName(), chain.getContainerConfig(s.root))
+	keyPair, err := ioutil.ReadFile(input.KeyPairConfigPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not read key pair config: %s at %s", err, input.KeyPairConfigPath)
 	}
 
-	fmt.Println(containerId)
-
-	return nil
-}
-
-func (input *ProvisionVirtualChainInput) prepareVirtualChainConfig(root string) error {
-	vchainVolumes := input.VirtualChain.getContainerVolumes(root)
-	vchainVolumes.createDirs()
-
-	if err := copyFile(input.KeyPairConfigPath, vchainVolumes.keyPairConfigFile); err != nil {
-		return fmt.Errorf("could not copy key pair config: %s at %s", err, input.KeyPairConfigPath)
+	if err := s.docker.StoreConfiguration(ctx, chain.getContainerName(), s.root, &adapter.AppConfig{
+		KeyPair: keyPair,
+		Network: getNetworkConfigJSON(input.Peers),
+	}); err != nil {
+		return fmt.Errorf("could not store configuration for vchain")
 	}
 
-	if err := ioutil.WriteFile(vchainVolumes.networkConfigFile, getNetworkConfigJSON(input.Peers), 0644); err != nil {
-		return fmt.Errorf("could not write network config: %s at %s", err, vchainVolumes.networkConfigFile)
+	containerConfig := s.docker.GetContainerConfiguration(imageName, chain.getContainerName(), s.root, chain.HttpPort, chain.GossipPort)
+	if containerId, err := s.docker.RunContainer(ctx, chain.getContainerName(), containerConfig); err != nil {
+		return fmt.Errorf("could not provision new vchain: %s", err)
+	} else {
+		fmt.Println(containerId)
 	}
 
 	return nil

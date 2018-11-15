@@ -39,7 +39,7 @@ func (d *dockerSwarm) PullImage(ctx context.Context, imageName string) error {
 	return nil
 }
 
-func (d *dockerSwarm) RunContainer(ctx context.Context, containerName string, dockerConfig map[string]interface{}) (string, error) {
+func (d *dockerSwarm) RunContainer(ctx context.Context, containerName string, dockerConfig interface{}) (string, error) {
 	jsonConfig, _ := json.Marshal(dockerConfig)
 
 	fmt.Println(string(jsonConfig))
@@ -50,18 +50,17 @@ func (d *dockerSwarm) RunContainer(ctx context.Context, containerName string, do
 		return "", err
 	}
 
-	fmt.Println(containerName, config.Image)
-
-	fmt.Println(d.client.ServiceRemove(ctx, "top"))
-
 	ureplicas := uint64(1)
-	restartDelay := time.Duration(100 * time.Millisecond)
+	restartDelay := time.Duration(10 * time.Second)
+
+	fmt.Println(config)
 
 	spec := swarm.ServiceSpec{
 		TaskTemplate: swarm.TaskSpec{
 			ContainerSpec: &swarm.ContainerSpec{
-				Image:   "busybox:latest",
-				Command: []string{"/bin/top"},
+				Command: []string{"top"},
+				Image:   config.Image,
+				//Command: config.Cmd,
 			},
 			RestartPolicy: &swarm.RestartPolicy{
 				Delay: &restartDelay,
@@ -73,7 +72,7 @@ func (d *dockerSwarm) RunContainer(ctx context.Context, containerName string, do
 			},
 		},
 	}
-	spec.Name = "stack-" + containerName
+	spec.Name = getServiceId(containerName)
 
 	resp, err := d.client.ServiceCreate(ctx, spec, types.ServiceCreateOptions{
 		QueryRegistry: true,
@@ -86,11 +85,18 @@ func (d *dockerSwarm) RunContainer(ctx context.Context, containerName string, do
 }
 
 func (d *dockerSwarm) RemoveContainer(ctx context.Context, containerName string) error {
-	//return d.client.ContainerRemove(ctx, containerName, types.ContainerRemoveOptions{
-	//	Force:         true,
-	//	RemoveLinks:   false,
-	//	RemoveVolumes: false,
-	//})
+	return d.client.ServiceRemove(ctx, getServiceId(containerName))
+}
 
+func (d *dockerSwarm) StoreConfiguration(ctx context.Context, containerName string, root string, config *AppConfig) error {
+	panic("not implemented")
 	return nil
+}
+
+func (d *dockerSwarm) GetContainerConfiguration(imageName string, containerName string, root string, httpPort int, gossipPort int) interface{} {
+	panic("not implemented")
+}
+
+func getServiceId(input string) string {
+	return "stack-" + input
 }

@@ -1,4 +1,4 @@
-package strelets
+package adapter
 
 import (
 	"github.com/stretchr/testify/require"
@@ -6,14 +6,7 @@ import (
 )
 
 func Test_getDockerVolumes(t *testing.T) {
-	chain := &VirtualChain{
-		Id: 42,
-		DockerConfig: &DockerImageConfig{
-			ContainerNamePrefix: "node1",
-		},
-	}
-
-	volumes := chain.getContainerVolumes("/tmp")
+	volumes := getContainerVolumes("node1-chain-42", "/tmp")
 
 	require.NotNil(t, volumes)
 	require.EqualValues(t, "/tmp/node1-chain-42/config", volumes.configRootDir)

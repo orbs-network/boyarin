@@ -16,6 +16,8 @@ func TestE2E(t *testing.T) {
 	h := newHarness(t, docker)
 
 	for i := 1; i <= 3; i++ {
+		docker.mock.On("GetContainerConfiguration", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once()
+		docker.mock.On("StoreConfiguration", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once()
 		docker.mock.On("RunContainer", mock.Anything, fmt.Sprintf("node%d-chain-42", i), mock.Anything).Once()
 		docker.mock.On("RemoveContainer", mock.Anything, fmt.Sprintf("node%d-chain-42", i)).Once()
 	}
@@ -31,7 +33,7 @@ func TestE2EWithRealDocker(t *testing.T) {
 		t.Skip("skipping test, real docker disabled")
 	}
 
-	realDocker, err := adapter.NewDockerSwarm()
+	realDocker, err := adapter.NewDockerAPI()
 	require.NoError(t, err)
 	h := newHarness(t, realDocker)
 
@@ -52,9 +54,9 @@ func TestE2EWithRealDocker(t *testing.T) {
 }
 
 func TestE2EWithDockerSwarm(t *testing.T) {
-	//if os.Getenv("ENABLE_SWARM") != "true" {
-	//	t.Skip("skipping test, real docker disabled")
-	//}
+	if os.Getenv("ENABLE_SWARM") != "true" {
+		t.Skip("skipping test, docker swarm disabled")
+	}
 
 	realDocker, err := adapter.NewDockerSwarm()
 	require.NoError(t, err)

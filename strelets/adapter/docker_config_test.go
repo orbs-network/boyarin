@@ -1,4 +1,4 @@
-package strelets
+package adapter
 
 import (
 	"encoding/json"

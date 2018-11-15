@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func Test_prepareVirtualChainConfig(t *testing.T) {
+func TestDockerAPI_StoreConfiguration(t *testing.T) {
 	dir, err := ioutil.TempDir("", "vchain-config")
 	defer os.RemoveAll(dir)
 
@@ -19,7 +19,7 @@ func Test_prepareVirtualChainConfig(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	volumes := getContainerVolumes("fake-container-name", dir)
+	volumes := getDockerContainerVolumes("fake-container-name", dir)
 
 	require.DirExists(t, volumes.configRootDir)
 	require.DirExists(t, volumes.logsDir)

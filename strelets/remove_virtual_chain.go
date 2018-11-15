@@ -10,5 +10,5 @@ type RemoveVirtualChainInput struct {
 
 func (s *strelets) RemoveVirtualChain(ctx context.Context, input *RemoveVirtualChainInput) error {
 	containerName := input.VirtualChain.getContainerName()
-	return s.docker.RemoveContainer(ctx, containerName)
+	return s.orchestrator.RemoveContainer(ctx, containerName)
 }

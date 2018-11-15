@@ -26,7 +26,7 @@ func (s *strelets) ProvisionVirtualChain(ctx context.Context, input *ProvisionVi
 	chain := input.VirtualChain
 	imageName := chain.DockerConfig.FullImageName()
 	if chain.DockerConfig.Pull {
-		if err := s.docker.PullImage(ctx, imageName); err != nil {
+		if err := s.orchestrator.PullImage(ctx, imageName); err != nil {
 			return err
 		}
 	}
@@ -36,15 +36,15 @@ func (s *strelets) ProvisionVirtualChain(ctx context.Context, input *ProvisionVi
 		return fmt.Errorf("could not read key pair config: %s at %s", err, input.KeyPairConfigPath)
 	}
 
-	if err := s.docker.StoreConfiguration(ctx, chain.getContainerName(), s.root, &adapter.AppConfig{
+	if err := s.orchestrator.StoreConfiguration(ctx, chain.getContainerName(), s.root, &adapter.AppConfig{
 		KeyPair: keyPair,
 		Network: getNetworkConfigJSON(input.Peers),
 	}); err != nil {
 		return fmt.Errorf("could not store configuration for vchain")
 	}
 
-	containerConfig := s.docker.GetContainerConfiguration(imageName, chain.getContainerName(), s.root, chain.HttpPort, chain.GossipPort)
-	if containerId, err := s.docker.RunContainer(ctx, chain.getContainerName(), containerConfig); err != nil {
+	containerConfig := s.orchestrator.GetContainerConfiguration(imageName, chain.getContainerName(), s.root, chain.HttpPort, chain.GossipPort)
+	if containerId, err := s.orchestrator.RunContainer(ctx, chain.getContainerName(), containerConfig); err != nil {
 		return fmt.Errorf("could not provision new vchain: %s", err)
 	} else {
 		fmt.Println(containerId)

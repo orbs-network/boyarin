@@ -18,7 +18,7 @@ type dockerSwarm struct {
 	client *client.Client
 }
 
-func NewDockerSwarm() (DockerAPI, error) {
+func NewDockerSwarm() (Orchestrator, error) {
 	client, err := client.NewClientWithOpts(client.WithVersion(DOCKER_API_VERSION))
 
 	if err != nil {

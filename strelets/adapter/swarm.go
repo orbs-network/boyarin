@@ -1,14 +1,11 @@
 package adapter
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
-	"github.com/docker/docker/runconfig"
 	"io"
 	"os"
 	"strings"
@@ -17,6 +14,11 @@ import (
 
 type dockerSwarm struct {
 	client *client.Client
+}
+
+type dockerSwarmSecretsConfig struct {
+	networkSecretId string
+	keysSecretId    string
 }
 
 func NewDockerSwarm() (Orchestrator, error) {
@@ -41,27 +43,43 @@ func (d *dockerSwarm) PullImage(ctx context.Context, imageName string) error {
 }
 
 func (d *dockerSwarm) RunContainer(ctx context.Context, containerName string, dockerConfig interface{}) (string, error) {
-	jsonConfig, _ := json.Marshal(dockerConfig)
-
-	fmt.Println(string(jsonConfig))
-
-	decoder := runconfig.ContainerDecoder{}
-	config, _, _, err := decoder.DecodeConfig(bytes.NewReader(jsonConfig))
-	if err != nil {
-		return "", err
-	}
+	config := dockerConfig.(*dockerSwarmSecretsConfig)
 
 	ureplicas := uint64(1)
 	restartDelay := time.Duration(10 * time.Second)
 
 	fmt.Println(config)
 
+	keysSecret := &swarm.SecretReference{
+		SecretName: getSwarmSecretName(containerName, "keyPair"),
+		SecretID:   config.keysSecretId,
+		File: &swarm.SecretReferenceFileTarget{
+			Name: "keys.json",
+			UID:  "0",
+			GID:  "0",
+		},
+	}
+
+	networkSecret := &swarm.SecretReference{
+		SecretName: getSwarmSecretName(containerName, "network"),
+		SecretID:   config.networkSecretId,
+		File: &swarm.SecretReferenceFileTarget{
+			Name: "network.json",
+			UID:  "0",
+			GID:  "0",
+		},
+	}
+
 	spec := swarm.ServiceSpec{
 		TaskTemplate: swarm.TaskSpec{
 			ContainerSpec: &swarm.ContainerSpec{
 				Command: []string{"top"},
-				Image:   config.Image,
+				Image:   "orbs:export",
 				//Command: config.Cmd,
+				Secrets: []*swarm.SecretReference{
+					keysSecret,
+					networkSecret,
+				},
 			},
 			RestartPolicy: &swarm.RestartPolicy{
 				Delay: &restartDelay,
@@ -89,28 +107,35 @@ func (d *dockerSwarm) RemoveContainer(ctx context.Context, containerName string)
 	return d.client.ServiceRemove(ctx, getServiceId(containerName))
 }
 
-func (d *dockerSwarm) StoreConfiguration(ctx context.Context, containerName string, root string, config *AppConfig) error {
-	if err := d.saveSwarmSecret(ctx, containerName, "keyPair", config.KeyPair); err != nil {
-		return err
+func (d *dockerSwarm) StoreConfiguration(ctx context.Context, containerName string, root string, config *AppConfig) (interface{}, error) {
+	secrets := &dockerSwarmSecretsConfig{}
+
+	if keyPairSecretId, err := d.saveSwarmSecret(ctx, containerName, "keyPair", config.KeyPair); err != nil {
+		return nil, err
+	} else {
+		secrets.keysSecretId = keyPairSecretId
 	}
 
-	if err := d.saveSwarmSecret(ctx, containerName, "network", config.Network); err != nil {
-		return err
+	if networkSecretId, err := d.saveSwarmSecret(ctx, containerName, "network", config.Network); err != nil {
+		return nil, err
+	} else {
+		secrets.networkSecretId = networkSecretId
 	}
 
-	return nil
+	return secrets, nil
 }
 
-func (d *dockerSwarm) GetContainerConfiguration(imageName string, containerName string, root string, httpPort int, gossipPort int) interface{} {
-	panic("not implemented")
+func (d *dockerSwarm) GetContainerConfiguration(imageName string, containerName string, root string, httpPort int, gossipPort int, storedConfig interface{}) interface{} {
+	// FIXME return proper struct
+	return storedConfig
 }
 
 func getServiceId(input string) string {
 	return "stack-" + input
 }
 
-func (d *dockerSwarm) saveSwarmSecret(ctx context.Context, containerName string, secretName string, content []byte) error {
-	secretId := getSwarmSecretId(containerName, secretName)
+func (d *dockerSwarm) saveSwarmSecret(ctx context.Context, containerName string, secretName string, content []byte) (string, error) {
+	secretId := getSwarmSecretName(containerName, secretName)
 	d.client.SecretRemove(ctx, secretId)
 
 	secretSpec := swarm.SecretSpec{
@@ -118,10 +143,10 @@ func (d *dockerSwarm) saveSwarmSecret(ctx context.Context, containerName string,
 	}
 	secretSpec.Name = secretId
 
-	_, err := d.client.SecretCreate(ctx, secretSpec)
-	return err
+	response, err := d.client.SecretCreate(ctx, secretSpec)
+	return response.ID, err
 }
 
-func getSwarmSecretId(containerName string, secretName string) string {
+func getSwarmSecretName(containerName string, secretName string) string {
 	return strings.Join([]string{containerName, secretName}, "-")
 }

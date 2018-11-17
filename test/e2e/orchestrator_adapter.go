@@ -32,12 +32,12 @@ func (d *MockOrchestratorAdapter) RemoveContainer(ctx context.Context, container
 	return nil
 }
 
-func (d *MockOrchestratorAdapter) StoreConfiguration(ctx context.Context, containerName string, root string, config *adapter.AppConfig) error {
+func (d *MockOrchestratorAdapter) StoreConfiguration(ctx context.Context, containerName string, root string, config *adapter.AppConfig) (interface{}, error) {
 	d.mock.MethodCalled("StoreConfiguration", ctx, containerName, root, config)
-	return nil
+	return nil, nil
 }
 
-func (d *MockOrchestratorAdapter) GetContainerConfiguration(imageName string, containerName string, root string, httpPort int, gossipPort int) interface{} {
+func (d *MockOrchestratorAdapter) GetContainerConfiguration(imageName string, containerName string, root string, httpPort int, gossipPort int, storedConfig interface{}) interface{} {
 	d.mock.MethodCalled("GetContainerConfiguration", imageName, containerName, root, httpPort, gossipPort)
 	return nil
 }

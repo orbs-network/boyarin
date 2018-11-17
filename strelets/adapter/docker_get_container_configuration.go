@@ -2,7 +2,7 @@ package adapter
 
 import "strconv"
 
-func (d *dockerAPI) GetContainerConfiguration(imageName string, containerName string, root string, httpPort int, gossipPort int) interface{} {
+func (d *dockerAPI) GetContainerConfiguration(imageName string, containerName string, root string, httpPort int, gossipPort int, storedConfig interface{}) interface{} {
 	exposedPorts, portBindings := buildDockerNetworkOptions(httpPort, gossipPort)
 	return buildDockerConfig(imageName, exposedPorts, portBindings, getDockerContainerVolumes(containerName, root))
 }

@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 )
 
-func (d *dockerAPI) StoreConfiguration(ctx context.Context, containerName string, containerRoot string, config *AppConfig) error {
-	return storeConfiguration(containerName, containerRoot, config)
+func (d *dockerAPI) StoreConfiguration(ctx context.Context, containerName string, containerRoot string, config *AppConfig) (interface{}, error) {
+	return nil, storeConfiguration(containerName, containerRoot, config)
 }
 
 func storeConfiguration(containerName string, containerRoot string, config *AppConfig) error {

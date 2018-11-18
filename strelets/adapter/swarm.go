@@ -2,7 +2,6 @@ package adapter
 
 import (
 	"context"
-	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
@@ -43,55 +42,7 @@ func (d *dockerSwarm) PullImage(ctx context.Context, imageName string) error {
 }
 
 func (d *dockerSwarm) RunContainer(ctx context.Context, containerName string, dockerConfig interface{}) (string, error) {
-	config := dockerConfig.(*dockerSwarmSecretsConfig)
-
-	ureplicas := uint64(1)
-	restartDelay := time.Duration(10 * time.Second)
-
-	fmt.Println(config)
-
-	keysSecret := &swarm.SecretReference{
-		SecretName: getSwarmSecretName(containerName, "keyPair"),
-		SecretID:   config.keysSecretId,
-		File: &swarm.SecretReferenceFileTarget{
-			Name: "keys.json",
-			UID:  "0",
-			GID:  "0",
-		},
-	}
-
-	networkSecret := &swarm.SecretReference{
-		SecretName: getSwarmSecretName(containerName, "network"),
-		SecretID:   config.networkSecretId,
-		File: &swarm.SecretReferenceFileTarget{
-			Name: "network.json",
-			UID:  "0",
-			GID:  "0",
-		},
-	}
-
-	spec := swarm.ServiceSpec{
-		TaskTemplate: swarm.TaskSpec{
-			ContainerSpec: &swarm.ContainerSpec{
-				Command: []string{"top"},
-				Image:   "orbs:export",
-				//Command: config.Cmd,
-				Secrets: []*swarm.SecretReference{
-					keysSecret,
-					networkSecret,
-				},
-			},
-			RestartPolicy: &swarm.RestartPolicy{
-				Delay: &restartDelay,
-			},
-		},
-		Mode: swarm.ServiceMode{
-			Replicated: &swarm.ReplicatedService{
-				Replicas: &ureplicas,
-			},
-		},
-	}
-	spec.Name = getServiceId(containerName)
+	spec := dockerConfig.(swarm.ServiceSpec)
 
 	resp, err := d.client.ServiceCreate(ctx, spec, types.ServiceCreateOptions{
 		QueryRegistry: true,
@@ -126,8 +77,77 @@ func (d *dockerSwarm) StoreConfiguration(ctx context.Context, containerName stri
 }
 
 func (d *dockerSwarm) GetContainerConfiguration(imageName string, containerName string, root string, httpPort int, gossipPort int, storedConfig interface{}) interface{} {
-	// FIXME return proper struct
-	return storedConfig
+	config := storedConfig.(*dockerSwarmSecretsConfig)
+
+	ureplicas := uint64(1)
+	restartDelay := time.Duration(10 * time.Second)
+
+	keysSecret := &swarm.SecretReference{
+		SecretName: getSwarmSecretName(containerName, "keyPair"),
+		SecretID:   config.keysSecretId,
+		File: &swarm.SecretReferenceFileTarget{
+			Name: "keys.json",
+			UID:  "0",
+			GID:  "0",
+		},
+	}
+
+	networkSecret := &swarm.SecretReference{
+		SecretName: getSwarmSecretName(containerName, "network"),
+		SecretID:   config.networkSecretId,
+		File: &swarm.SecretReferenceFileTarget{
+			Name: "network.json",
+			UID:  "0",
+			GID:  "0",
+		},
+	}
+
+	spec := swarm.ServiceSpec{
+		TaskTemplate: swarm.TaskSpec{
+			ContainerSpec: &swarm.ContainerSpec{
+				Image: "orbs:export",
+				Command: []string{
+					"/opt/orbs/orbs-node",
+					"--silent",
+					"--config", "/var/run/secrets/keys.json",
+					"--config", "/var/run/secrets/network.json",
+					// FIXME add separate volume for logs
+					"--log", "/opt/orbs/node.log",
+				},
+				Secrets: []*swarm.SecretReference{
+					keysSecret,
+					networkSecret,
+				},
+			},
+			RestartPolicy: &swarm.RestartPolicy{
+				Delay: &restartDelay,
+			},
+		},
+		Mode: swarm.ServiceMode{
+			Replicated: &swarm.ReplicatedService{
+				Replicas: &ureplicas,
+			},
+		},
+		EndpointSpec: &swarm.EndpointSpec{
+			Ports: []swarm.PortConfig{
+				{
+					Protocol:      "tcp",
+					PublishMode:   swarm.PortConfigPublishModeIngress,
+					PublishedPort: uint32(httpPort),
+					TargetPort:    8080,
+				},
+				{
+					Protocol:      "tcp",
+					PublishMode:   swarm.PortConfigPublishModeIngress,
+					PublishedPort: uint32(gossipPort),
+					TargetPort:    4400,
+				},
+			},
+		},
+	}
+	spec.Name = getServiceId(containerName)
+
+	return spec
 }
 
 func getServiceId(input string) string {

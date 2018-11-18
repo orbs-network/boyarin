@@ -1,10 +1,20 @@
-package strelets
+package adapter
 
 import (
 	"encoding/json"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
+
+func Test_getDockerVolumes(t *testing.T) {
+	volumes := getDockerContainerVolumes("node1-chain-42", "/tmp")
+
+	require.NotNil(t, volumes)
+	require.EqualValues(t, "/tmp/node1-chain-42/config", volumes.configRootDir)
+	require.EqualValues(t, "/tmp/node1-chain-42/logs", volumes.logsDir)
+	require.EqualValues(t, "/tmp/node1-chain-42/config/keys.json", volumes.keyPairConfigFile)
+	require.EqualValues(t, "/tmp/node1-chain-42/config/network.json", volumes.networkConfigFile)
+}
 
 const expectedDockerConfig = `{
    "CMD":[
@@ -44,8 +54,8 @@ func Test_buildDockerConfig(t *testing.T) {
 	exposedPorts := make(map[string]interface{})
 	exposedPorts["8080/tcp"] = struct{}{}
 
-	portBindings := make(map[string][]portBinding)
-	portBindings["8080/tcp"] = []portBinding{{"0.0.0.0", "8080"}}
+	portBindings := make(map[string][]dockerPortBinding)
+	portBindings["8080/tcp"] = []dockerPortBinding{{"0.0.0.0", "8080"}}
 
 	volumes := &virtualChainVolumes{
 		configRootDir:     "/tmp/root/",

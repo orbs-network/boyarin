@@ -12,13 +12,7 @@ import (
 	"os"
 )
 
-const DOCKER_API_VERSION = "1.38"
-
-type dockerAPI struct {
-	client *client.Client
-}
-
-func NewDockerAPI() (DockerAPI, error) {
+func NewDockerAPI() (Orchestrator, error) {
 	client, err := client.NewClientWithOpts(client.WithVersion(DOCKER_API_VERSION))
 
 	if err != nil {
@@ -39,7 +33,7 @@ func (d *dockerAPI) PullImage(ctx context.Context, imageName string) error {
 	return nil
 }
 
-func (d *dockerAPI) RunContainer(ctx context.Context, containerName string, dockerConfig map[string]interface{}) (string, error) {
+func (d *dockerAPI) RunContainer(ctx context.Context, containerName string, dockerConfig interface{}) (string, error) {
 	jsonConfig, _ := json.Marshal(dockerConfig)
 
 	fmt.Println(string(jsonConfig))

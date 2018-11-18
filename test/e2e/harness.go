@@ -19,7 +19,7 @@ type harness struct {
 	configPath string
 }
 
-func newHarness(t *testing.T, docker adapter.DockerAPI) *harness {
+func newHarness(t *testing.T, docker adapter.Orchestrator) *harness {
 	configPath := "../../e2e-config/"
 	if configPathFromEnv := os.Getenv("E2E_CONFIG"); configPathFromEnv != "" {
 		configPath = configPathFromEnv

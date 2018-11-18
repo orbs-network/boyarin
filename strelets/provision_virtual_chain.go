@@ -3,6 +3,7 @@ package strelets
 import (
 	"context"
 	"fmt"
+	"github.com/orbs-network/boyarin/strelets/adapter"
 	"io/ioutil"
 )
 
@@ -25,35 +26,29 @@ func (s *strelets) ProvisionVirtualChain(ctx context.Context, input *ProvisionVi
 	chain := input.VirtualChain
 	imageName := chain.DockerConfig.FullImageName()
 	if chain.DockerConfig.Pull {
-		if err := s.docker.PullImage(ctx, imageName); err != nil {
+		if err := s.orchestrator.PullImage(ctx, imageName); err != nil {
 			return err
 		}
 	}
 
-	if err := input.prepareVirtualChainConfig(s.root); err != nil {
-		return err
-	}
-
-	containerId, err := s.docker.RunContainer(ctx, chain.getContainerName(), chain.getContainerConfig(s.root))
+	keyPair, err := ioutil.ReadFile(input.KeyPairConfigPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not read key pair config: %s at %s", err, input.KeyPairConfigPath)
 	}
 
-	fmt.Println(containerId)
-
-	return nil
-}
-
-func (input *ProvisionVirtualChainInput) prepareVirtualChainConfig(root string) error {
-	vchainVolumes := input.VirtualChain.getContainerVolumes(root)
-	vchainVolumes.createDirs()
-
-	if err := copyFile(input.KeyPairConfigPath, vchainVolumes.keyPairConfigFile); err != nil {
-		return fmt.Errorf("could not copy key pair config: %s at %s", err, input.KeyPairConfigPath)
+	storedConfig, err := s.orchestrator.StoreConfiguration(ctx, chain.getContainerName(), s.root, &adapter.AppConfig{
+		KeyPair: keyPair,
+		Network: getNetworkConfigJSON(input.Peers),
+	})
+	if err != nil {
+		return fmt.Errorf("could not store configuration for vchain")
 	}
 
-	if err := ioutil.WriteFile(vchainVolumes.networkConfigFile, getNetworkConfigJSON(input.Peers), 0644); err != nil {
-		return fmt.Errorf("could not write network config: %s at %s", err, vchainVolumes.networkConfigFile)
+	containerConfig := s.orchestrator.GetContainerConfiguration(imageName, chain.getContainerName(), s.root, chain.HttpPort, chain.GossipPort, storedConfig)
+	if containerId, err := s.orchestrator.RunContainer(ctx, chain.getContainerName(), containerConfig); err != nil {
+		return fmt.Errorf("could not provision new vchain: %s", err)
+	} else {
+		fmt.Println(containerId)
 	}
 
 	return nil

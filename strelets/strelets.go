@@ -11,13 +11,13 @@ type Strelets interface {
 }
 
 type strelets struct {
-	root   string
-	docker adapter.DockerAPI
+	root         string
+	orchestrator adapter.Orchestrator
 }
 
-func NewStrelets(root string, docker adapter.DockerAPI) Strelets {
+func NewStrelets(root string, docker adapter.Orchestrator) Strelets {
 	return &strelets{
-		root:   root,
-		docker: docker,
+		root:         root,
+		orchestrator: docker,
 	}
 }

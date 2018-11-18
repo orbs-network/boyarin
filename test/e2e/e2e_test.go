@@ -40,7 +40,7 @@ func TestE2EWithRealDocker(t *testing.T) {
 	h.startChain(t)
 	defer h.stopChain(t)
 
-	require.True(t, test.Eventually(10*time.Second, func() bool {
+	require.True(t, test.Eventually(15*time.Second, func() bool {
 		metrics, err := h.getMetrics()
 		if err != nil {
 			return false
@@ -65,7 +65,7 @@ func TestE2EWithDockerSwarm(t *testing.T) {
 	h.startChain(t)
 	defer h.stopChain(t)
 
-	require.True(t, test.Eventually(10*time.Second, func() bool {
+	require.True(t, test.Eventually(20*time.Second, func() bool {
 		metrics, err := h.getMetrics()
 		if err != nil {
 			return false

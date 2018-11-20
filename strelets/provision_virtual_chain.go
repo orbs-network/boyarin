@@ -36,20 +36,12 @@ func (s *strelets) ProvisionVirtualChain(ctx context.Context, input *ProvisionVi
 		return fmt.Errorf("could not read key pair config: %s at %s", err, input.KeyPairConfigPath)
 	}
 
-	storedConfig, err := s.orchestrator.StoreConfiguration(ctx, chain.getContainerName(), s.root, &adapter.AppConfig{
+	if runner, err := s.orchestrator.Prepare(ctx, imageName, chain.getContainerName(), s.root, chain.HttpPort, chain.GossipPort, &adapter.AppConfig{
 		KeyPair: keyPair,
 		Network: getNetworkConfigJSON(input.Peers),
-	})
-	if err != nil {
-		return fmt.Errorf("could not store configuration for vchain")
-	}
-
-	containerConfig := s.orchestrator.GetContainerConfiguration(imageName, chain.getContainerName(), s.root, chain.HttpPort, chain.GossipPort, storedConfig)
-	if containerId, err := s.orchestrator.RunContainer(ctx, chain.getContainerName(), containerConfig); err != nil {
-		return fmt.Errorf("could not provision new vchain: %s", err)
+	}); err != nil {
+		return err
 	} else {
-		fmt.Println(containerId)
+		return runner.Run(ctx)
 	}
-
-	return nil
 }

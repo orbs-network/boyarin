@@ -1,16 +1,11 @@
 package adapter
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 )
-
-func (d *dockerAPI) StoreConfiguration(ctx context.Context, containerName string, containerRoot string, config *AppConfig) (interface{}, error) {
-	return nil, storeConfiguration(containerName, containerRoot, config)
-}
 
 func storeConfiguration(containerName string, containerRoot string, config *AppConfig) error {
 	vchainVolumes := getDockerContainerVolumes(containerName, containerRoot)

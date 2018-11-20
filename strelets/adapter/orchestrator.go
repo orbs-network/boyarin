@@ -16,11 +16,12 @@ type AppConfig struct {
 	Network []byte
 }
 
+type Runner interface {
+	Run(ctx context.Context) error
+}
+
 type Orchestrator interface {
 	PullImage(ctx context.Context, imageName string) error
-	// TODO replace interface with something else
-	GetContainerConfiguration(imageName string, containerName string, root string, httpPort int, gossipPort int, storedConfig interface{}) interface{}
-	StoreConfiguration(ctx context.Context, containerName string, root string, config *AppConfig) (interface{}, error)
-	RunContainer(ctx context.Context, containerName string, config interface{}) (string, error)
+	Prepare(ctx context.Context, imageName string, containerName string, root string, httpPort int, gossipPort int, config *AppConfig) (Runner, error)
 	RemoveContainer(ctx context.Context, containerName string) error
 }

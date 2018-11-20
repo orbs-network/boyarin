@@ -11,7 +11,7 @@ type VirtualChain struct {
 	Id           VirtualChainId
 	HttpPort     int
 	GossipPort   int
-	DockerConfig *DockerImageConfig
+	DockerConfig DockerImageConfig
 }
 
 func (v *VirtualChain) getContainerName() string {

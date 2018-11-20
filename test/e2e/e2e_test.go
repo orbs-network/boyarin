@@ -16,9 +16,8 @@ func TestE2E(t *testing.T) {
 	h := newHarness(t, docker)
 
 	for i := 1; i <= 3; i++ {
-		docker.mock.On("GetContainerConfiguration", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once()
-		docker.mock.On("StoreConfiguration", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once()
-		docker.mock.On("RunContainer", mock.Anything, fmt.Sprintf("node%d-chain-42", i), mock.Anything).Once()
+		docker.mock.On("Prepare", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once()
+		docker.runner.mock.On("Run", mock.Anything).Once()
 		docker.mock.On("RemoveContainer", mock.Anything, fmt.Sprintf("node%d-chain-42", i)).Once()
 	}
 

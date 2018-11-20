@@ -2,6 +2,7 @@ package adapter
 
 import (
 	"context"
+	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
@@ -18,6 +19,11 @@ type dockerSwarm struct {
 type dockerSwarmSecretsConfig struct {
 	networkSecretId string
 	keysSecretId    string
+}
+
+type dockerSwarmRunner struct {
+	client *client.Client
+	spec   swarm.ServiceSpec
 }
 
 func NewDockerSwarm() (Orchestrator, error) {
@@ -41,34 +47,32 @@ func (d *dockerSwarm) PullImage(ctx context.Context, imageName string) error {
 	return nil
 }
 
-func (d *dockerSwarm) RunContainer(ctx context.Context, containerName string, dockerConfig interface{}) (string, error) {
-	spec := dockerConfig.(swarm.ServiceSpec)
-
-	resp, err := d.client.ServiceCreate(ctx, spec, types.ServiceCreateOptions{
+func (r *dockerSwarmRunner) Run(ctx context.Context) error {
+	if resp, err := r.client.ServiceCreate(ctx, r.spec, types.ServiceCreateOptions{
 		QueryRegistry: true,
-	})
-	if err != nil {
-		return "", err
+	}); err != nil {
+		return err
+	} else {
+		fmt.Println("Starting Docker Swarm stack:", resp.ID)
+		return nil
 	}
-
-	return resp.ID, nil
 }
 
 func (d *dockerSwarm) RemoveContainer(ctx context.Context, containerName string) error {
 	return d.client.ServiceRemove(ctx, getServiceId(containerName))
 }
 
-func (d *dockerSwarm) StoreConfiguration(ctx context.Context, containerName string, root string, config *AppConfig) (interface{}, error) {
+func (d *dockerSwarm) storeConfiguration(ctx context.Context, containerName string, root string, config *AppConfig) (*dockerSwarmSecretsConfig, error) {
 	secrets := &dockerSwarmSecretsConfig{}
 
 	if keyPairSecretId, err := d.saveSwarmSecret(ctx, containerName, "keyPair", config.KeyPair); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not store key pair secret: %s", err)
 	} else {
 		secrets.keysSecretId = keyPairSecretId
 	}
 
 	if networkSecretId, err := d.saveSwarmSecret(ctx, containerName, "network", config.Network); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not store network config secret: %s", err)
 	} else {
 		secrets.networkSecretId = networkSecretId
 	}
@@ -76,8 +80,11 @@ func (d *dockerSwarm) StoreConfiguration(ctx context.Context, containerName stri
 	return secrets, nil
 }
 
-func (d *dockerSwarm) GetContainerConfiguration(imageName string, containerName string, root string, httpPort int, gossipPort int, storedConfig interface{}) interface{} {
-	config := storedConfig.(*dockerSwarmSecretsConfig)
+func (d *dockerSwarm) Prepare(ctx context.Context, imageName string, containerName string, root string, httpPort int, gossipPort int, appConfig *AppConfig) (Runner, error) {
+	config, err := d.storeConfiguration(ctx, containerName, root, appConfig)
+	if err != nil {
+		return nil, err
+	}
 
 	ureplicas := uint64(1)
 	restartDelay := time.Duration(10 * time.Second)
@@ -147,7 +154,10 @@ func (d *dockerSwarm) GetContainerConfiguration(imageName string, containerName 
 	}
 	spec.Name = getServiceId(containerName)
 
-	return spec
+	return &dockerSwarmRunner{
+		client: d.client,
+		spec:   spec,
+	}, nil
 }
 
 func getServiceId(input string) string {

@@ -4,30 +4,19 @@ import (
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/test"
 	"github.com/stretchr/testify/require"
+	"io/ioutil"
 	"net/http"
 	"testing"
 )
 
-const input = `
-{
-	"network": [
-		{"Key":"dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173","IP":"192.168.1.14"}
-	],
-	"chains": [
-		{
-			"Id":        42,
-			"HttpPort":   8080,
-			"GossipPort": 4400,
-			"DockerConfig": {
-			"ContainerNamePrefix": "node1",
-				"Image":  "506367651493.dkr.ecr.us-west-2.amazonaws.com/orbs-network-v1",
-				"Tag":    "master",
-				"Pull":   false
-			}
-		}
-	]
+func getJSONConfig() string {
+	contents, err := ioutil.ReadFile("./test/config.json")
+	if err != nil {
+		panic(err)
+	}
+
+	return string(contents)
 }
-`
 
 func verifySource(t *testing.T, source ConfigurationSource) {
 	require.EqualValues(t, []*strelets.FederationNode{
@@ -52,14 +41,14 @@ func verifySource(t *testing.T, source ConfigurationSource) {
 }
 
 func Test_parseStringConfig(t *testing.T) {
-	source, err := parseStringConfig(input)
+	source, err := parseStringConfig(getJSONConfig())
 
 	require.NoError(t, err)
 	verifySource(t, source)
 }
 
 func TestNewStringConfigurationSource(t *testing.T) {
-	source, err := NewStringConfigurationSource(input)
+	source, err := NewStringConfigurationSource(getJSONConfig())
 
 	require.NoError(t, err)
 	verifySource(t, source)
@@ -67,7 +56,7 @@ func TestNewStringConfigurationSource(t *testing.T) {
 
 func TestNewUrlConfigurationSource(t *testing.T) {
 	server := test.CreateHttpServer("/", func(writer http.ResponseWriter, request *http.Request) {
-		writer.Write([]byte(input))
+		writer.Write([]byte(getJSONConfig()))
 	})
 	server.Start()
 	defer server.Shutdown()

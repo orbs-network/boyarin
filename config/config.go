@@ -102,20 +102,12 @@ func getPeersFromConfig(peers string, peerKeys string, peersConfig string, gossi
 			return nil, fmt.Errorf("virtual chain network config not found: %s at %s", err, peersConfig)
 		}
 
-		var nodes []strelets.FederationNode
+		var nodes []*strelets.FederationNode
 		if err := json.Unmarshal(jsonConfig, &nodes); err != nil {
 			return nil, err
 		}
 
-		peersMap = make(strelets.PeersMap)
-
-		for _, node := range nodes {
-			peersMap[strelets.PublicKey(node.Key)] = &strelets.Peer{
-				node.IP, gossipPort,
-			}
-		}
-
-		return &peersMap, nil
+		return GetPeersMap(nodes, gossipPort), nil
 	}
 
 	keys := strings.Split(peerKeys, ",")
@@ -137,4 +129,16 @@ func getPeersFromConfig(peers string, peerKeys string, peersConfig string, gossi
 	}
 
 	return &peersMap, nil
+}
+
+func GetPeersMap(nodes []*strelets.FederationNode, gossipPort int) *strelets.PeersMap {
+	peersMap := make(strelets.PeersMap)
+
+	for _, node := range nodes {
+		peersMap[strelets.PublicKey(node.Key)] = &strelets.Peer{
+			node.IP, gossipPort,
+		}
+	}
+
+	return &peersMap
 }

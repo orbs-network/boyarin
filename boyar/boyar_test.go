@@ -12,11 +12,6 @@ import (
 
 const input = `
 {
-	"keys": {
-		"node-public-key": "dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173",
-		"node-private-key": "93e919986a22477fda016789cca30cb841a135650938714f85f0000a65076bd4dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173",
-		"constant-consensus-leader": "dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173"
-	},
 	"network": [
 		{"Key":"dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173","IP":"192.168.1.14"}
 	],
@@ -37,8 +32,6 @@ const input = `
 `
 
 func verifySource(t *testing.T, source ConfigurationSource) {
-	require.NotEqual(t, []byte("null"), source.Keys())
-
 	require.EqualValues(t, []*strelets.FederationNode{
 		{
 			Key: "dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173",

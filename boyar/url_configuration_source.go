@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func NewUrlConfigurationSource(url string) (ConfigurationSource, error) {
+func NewUrlConfigurationSource(url string) (NodeConfiguration, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("could not download configuration from source: %s", err)

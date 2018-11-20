@@ -5,10 +5,10 @@ import (
 )
 
 type stringConfigurationSource struct {
-	value configValue
+	value nodeConfiguration
 }
 
-func NewStringConfigurationSource(input string) (ConfigurationSource, error) {
+func NewStringConfigurationSource(input string) (NodeConfiguration, error) {
 	return parseStringConfig(input)
 }
 

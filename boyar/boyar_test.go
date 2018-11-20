@@ -18,7 +18,7 @@ func getJSONConfig() string {
 	return string(contents)
 }
 
-func verifySource(t *testing.T, source ConfigurationSource) {
+func verifySource(t *testing.T, source NodeConfiguration) {
 	require.EqualValues(t, []*strelets.FederationNode{
 		{
 			Key: "dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173",

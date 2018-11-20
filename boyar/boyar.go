@@ -7,12 +7,12 @@ import (
 	"github.com/orbs-network/boyarin/strelets"
 )
 
-type configValue struct {
+type nodeConfiguration struct {
 	Chains          []*strelets.VirtualChain   `json:"chains"`
 	FederationNodes []*strelets.FederationNode `json:"network"`
 }
 
-type ConfigurationSource interface {
+type NodeConfiguration interface {
 	FederationNodes() []*strelets.FederationNode
 	Chains() []*strelets.VirtualChain
 }
@@ -23,14 +23,14 @@ type Boyar interface {
 
 type boyar struct {
 	strelets          strelets.Strelets
-	config            ConfigurationSource
+	config            NodeConfiguration
 	keyPairConfigPath string
 }
 
-func NewBoyar(strelets strelets.Strelets, source ConfigurationSource, keyPairConfigPath string) Boyar {
+func NewBoyar(strelets strelets.Strelets, config NodeConfiguration, keyPairConfigPath string) Boyar {
 	return &boyar{
 		strelets:          strelets,
-		config:            source,
+		config:            config,
 		keyPairConfigPath: keyPairConfigPath,
 	}
 }

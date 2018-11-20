@@ -1,11 +1,9 @@
 package boyar
 
 import (
-	"context"
-	"fmt"
 	"github.com/orbs-network/boyarin/strelets"
+	"github.com/orbs-network/boyarin/test"
 	"github.com/stretchr/testify/require"
-	"net"
 	"net/http"
 	"testing"
 )
@@ -68,22 +66,13 @@ func TestNewStringConfigurationSource(t *testing.T) {
 }
 
 func TestNewUrlConfigurationSource(t *testing.T) {
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(t, err)
-
-	router := http.NewServeMux()
-	router.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
+	server := test.CreateHttpServer("/", func(writer http.ResponseWriter, request *http.Request) {
 		writer.Write([]byte(input))
 	})
+	server.Start()
+	defer server.Shutdown()
 
-	server := &http.Server{
-		Handler: router,
-	}
-
-	go server.Serve(listener)
-	defer server.Shutdown(context.TODO())
-
-	source, err := NewUrlConfigurationSource(fmt.Sprintf("http://127.0.0.1:%d", listener.Addr().(*net.TCPAddr).Port))
+	source, err := NewUrlConfigurationSource(server.Url())
 
 	require.NoError(t, err)
 	verifySource(t, source)

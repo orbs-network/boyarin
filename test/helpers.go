@@ -1,7 +1,10 @@
 package test
 
 import (
+	"context"
+	"fmt"
 	"net"
+	"net/http"
 	"time"
 )
 
@@ -47,4 +50,48 @@ func Eventually(timeout time.Duration, f func() bool) bool {
 		time.Sleep(timeout / eventuallyIterations)
 	}
 	return false
+}
+
+type HttpServer interface {
+	Start()
+	Shutdown()
+	Url() string
+}
+
+type httpServer struct {
+	path     string
+	listener net.Listener
+	server   *http.Server
+}
+
+func (h *httpServer) Start() {
+	go h.server.Serve(h.listener)
+}
+
+func (h *httpServer) Shutdown() {
+	h.server.Shutdown(context.TODO())
+}
+
+func (h *httpServer) Url() string {
+	return fmt.Sprintf("http://127.0.0.1:%d%s", h.listener.Addr().(*net.TCPAddr).Port, h.path)
+}
+
+func CreateHttpServer(path string, f func(writer http.ResponseWriter, request *http.Request)) HttpServer {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		panic(err)
+	}
+
+	router := http.NewServeMux()
+	router.HandleFunc(path, f)
+
+	server := &http.Server{
+		Handler: router,
+	}
+
+	return &httpServer{
+		path:     path,
+		listener: listener,
+		server:   server,
+	}
 }

@@ -1,7 +1,11 @@
 package boyar
 
 import (
+	"context"
+	"fmt"
 	"github.com/stretchr/testify/require"
+	"net"
+	"net/http"
 	"testing"
 )
 
@@ -53,6 +57,28 @@ func Test_parseStringConfig(t *testing.T) {
 
 func TestNewStringConfigurationSource(t *testing.T) {
 	source, err := NewStringConfigurationSource(input)
+
+	require.NoError(t, err)
+	verifySource(t, source)
+}
+
+func TestNewUrlConfigurationSource(t *testing.T) {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+
+	router := http.NewServeMux()
+	router.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
+		writer.Write([]byte(input))
+	})
+
+	server := &http.Server{
+		Handler: router,
+	}
+
+	go server.Serve(listener)
+	defer server.Shutdown(context.TODO())
+
+	source, err := NewUrlConfigurationSource(fmt.Sprintf("http://127.0.0.1:%d", listener.Addr().(*net.TCPAddr).Port))
 
 	require.NoError(t, err)
 	verifySource(t, source)

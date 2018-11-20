@@ -1,10 +1,23 @@
 package adapter
 
-import "strconv"
+import (
+	"context"
+	"strconv"
+)
 
-func (d *dockerAPI) GetContainerConfiguration(imageName string, containerName string, root string, httpPort int, gossipPort int, storedConfig interface{}) interface{} {
+func (d *dockerAPI) Prepare(ctx context.Context, imageName string, containerName string, root string, httpPort int, gossipPort int, appConfig *AppConfig) (Runner, error) {
+	if err := storeConfiguration(containerName, root, appConfig); err != nil {
+		return nil, err
+	}
+
 	exposedPorts, portBindings := buildDockerNetworkOptions(httpPort, gossipPort)
-	return buildDockerConfig(imageName, exposedPorts, portBindings, getDockerContainerVolumes(containerName, root))
+	config := buildDockerConfig(imageName, exposedPorts, portBindings, getDockerContainerVolumes(containerName, root))
+
+	return &dockerRunner{
+		client:        d.client,
+		config:        config,
+		containerName: containerName,
+	}, nil
 }
 
 func buildDockerNetworkOptions(httpPort int, gossipPort int) (exposedPorts map[string]interface{}, portBindings map[string][]dockerPortBinding) {

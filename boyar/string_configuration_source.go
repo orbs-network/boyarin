@@ -21,3 +21,7 @@ func (c *stringConfigurationSource) Keys() []byte {
 func (c *stringConfigurationSource) Chains() []*strelets.VirtualChain {
 	return c.value.Chains
 }
+
+func (c *stringConfigurationSource) FederationNodes() []*strelets.FederationNode {
+	return c.value.FederationNodes
+}

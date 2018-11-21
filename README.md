@@ -2,7 +2,9 @@
 
 [![CircleCI](https://circleci.com/gh/orbs-network/boyarin/tree/master.svg?style=svg)](https://circleci.com/gh/orbs-network/boyarin/tree/master)
 
-Management layer that provisions virtual chains.
+![Boyars, Russian 17th century administrators and warlords](boyars.jpg)
+
+Management layer that provisions virtual chains for [ORBS blockchain](https://github.com/orbs-network/orbs-network-go/).
 
 ## CLI
 

@@ -1,7 +1,11 @@
 package e2e
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/orbs-network/boyarin/boyar"
+	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test"
 	"github.com/stretchr/testify/mock"
@@ -27,9 +31,9 @@ func TestE2E(t *testing.T) {
 	docker.VerifyMocks(t)
 }
 
-func TestE2EWithRealDocker(t *testing.T) {
+func TestE2EWithDocker(t *testing.T) {
 	if os.Getenv("ENABLE_DOCKER") != "true" {
-		t.Skip("skipping test, real docker disabled")
+		t.Skip("skipping test, docker is disabled")
 	}
 
 	realDocker, err := adapter.NewDockerAPI()
@@ -39,22 +43,67 @@ func TestE2EWithRealDocker(t *testing.T) {
 	h.startChain(t)
 	defer h.stopChain(t)
 
-	require.True(t, test.Eventually(15*time.Second, func() bool {
-		metrics, err := h.getMetrics()
-		if err != nil {
-			return false
+	waitForBlock(t, h.getMetrics, 3, 15*time.Second)
+}
+
+func TestE2EWithDockerAndBoyar(t *testing.T) {
+	if os.Getenv("ENABLE_DOCKER") != "true" {
+		t.Skip("skipping test, docker is disabled")
+	}
+
+	realDocker, err := adapter.NewDockerAPI()
+	require.NoError(t, err)
+	h := newHarness(t, realDocker)
+
+	s := strelets.NewStrelets("_tmp", realDocker)
+
+	configMap := make(map[string]interface{})
+
+	ip := test.LocalIP()
+
+	var network []*strelets.FederationNode
+	for i, key := range test.PublicKeys() {
+		network = append(network, &strelets.FederationNode{
+			Key:  key,
+			IP:   ip,
+			Port: 4400 + i + 1,
+		})
+	}
+
+	configMap["network"] = network
+
+	for i := 1; i <= 3; i++ {
+		chain := &strelets.VirtualChain{
+			Id:         42,
+			HttpPort:   8080 + i,
+			GossipPort: 4400 + i,
+			DockerConfig: &strelets.DockerImageConfig{
+				ContainerNamePrefix: fmt.Sprintf("node%d", i),
+				Image:               "orbs",
+				Tag:                 "export",
+				Pull:                false,
+			},
 		}
 
-		blockHeight := metrics["BlockStorage.BlockHeight"].(map[string]interface{})["Value"].(float64)
-		fmt.Println("blockHeight", blockHeight)
+		configMap["chains"] = []*strelets.VirtualChain{chain}
 
-		return blockHeight == 3
-	}))
+		jsonConfig, _ := json.Marshal(configMap)
+		config, err := boyar.NewStringConfigurationSource(string(jsonConfig))
+		require.NoError(t, err)
+
+		b := boyar.NewBoyar(s, config, fmt.Sprintf("../../e2e-config/node%d/keys.json", i))
+		err = b.ProvisionVirtualChains(context.Background())
+		require.NoError(t, err)
+	}
+	// FIXME boyar should take care of it, not the harness
+	defer h.stopChain(t)
+
+	waitForBlock(t, h.getMetrics, 3, 20*time.Second)
 }
 
 func TestE2EWithDockerSwarm(t *testing.T) {
 	if os.Getenv("ENABLE_SWARM") != "true" {
-		t.Skip("skipping test, docker swarm disabled")
+		t.Skip("skipping test, docker swarm is disabled")
 	}
 
 	realDocker, err := adapter.NewDockerSwarm()
@@ -64,15 +113,5 @@ func TestE2EWithDockerSwarm(t *testing.T) {
 	h.startChain(t)
 	defer h.stopChain(t)
 
-	require.True(t, test.Eventually(20*time.Second, func() bool {
-		metrics, err := h.getMetrics()
-		if err != nil {
-			return false
-		}
-
-		blockHeight := metrics["BlockStorage.BlockHeight"].(map[string]interface{})["Value"].(float64)
-		fmt.Println("blockHeight", blockHeight)
-
-		return blockHeight == 3
-	}))
+	waitForBlock(t, h.getMetrics, 3, 20*time.Second)
 }

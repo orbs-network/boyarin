@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"testing"
+	"time"
 )
 
 type harness struct {
@@ -38,16 +39,16 @@ func (h *harness) startChain(t *testing.T) {
 	localIP := test.LocalIP()
 	ctx := context.Background()
 
-	for i := 0; i < 3; i++ {
+	for i := 1; i <= 3; i++ {
 		err := h.s.ProvisionVirtualChain(ctx, &strelets.ProvisionVirtualChainInput{
 			VirtualChain: &strelets.VirtualChain{
 				Id:           42,
 				HttpPort:     8080 + i,
 				GossipPort:   4400 + i,
-				DockerConfig: DockerConfig(fmt.Sprintf("node%d", i+1)),
+				DockerConfig: DockerConfig(fmt.Sprintf("node%d", i)),
 			},
 			Peers:             Peers(localIP),
-			KeyPairConfigPath: fmt.Sprintf("%s/node%d/keys.json", h.configPath, i+1),
+			KeyPairConfigPath: fmt.Sprintf("%s/node%d/keys.json", h.configPath, i),
 		})
 
 		require.NoError(t, err)
@@ -57,11 +58,11 @@ func (h *harness) startChain(t *testing.T) {
 func (h *harness) stopChain(t *testing.T) {
 	ctx := context.Background()
 
-	for i := 0; i < 3; i++ {
+	for i := 1; i <= 3; i++ {
 		h.s.RemoveVirtualChain(ctx, &strelets.RemoveVirtualChainInput{
 			VirtualChain: &strelets.VirtualChain{
 				Id:           42,
-				DockerConfig: DockerConfig(fmt.Sprintf("node%d", i+1)),
+				DockerConfig: DockerConfig(fmt.Sprintf("node%d", i)),
 			},
 		})
 	}
@@ -119,9 +120,23 @@ func Peers(ip string) *strelets.PeersMap {
 	for i, key := range test.PublicKeys() {
 		peers[strelets.PublicKey(key)] = &strelets.Peer{
 			IP:   ip,
-			Port: 4400 + i,
+			Port: 4400 + i + 1,
 		}
 	}
 
 	return &peers
+}
+
+func waitForBlock(t *testing.T, getMetrics func() (map[string]interface{}, error), targetBlockHeight int, timeout time.Duration) {
+	require.True(t, test.Eventually(timeout, func() bool {
+		metrics, err := getMetrics()
+		if err != nil {
+			return false
+		}
+
+		blockHeight := int(metrics["BlockStorage.BlockHeight"].(map[string]interface{})["Value"].(float64))
+		fmt.Println("blockHeight", blockHeight)
+
+		return blockHeight >= targetBlockHeight
+	}))
 }

@@ -135,8 +135,14 @@ func GetPeersMap(nodes []*strelets.FederationNode, gossipPort int) *strelets.Pee
 	peersMap := make(strelets.PeersMap)
 
 	for _, node := range nodes {
+		// Need this override for more flexibility in network config and also for local testing
+		port := node.Port
+		if port == 0 {
+			port = gossipPort
+		}
+
 		peersMap[strelets.PublicKey(node.Key)] = &strelets.Peer{
-			node.IP, gossipPort,
+			node.IP, port,
 		}
 	}
 

@@ -91,7 +91,7 @@ func TestE2EWithDockerAndBoyar(t *testing.T) {
 		config, err := boyar.NewStringConfigurationSource(string(jsonConfig))
 		require.NoError(t, err)
 
-		b := boyar.NewBoyar(s, config, fmt.Sprintf("../../e2e-config/node%d/keys.json", i))
+		b := boyar.NewBoyar(s, config, fmt.Sprintf("%s/node%d/keys.json", h.configPath, i))
 		err = b.ProvisionVirtualChains(context.Background())
 		require.NoError(t, err)
 	}

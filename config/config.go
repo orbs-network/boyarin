@@ -45,6 +45,8 @@ func GetProvisionVirtualChainInput(input []string) (*strelets.ProvisionVirtualCh
 		v = &strelets.VirtualChain{}
 		if err := json.Unmarshal(jsonConfig, v); err != nil {
 			return nil, err
+		} else if *dockerPullPtr {
+			v.DockerConfig.Pull = true
 		}
 	} else {
 		vchainId := strelets.VirtualChainId(*vchainPtr)

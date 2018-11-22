@@ -8,8 +8,6 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/runconfig"
-	"io"
-	"os"
 )
 
 type dockerRunner struct {
@@ -30,14 +28,7 @@ func NewDockerAPI() (Orchestrator, error) {
 }
 
 func (d *dockerAPI) PullImage(ctx context.Context, imageName string) error {
-	out, err := d.client.ImagePull(ctx, imageName, types.ImagePullOptions{})
-
-	if err != nil {
-		return err
-	}
-	io.Copy(os.Stdout, out)
-
-	return nil
+	return pullImage(ctx, d.client, imageName)
 }
 
 func (r *dockerRunner) Run(ctx context.Context) error {

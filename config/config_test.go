@@ -11,6 +11,7 @@ func TestGetProvisionVirtualChainInputFromJSON(t *testing.T) {
 		"--chain-config", "./_fixtures/config.json",
 		"--keys-config", "../e2e-config/node1-keys.json",
 		"--peers-config", "./_fixtures/network.json",
+		"--pull-docker-image",
 	}
 
 	expectedPeers := make(strelets.PeersMap)
@@ -28,7 +29,7 @@ func TestGetProvisionVirtualChainInputFromJSON(t *testing.T) {
 				ContainerNamePrefix: "node1",
 				Image:               "orbs",
 				Tag:                 "export",
-				Pull:                false,
+				Pull:                true,
 			},
 		},
 		KeyPairConfigPath: "../e2e-config/node1-keys.json",

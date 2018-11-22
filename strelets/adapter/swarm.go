@@ -6,8 +6,6 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
-	"io"
-	"os"
 )
 
 type dockerSwarm struct {
@@ -35,14 +33,7 @@ func NewDockerSwarm() (Orchestrator, error) {
 }
 
 func (d *dockerSwarm) PullImage(ctx context.Context, imageName string) error {
-	out, err := d.client.ImagePull(ctx, imageName, types.ImagePullOptions{})
-
-	if err != nil {
-		return err
-	}
-	io.Copy(os.Stdout, out)
-
-	return nil
+	return pullImage(ctx, d.client, imageName)
 }
 
 func (r *dockerSwarmRunner) Run(ctx context.Context) error {

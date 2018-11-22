@@ -1,0 +1,41 @@
+{
+  "network": [
+    {
+      "Key": "dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173",
+      "IP": "us-east-1.global.nodes.staging.orbs-test.com"
+    },
+    {
+      "Key": "92d469d7c004cc0b24a192d9457836bf38effa27536627ef60718b00b0f33152",
+      "IP": "eu-central-1.global.nodes.staging.orbs-test.com"
+    },
+    {
+      "Key": "58e7ed8169a151602b1349c990c84ca2fb2f62eb17378f9a94e49552fbafb9d8",
+      "IP": "ap-northeast-1.global.nodes.staging.orbs-test.com"
+    },
+    {
+      "Key": "23f97918acf48728d3f25a39a5f091a1a9574c52ccb20b9bad81306bd2af4631",
+      "IP": "ap-northeast-2.global.nodes.staging.orbs-test.com"
+    },
+    {
+      "Key": "07492c6612f78a47d7b6a18a17792a01917dec7497bdac1a35c477fbccc3303b",
+      "IP": "ap-southeast-2.global.nodes.staging.orbs-test.com"
+    },
+    {
+      "Key": "a899b318e65915aa2de02841eeb72fe51fddad96014b73800ca788a547f8cce0",
+      "IP": "ca-central-1.global.nodes.staging.orbs-test.com"
+    }
+  ],
+  "chains": [
+    {
+      "Id": 42,
+      "HttpPort": 80,
+      "GossipPort": 4400,
+      "DockerConfig": {
+        "ContainerNamePrefix": "orbs-network",
+        "Image": "506367651493.dkr.ecr.eu-central-1.amazonaws.com/orbs-network-staging-eu-central-1",
+        "Tag": "master",
+        "Pull": true
+      }
+    }
+  ]
+}

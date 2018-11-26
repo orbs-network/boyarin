@@ -13,7 +13,9 @@ import (
 	"time"
 )
 
-func TestStrelets_UpdateReverseProxyOnDocker(t *testing.T) {
+func Test_UpdateReverseProxyWithDocker(t *testing.T) {
+	skipUnlessDockerIsEnabled(t)
+
 	server := test.CreateHttpServer("/test", func(writer http.ResponseWriter, request *http.Request) {
 		writer.Write([]byte("success"))
 	})
@@ -52,7 +54,9 @@ func TestStrelets_UpdateReverseProxyOnDocker(t *testing.T) {
 	}))
 }
 
-func TestStrelets_UpdateReverseProxyOnSwarm(t *testing.T) {
+func Test_UpdateReverseProxyWithSwarm(t *testing.T) {
+	skipUnlessSwarmIsEnabled(t)
+
 	server := test.CreateHttpServer("/test", func(writer http.ResponseWriter, request *http.Request) {
 		writer.Write([]byte("success"))
 	})

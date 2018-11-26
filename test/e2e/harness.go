@@ -144,3 +144,15 @@ func waitForBlock(t *testing.T, getMetrics func() (map[string]interface{}, error
 		return blockHeight >= targetBlockHeight
 	}))
 }
+
+func skipUnlessDockerIsEnabled(t *testing.T) {
+	if os.Getenv("ENABLE_DOCKER") != "true" {
+		t.Skip("skipping test, docker is disabled")
+	}
+}
+
+func skipUnlessSwarmIsEnabled(t *testing.T) {
+	if os.Getenv("ENABLE_SWARM") != "true" {
+		t.Skip("skipping test, docker swarm is disabled")
+	}
+}

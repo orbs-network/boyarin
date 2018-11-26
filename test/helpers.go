@@ -56,6 +56,7 @@ type HttpServer interface {
 	Start()
 	Shutdown()
 	Url() string
+	Port() int
 }
 
 type httpServer struct {
@@ -76,8 +77,12 @@ func (h *httpServer) Url() string {
 	return fmt.Sprintf("http://127.0.0.1:%d%s", h.listener.Addr().(*net.TCPAddr).Port, h.path)
 }
 
+func (h *httpServer) Port() int {
+	return h.listener.Addr().(*net.TCPAddr).Port
+}
+
 func CreateHttpServer(path string, f func(writer http.ResponseWriter, request *http.Request)) HttpServer {
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	listener, err := net.Listen("tcp", "0.0.0.0:0")
 	if err != nil {
 		panic(err)
 	}

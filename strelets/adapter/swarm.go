@@ -54,3 +54,8 @@ func (d *dockerSwarm) RemoveContainer(ctx context.Context, containerName string)
 func getServiceId(input string) string {
 	return "stack-" + input
 }
+
+func (d *dockerSwarm) UpdateReverseProxy(ctx context.Context, config string) error {
+	panic("not implemented")
+	return nil
+}

@@ -35,18 +35,22 @@ func newHarness(t *testing.T, docker adapter.Orchestrator) *harness {
 	}
 }
 
+func chain(i int) *strelets.VirtualChain {
+	return &strelets.VirtualChain{
+		Id:           42,
+		HttpPort:     8080 + i,
+		GossipPort:   4400 + i,
+		DockerConfig: DockerConfig(fmt.Sprintf("node%d", i)),
+	}
+}
+
 func (h *harness) startChain(t *testing.T) {
 	localIP := test.LocalIP()
 	ctx := context.Background()
 
 	for i := 1; i <= 3; i++ {
 		err := h.s.ProvisionVirtualChain(ctx, &strelets.ProvisionVirtualChainInput{
-			VirtualChain: &strelets.VirtualChain{
-				Id:           42,
-				HttpPort:     8080 + i,
-				GossipPort:   4400 + i,
-				DockerConfig: DockerConfig(fmt.Sprintf("node%d", i)),
-			},
+			VirtualChain:      chain(i),
 			Peers:             Peers(localIP),
 			KeyPairConfigPath: fmt.Sprintf("%s/node%d/keys.json", h.configPath, i),
 		})

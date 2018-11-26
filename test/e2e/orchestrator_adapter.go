@@ -49,3 +49,8 @@ func (r *MockRunner) Run(ctx context.Context) error {
 	r.mock.MethodCalled("Run", ctx)
 	return nil
 }
+
+func (d *MockOrchestratorAdapter) UpdateReverseProxy(ctx context.Context, config string) error {
+	panic("not implemented")
+	return nil
+}

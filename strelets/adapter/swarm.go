@@ -22,6 +22,11 @@ type dockerSwarmRunner struct {
 	spec   swarm.ServiceSpec
 }
 
+type dockerSwarmNginxSecretsConfig struct {
+	nginxConfId  string
+	vchainConfId string
+}
+
 func NewDockerSwarm() (Orchestrator, error) {
 	client, err := client.NewClientWithOpts(client.WithVersion(DOCKER_API_VERSION))
 
@@ -56,6 +61,36 @@ func getServiceId(input string) string {
 }
 
 func (d *dockerSwarm) PrepareReverseProxy(ctx context.Context, config string) (Runner, error) {
-	panic("not implemented")
-	return nil, nil
+	storedSecrets, err := d.storeNginxConfiguration(ctx, config)
+	if err != nil {
+		return nil, err
+	}
+
+	secrets := []*swarm.SecretReference{
+		{
+			SecretName: getSwarmSecretName("http-api-reverse-proxy", "nginx.conf"),
+			SecretID:   storedSecrets.nginxConfId,
+			File: &swarm.SecretReferenceFileTarget{
+				Name: "nginx.conf",
+				UID:  "0",
+				GID:  "0",
+			},
+		},
+		{
+			SecretName: getSwarmSecretName("http-api-reverse-proxy", "vchains.conf"),
+			SecretID:   storedSecrets.vchainConfId,
+			File: &swarm.SecretReferenceFileTarget{
+				Name: "vchains.conf",
+				UID:  "0",
+				GID:  "0",
+			},
+		},
+	}
+
+	spec := getNginxServiceSpec(secrets)
+
+	return &dockerSwarmRunner{
+		client: d.client,
+		spec:   spec,
+	}, nil
 }

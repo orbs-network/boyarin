@@ -7,7 +7,7 @@ import (
 )
 
 func (d *dockerSwarm) Prepare(ctx context.Context, imageName string, containerName string, httpPort int, gossipPort int, appConfig *AppConfig) (Runner, error) {
-	config, err := d.storeConfiguration(ctx, containerName, appConfig)
+	config, err := d.storeVirtualChainConfiguration(ctx, containerName, appConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -17,7 +17,7 @@ func (d *dockerSwarm) Prepare(ctx context.Context, imageName string, containerNa
 		getSecretReference(containerName, config.networkSecretId, "network", "network.json"),
 	}
 
-	spec := getServiceSpec(imageName, containerName, httpPort, gossipPort, secrets)
+	spec := getVirtualChainServiceSpec(imageName, containerName, httpPort, gossipPort, secrets)
 
 	return &dockerSwarmRunner{
 		client: d.client,
@@ -83,7 +83,7 @@ func getEndpointsSpec(httpPort int, gossipPort int) *swarm.EndpointSpec {
 	}
 }
 
-func getServiceSpec(imageName string, containerName string, httpPort int, gossipPort int, secrets []*swarm.SecretReference) swarm.ServiceSpec {
+func getVirtualChainServiceSpec(imageName string, containerName string, httpPort int, gossipPort int, secrets []*swarm.SecretReference) swarm.ServiceSpec {
 	restartDelay := time.Duration(10 * time.Second)
 	replicas := uint64(1)
 
@@ -98,6 +98,40 @@ func getServiceSpec(imageName string, containerName string, httpPort int, gossip
 		EndpointSpec: getEndpointsSpec(httpPort, gossipPort),
 	}
 	spec.Name = getServiceId(containerName)
+
+	return spec
+}
+
+func getNginxServiceSpec(secrets []*swarm.SecretReference) swarm.ServiceSpec {
+	restartDelay := time.Duration(10 * time.Second)
+	replicas := uint64(1)
+
+	spec := swarm.ServiceSpec{
+		TaskTemplate: swarm.TaskSpec{
+			ContainerSpec: &swarm.ContainerSpec{
+				Image:   "nginx:latest",
+				Secrets: secrets,
+				Command: []string{
+					"nginx", "-c", "/var/run/secrets/nginx.conf",
+				},
+			},
+			RestartPolicy: &swarm.RestartPolicy{
+				Delay: &restartDelay,
+			},
+		},
+		Mode: getServiceMode(replicas),
+		EndpointSpec: &swarm.EndpointSpec{
+			Ports: []swarm.PortConfig{
+				{
+					Protocol:      "tcp",
+					PublishMode:   swarm.PortConfigPublishModeIngress,
+					PublishedPort: uint32(80),
+					TargetPort:    80,
+				},
+			},
+		},
+	}
+	spec.Name = getServiceId("http-api-reverse-proxy")
 
 	return spec
 }

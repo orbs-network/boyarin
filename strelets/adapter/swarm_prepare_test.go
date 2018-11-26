@@ -16,7 +16,7 @@ func Test_getServiceSpec(t *testing.T) {
 	restartDelay := time.Duration(10 * time.Second)
 	replicas := uint64(1)
 
-	spec := getServiceSpec("orbs:export", containerName, 16160, 8800, secrets)
+	spec := getVirtualChainServiceSpec("orbs:export", containerName, 16160, 8800, secrets)
 
 	require.EqualValues(t, spec.Name, "stack-"+containerName)
 

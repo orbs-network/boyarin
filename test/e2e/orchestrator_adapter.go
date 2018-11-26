@@ -50,7 +50,7 @@ func (r *MockRunner) Run(ctx context.Context) error {
 	return nil
 }
 
-func (d *MockOrchestratorAdapter) UpdateReverseProxy(ctx context.Context, config string) error {
+func (d *MockOrchestratorAdapter) PrepareReverseProxy(ctx context.Context, config string) (adapter.Runner, error) {
 	panic("not implemented")
-	return nil
+	return nil, nil
 }

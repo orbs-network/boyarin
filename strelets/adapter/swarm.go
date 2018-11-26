@@ -55,7 +55,7 @@ func getServiceId(input string) string {
 	return "stack-" + input
 }
 
-func (d *dockerSwarm) UpdateReverseProxy(ctx context.Context, config string) error {
+func (d *dockerSwarm) PrepareReverseProxy(ctx context.Context, config string) (Runner, error) {
 	panic("not implemented")
-	return nil
+	return nil, nil
 }

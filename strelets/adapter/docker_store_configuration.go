@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 )
 
@@ -48,4 +49,14 @@ func getVirtualChainDockerContainerVolumes(containerName string, root string) *v
 		keyPairConfigFile: filepath.Join(absolutePathToConfigDir, "keys.json"),
 		networkConfigFile: filepath.Join(absolutePathToConfigDir, "network.json"),
 	}
+}
+
+func storeNginxConfiguration(nginxConfigDir string, config string) error {
+	os.MkdirAll(nginxConfigDir, 0755)
+
+	if err := ioutil.WriteFile(path.Join(nginxConfigDir, "nginx.conf"), []byte(config), 0644); err != nil {
+		return fmt.Errorf("could not save nginx configuration: %s", err)
+	}
+
+	return nil
 }

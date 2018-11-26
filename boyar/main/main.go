@@ -43,4 +43,8 @@ func main() {
 	if err := b.ProvisionVirtualChains(context.Background()); err != nil {
 		panic(err)
 	}
+
+	if err := b.ProvisionHttpAPIEndpoint(context.Background()); err != nil {
+		panic(err)
+	}
 }

@@ -3,23 +3,18 @@ package adapter
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
-	"os"
 	"path"
 )
 
-func (d *dockerAPI) UpdateReverseProxy(ctx context.Context, config string) error {
+func (d *dockerAPI) PrepareReverseProxy(ctx context.Context, config string) (Runner, error) {
 	image := "nginx:latest"
 	if err := d.PullImage(ctx, image); err != nil {
-		return fmt.Errorf("could not pull latest nginx image: %s", err)
+		return nil, fmt.Errorf("could not pull latest nginx image: %s", err)
 	}
 
 	nginxConfigDir := path.Join(d.root, "reverse-proxy")
-
-	os.MkdirAll(nginxConfigDir, 0755)
-
-	if err := ioutil.WriteFile(path.Join(nginxConfigDir, "nginx.conf"), []byte(config), 0644); err != nil {
-		return fmt.Errorf("could not save nginx configuration: %s", err)
+	if err := storeNginxConfiguration(nginxConfigDir, config); err != nil {
+		return nil, err
 	}
 
 	configMap := make(map[string]interface{})
@@ -41,11 +36,9 @@ func (d *dockerAPI) UpdateReverseProxy(ctx context.Context, config string) error
 
 	configMap["HostConfig"] = hostConfigMap
 
-	runner := &dockerRunner{
+	return &dockerRunner{
 		client:        d.client,
 		config:        configMap,
 		containerName: "http-api-reverse-proxy",
-	}
-
-	return runner.Run(ctx)
+	}, nil
 }

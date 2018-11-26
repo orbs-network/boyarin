@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"path/filepath"
 )
 
 func (d *dockerAPI) UpdateReverseProxy(ctx context.Context, config string) error {
@@ -15,15 +14,12 @@ func (d *dockerAPI) UpdateReverseProxy(ctx context.Context, config string) error
 		return fmt.Errorf("could not pull latest nginx image: %s", err)
 	}
 
-	nginxConfigDir, err := filepath.Abs("_tmp/reverse-proxy")
-	if err != nil {
-		panic(err)
-	}
+	nginxConfigDir := path.Join(d.root, "reverse-proxy")
 
 	os.MkdirAll(nginxConfigDir, 0755)
 
 	if err := ioutil.WriteFile(path.Join(nginxConfigDir, "nginx.conf"), []byte(config), 0644); err != nil {
-		return fmt.Errorf("could not save nginx configuration", err)
+		return fmt.Errorf("could not save nginx configuration: %s", err)
 	}
 
 	configMap := make(map[string]interface{})

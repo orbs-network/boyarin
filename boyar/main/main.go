@@ -21,7 +21,7 @@ func main() {
 
 	switch *orchestratorPtr {
 	case "docker":
-		orchestrator, err = adapter.NewDockerAPI()
+		orchestrator, err = adapter.NewDockerAPI("_tmp")
 	case "swarm":
 		orchestrator, err = adapter.NewDockerSwarm()
 	default:

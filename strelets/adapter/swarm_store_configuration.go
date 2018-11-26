@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func (d *dockerSwarm) storeConfiguration(ctx context.Context, containerName string, root string, config *AppConfig) (*dockerSwarmSecretsConfig, error) {
+func (d *dockerSwarm) storeConfiguration(ctx context.Context, containerName string, config *AppConfig) (*dockerSwarmSecretsConfig, error) {
 	secrets := &dockerSwarmSecretsConfig{}
 
 	if keyPairSecretId, err := d.saveSwarmSecret(ctx, containerName, "keyPair", config.KeyPair); err != nil {

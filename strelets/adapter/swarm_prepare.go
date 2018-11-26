@@ -6,8 +6,8 @@ import (
 	"time"
 )
 
-func (d *dockerSwarm) Prepare(ctx context.Context, imageName string, containerName string, root string, httpPort int, gossipPort int, appConfig *AppConfig) (Runner, error) {
-	config, err := d.storeConfiguration(ctx, containerName, root, appConfig)
+func (d *dockerSwarm) Prepare(ctx context.Context, imageName string, containerName string, httpPort int, gossipPort int, appConfig *AppConfig) (Runner, error) {
+	config, err := d.storeConfiguration(ctx, containerName, appConfig)
 	if err != nil {
 		return nil, err
 	}

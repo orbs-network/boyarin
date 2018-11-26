@@ -36,7 +36,7 @@ func (s *strelets) ProvisionVirtualChain(ctx context.Context, input *ProvisionVi
 		return fmt.Errorf("could not read key pair config: %s at %s", err, input.KeyPairConfigPath)
 	}
 
-	if runner, err := s.orchestrator.Prepare(ctx, imageName, chain.getContainerName(), s.root, chain.HttpPort, chain.GossipPort, &adapter.AppConfig{
+	if runner, err := s.orchestrator.Prepare(ctx, imageName, chain.getContainerName(), chain.HttpPort, chain.GossipPort, &adapter.AppConfig{
 		KeyPair: keyPair,
 		Network: getNetworkConfigJSON(input.Peers),
 	}); err != nil {

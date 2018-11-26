@@ -20,7 +20,7 @@ func TestStrelets_UpdateReverseProxy(t *testing.T) {
 	server.Start()
 	defer server.Shutdown()
 
-	api, err := adapter.NewDockerAPI()
+	api, err := adapter.NewDockerAPI("_tmp")
 	require.NoError(t, err)
 
 	s := strelets.NewStrelets("_tmp", api)

@@ -7,7 +7,7 @@ import (
 )
 
 func Test_getDockerVolumes(t *testing.T) {
-	volumes := getDockerContainerVolumes("node1-chain-42", "/tmp")
+	volumes := getVirtualChainDockerContainerVolumes("node1-chain-42", "/tmp")
 
 	require.NotNil(t, volumes)
 	require.EqualValues(t, "/tmp/node1-chain-42/config", volumes.configRootDir)

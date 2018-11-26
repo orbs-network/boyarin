@@ -8,6 +8,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/runconfig"
+	"path/filepath"
 )
 
 type dockerRunner struct {
@@ -17,14 +18,22 @@ type dockerRunner struct {
 	config        map[string]interface{}
 }
 
-func NewDockerAPI() (Orchestrator, error) {
+func NewDockerAPI(root string) (Orchestrator, error) {
 	client, err := client.NewClientWithOpts(client.WithVersion(DOCKER_API_VERSION))
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &dockerAPI{client: client}, nil
+	absoluteRoot, err := filepath.Abs(root)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dockerAPI{
+		client: client,
+		root:   absoluteRoot,
+	}, nil
 }
 
 func (d *dockerAPI) PullImage(ctx context.Context, imageName string) error {

@@ -36,7 +36,7 @@ func TestE2EWithDocker(t *testing.T) {
 		t.Skip("skipping test, docker is disabled")
 	}
 
-	realDocker, err := adapter.NewDockerAPI()
+	realDocker, err := adapter.NewDockerAPI("_tmp")
 	require.NoError(t, err)
 	h := newHarness(t, realDocker)
 
@@ -51,7 +51,7 @@ func TestE2EWithDockerAndBoyar(t *testing.T) {
 		t.Skip("skipping test, docker is disabled")
 	}
 
-	realDocker, err := adapter.NewDockerAPI()
+	realDocker, err := adapter.NewDockerAPI("_tmp")
 	require.NoError(t, err)
 	h := newHarness(t, realDocker)
 

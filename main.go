@@ -26,7 +26,7 @@ func main() {
 	}
 
 	ctx := context.Background()
-	docker, err := adapter.NewDockerAPI()
+	docker, err := adapter.NewDockerAPI(root)
 	if err != nil {
 		panic(err)
 	}

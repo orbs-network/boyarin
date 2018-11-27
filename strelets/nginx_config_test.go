@@ -13,5 +13,5 @@ func Test_getNginxConfig(t *testing.T) {
 		},
 	}
 
-	require.EqualValues(t, `server { listen 80; location /42/ { proxy_pass http://192.168.0.1:8081/; } }`, getNginxConfig(chains, "192.168.0.1"))
+	require.EqualValues(t, `server { listen 80; location /vchains/42/ { proxy_pass http://192.168.0.1:8081/; } }`, getNginxConfig(chains, "192.168.0.1"))
 }

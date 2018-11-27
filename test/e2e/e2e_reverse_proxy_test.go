@@ -35,7 +35,7 @@ func testUpdateReverseProxy(t *testing.T, apiProvider func() (adapter.Orchestrat
 	defer api.RemoveContainer(context.Background(), "http-api-reverse-proxy")
 
 	require.True(t, test.Eventually(20*time.Second, func() bool {
-		url := fmt.Sprintf("http://%s/%d/test", ip, chain.Id)
+		url := fmt.Sprintf("http://%s/vchains/%d/test", ip, chain.Id)
 		fmt.Println(url)
 		res, err := http.Get(url)
 		if err != nil {

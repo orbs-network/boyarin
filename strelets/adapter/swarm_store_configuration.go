@@ -45,13 +45,13 @@ func getSwarmSecretName(containerName string, secretName string) string {
 func (d *dockerSwarm) storeNginxConfiguration(ctx context.Context, config string) (*dockerSwarmNginxSecretsConfig, error) {
 	secrets := &dockerSwarmNginxSecretsConfig{}
 
-	if nginxConfId, err := d.saveSwarmSecret(ctx, "http-api-reverse-proxy", "nginx.conf", []byte(DEFAULT_NGINX_CONFIG)); err != nil {
+	if nginxConfId, err := d.saveSwarmSecret(ctx, PROXY_CONTAINER_NAME, "nginx.conf", []byte(DEFAULT_NGINX_CONFIG)); err != nil {
 		return nil, fmt.Errorf("could not store nginx default config secret: %s", err)
 	} else {
 		secrets.nginxConfId = nginxConfId
 	}
 
-	if vchainConfId, err := d.saveSwarmSecret(ctx, "http-api-reverse-proxy", "vchains.conf", []byte(config)); err != nil {
+	if vchainConfId, err := d.saveSwarmSecret(ctx, PROXY_CONTAINER_NAME, "vchains.conf", []byte(config)); err != nil {
 		return nil, fmt.Errorf("could not store nginx vchains config secret: %s", err)
 	} else {
 		secrets.vchainConfId = vchainConfId

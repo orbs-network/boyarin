@@ -7,6 +7,8 @@ import (
 
 const DOCKER_API_VERSION = "1.38"
 
+const PROXY_CONTAINER_NAME = "http-api-reverse-proxy"
+
 type dockerAPI struct {
 	client *client.Client
 	root   string

@@ -39,6 +39,6 @@ func (d *dockerAPI) PrepareReverseProxy(ctx context.Context, config string) (Run
 	return &dockerRunner{
 		client:        d.client,
 		config:        configMap,
-		containerName: "http-api-reverse-proxy",
+		containerName: PROXY_CONTAINER_NAME,
 	}, nil
 }

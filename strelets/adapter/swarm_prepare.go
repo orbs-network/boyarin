@@ -131,7 +131,7 @@ func getNginxServiceSpec(secrets []*swarm.SecretReference) swarm.ServiceSpec {
 			},
 		},
 	}
-	spec.Name = getServiceId("http-api-reverse-proxy")
+	spec.Name = getServiceId(PROXY_CONTAINER_NAME)
 
 	return spec
 }

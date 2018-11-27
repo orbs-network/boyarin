@@ -68,7 +68,7 @@ func (d *dockerSwarm) PrepareReverseProxy(ctx context.Context, config string) (R
 
 	secrets := []*swarm.SecretReference{
 		{
-			SecretName: getSwarmSecretName("http-api-reverse-proxy", "nginx.conf"),
+			SecretName: getSwarmSecretName(PROXY_CONTAINER_NAME, "nginx.conf"),
 			SecretID:   storedSecrets.nginxConfId,
 			File: &swarm.SecretReferenceFileTarget{
 				Name: "nginx.conf",
@@ -77,7 +77,7 @@ func (d *dockerSwarm) PrepareReverseProxy(ctx context.Context, config string) (R
 			},
 		},
 		{
-			SecretName: getSwarmSecretName("http-api-reverse-proxy", "vchains.conf"),
+			SecretName: getSwarmSecretName(PROXY_CONTAINER_NAME, "vchains.conf"),
 			SecretID:   storedSecrets.vchainConfId,
 			File: &swarm.SecretReferenceFileTarget{
 				Name: "vchains.conf",

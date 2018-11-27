@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 )
 
-func storeConfiguration(containerName string, containerRoot string, config *AppConfig) error {
-	vchainVolumes := getDockerContainerVolumes(containerName, containerRoot)
+func storeVirtualChainConfiguration(containerName string, containerRoot string, config *AppConfig) error {
+	vchainVolumes := getVirtualChainDockerContainerVolumes(containerName, containerRoot)
 	vchainVolumes.createDirs()
 
 	if err := ioutil.WriteFile(vchainVolumes.keyPairConfigFile, config.KeyPair, 0644); err != nil {
@@ -39,17 +40,23 @@ func createDir(path string) error {
 	return os.MkdirAll(path, 0755)
 }
 
-func getDockerContainerVolumes(containerName string, root string) *virtualChainVolumes {
+func getVirtualChainDockerContainerVolumes(containerName string, root string) *virtualChainVolumes {
 	absolutePathToConfigDir := filepath.Join(root, containerName, "config")
-	absolutePathToLogDir, _ := filepath.Abs(filepath.Join(root, containerName, "logs"))
-
-	absolutePathToNetworkConfig, _ := filepath.Abs(filepath.Join(absolutePathToConfigDir, "network.json"))
-	absolutePathToKeyPairConfig, _ := filepath.Abs(filepath.Join(absolutePathToConfigDir, "keys.json"))
 
 	return &virtualChainVolumes{
 		configRootDir:     absolutePathToConfigDir,
-		logsDir:           absolutePathToLogDir,
-		keyPairConfigFile: absolutePathToKeyPairConfig,
-		networkConfigFile: absolutePathToNetworkConfig,
+		logsDir:           filepath.Join(root, containerName, "logs"),
+		keyPairConfigFile: filepath.Join(absolutePathToConfigDir, "keys.json"),
+		networkConfigFile: filepath.Join(absolutePathToConfigDir, "network.json"),
 	}
+}
+
+func storeNginxConfiguration(nginxConfigDir string, config string) error {
+	os.MkdirAll(nginxConfigDir, 0755)
+
+	if err := ioutil.WriteFile(path.Join(nginxConfigDir, "nginx.conf"), []byte(config), 0644); err != nil {
+		return fmt.Errorf("could not save nginx configuration: %s", err)
+	}
+
+	return nil
 }

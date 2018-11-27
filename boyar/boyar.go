@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/orbs-network/boyarin/config"
 	"github.com/orbs-network/boyarin/strelets"
+	"github.com/orbs-network/boyarin/test"
 )
 
 type nodeConfiguration struct {
@@ -19,6 +20,7 @@ type NodeConfiguration interface {
 
 type Boyar interface {
 	ProvisionVirtualChains(ctx context.Context) error
+	ProvisionHttpAPIEndpoint(ctx context.Context) error
 }
 
 type boyar struct {
@@ -49,4 +51,9 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
+	// TODO is there a better way to get a loopback interface?
+	return b.strelets.UpdateReverseProxy(ctx, b.config.Chains(), test.LocalIP())
 }

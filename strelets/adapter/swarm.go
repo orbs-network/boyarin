@@ -22,6 +22,11 @@ type dockerSwarmRunner struct {
 	spec   swarm.ServiceSpec
 }
 
+type dockerSwarmNginxSecretsConfig struct {
+	nginxConfId  string
+	vchainConfId string
+}
+
 func NewDockerSwarm() (Orchestrator, error) {
 	client, err := client.NewClientWithOpts(client.WithVersion(DOCKER_API_VERSION))
 

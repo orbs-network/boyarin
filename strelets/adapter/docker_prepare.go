@@ -5,13 +5,13 @@ import (
 	"strconv"
 )
 
-func (d *dockerAPI) Prepare(ctx context.Context, imageName string, containerName string, root string, httpPort int, gossipPort int, appConfig *AppConfig) (Runner, error) {
-	if err := storeConfiguration(containerName, root, appConfig); err != nil {
+func (d *dockerAPI) Prepare(ctx context.Context, imageName string, containerName string, httpPort int, gossipPort int, appConfig *AppConfig) (Runner, error) {
+	if err := storeVirtualChainConfiguration(containerName, d.root, appConfig); err != nil {
 		return nil, err
 	}
 
 	exposedPorts, portBindings := buildDockerNetworkOptions(httpPort, gossipPort)
-	config := buildDockerConfig(imageName, exposedPorts, portBindings, getDockerContainerVolumes(containerName, root))
+	config := getVirtualChainContainerConfig(imageName, exposedPorts, portBindings, getVirtualChainDockerContainerVolumes(containerName, d.root))
 
 	return &dockerRunner{
 		client:        d.client,
@@ -32,7 +32,7 @@ func buildDockerNetworkOptions(httpPort int, gossipPort int) (exposedPorts map[s
 	return
 }
 
-func buildDockerConfig(
+func getVirtualChainContainerConfig(
 	imageName string,
 	exposedPorts map[string]interface{},
 	portBindings map[string][]dockerPortBinding,

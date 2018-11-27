@@ -10,7 +10,6 @@ import (
 	"github.com/orbs-network/boyarin/test"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"os"
 	"testing"
 	"time"
 )
@@ -32,11 +31,9 @@ func TestE2E(t *testing.T) {
 }
 
 func TestE2EWithDocker(t *testing.T) {
-	if os.Getenv("ENABLE_DOCKER") != "true" {
-		t.Skip("skipping test, docker is disabled")
-	}
+	skipUnlessDockerIsEnabled(t)
 
-	realDocker, err := adapter.NewDockerAPI()
+	realDocker, err := adapter.NewDockerAPI("_tmp")
 	require.NoError(t, err)
 	h := newHarness(t, realDocker)
 
@@ -47,11 +44,9 @@ func TestE2EWithDocker(t *testing.T) {
 }
 
 func TestE2EWithDockerAndBoyar(t *testing.T) {
-	if os.Getenv("ENABLE_DOCKER") != "true" {
-		t.Skip("skipping test, docker is disabled")
-	}
+	skipUnlessDockerIsEnabled(t)
 
-	realDocker, err := adapter.NewDockerAPI()
+	realDocker, err := adapter.NewDockerAPI("_tmp")
 	require.NoError(t, err)
 	h := newHarness(t, realDocker)
 
@@ -102,9 +97,7 @@ func TestE2EWithDockerAndBoyar(t *testing.T) {
 }
 
 func TestE2EWithDockerSwarm(t *testing.T) {
-	if os.Getenv("ENABLE_SWARM") != "true" {
-		t.Skip("skipping test, docker swarm is disabled")
-	}
+	skipUnlessSwarmIsEnabled(t)
 
 	realDocker, err := adapter.NewDockerSwarm()
 	require.NoError(t, err)

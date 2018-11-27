@@ -21,7 +21,7 @@ func main() {
 
 	switch *orchestratorPtr {
 	case "docker":
-		orchestrator, err = adapter.NewDockerAPI()
+		orchestrator, err = adapter.NewDockerAPI("_tmp")
 	case "swarm":
 		orchestrator, err = adapter.NewDockerSwarm()
 	default:
@@ -41,6 +41,10 @@ func main() {
 	b := boyar.NewBoyar(s, config, *keyPairConfigPathPtr)
 
 	if err := b.ProvisionVirtualChains(context.Background()); err != nil {
+		panic(err)
+	}
+
+	if err := b.ProvisionHttpAPIEndpoint(context.Background()); err != nil {
 		panic(err)
 	}
 }

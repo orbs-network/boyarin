@@ -8,6 +8,7 @@ import (
 type Strelets interface {
 	ProvisionVirtualChain(ctx context.Context, input *ProvisionVirtualChainInput) error
 	RemoveVirtualChain(ctx context.Context, input *RemoveVirtualChainInput) error
+	UpdateReverseProxy(ctx context.Context, chains []*VirtualChain, ip string) error
 }
 
 type strelets struct {

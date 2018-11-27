@@ -24,3 +24,8 @@ func (s *streletsMock) RemoveVirtualChain(ctx context.Context, input *strelets.R
 func (s *streletsMock) VerifyMocks(t *testing.T) {
 	s.mock.AssertExpectations(t)
 }
+
+func (s *streletsMock) UpdateReverseProxy(ctx context.Context, chains []*strelets.VirtualChain, ip string) error {
+	s.mock.MethodCalled("UpdateReverseProxy", chains, ip)
+	return nil
+}

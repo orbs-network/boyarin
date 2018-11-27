@@ -30,7 +30,7 @@ func (d *MockOrchestratorAdapter) PullImage(ctx context.Context, imageName strin
 	return nil
 }
 
-func (d *MockOrchestratorAdapter) Prepare(ctx context.Context, imageName string, containerName string, root string, httpPort int, gossipPort int, config *adapter.AppConfig) (adapter.Runner, error) {
+func (d *MockOrchestratorAdapter) Prepare(ctx context.Context, imageName string, containerName string, httpPort int, gossipPort int, config *adapter.AppConfig) (adapter.Runner, error) {
 	d.mock.MethodCalled("Prepare", ctx, containerName, config)
 	return d.runner, nil
 }
@@ -48,4 +48,9 @@ func (d *MockOrchestratorAdapter) VerifyMocks(t *testing.T) {
 func (r *MockRunner) Run(ctx context.Context) error {
 	r.mock.MethodCalled("Run", ctx)
 	return nil
+}
+
+func (d *MockOrchestratorAdapter) PrepareReverseProxy(ctx context.Context, config string) (adapter.Runner, error) {
+	panic("not implemented")
+	return nil, nil
 }

@@ -6,8 +6,8 @@ import (
 	"time"
 )
 
-func (d *dockerSwarm) Prepare(ctx context.Context, imageName string, containerName string, root string, httpPort int, gossipPort int, appConfig *AppConfig) (Runner, error) {
-	config, err := d.storeConfiguration(ctx, containerName, root, appConfig)
+func (d *dockerSwarm) Prepare(ctx context.Context, imageName string, containerName string, httpPort int, gossipPort int, appConfig *AppConfig) (Runner, error) {
+	config, err := d.storeVirtualChainConfiguration(ctx, containerName, appConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -17,7 +17,7 @@ func (d *dockerSwarm) Prepare(ctx context.Context, imageName string, containerNa
 		getSecretReference(containerName, config.networkSecretId, "network", "network.json"),
 	}
 
-	spec := getServiceSpec(imageName, containerName, httpPort, gossipPort, secrets)
+	spec := getVirtualChainServiceSpec(imageName, containerName, httpPort, gossipPort, secrets)
 
 	return &dockerSwarmRunner{
 		client: d.client,
@@ -83,7 +83,7 @@ func getEndpointsSpec(httpPort int, gossipPort int) *swarm.EndpointSpec {
 	}
 }
 
-func getServiceSpec(imageName string, containerName string, httpPort int, gossipPort int, secrets []*swarm.SecretReference) swarm.ServiceSpec {
+func getVirtualChainServiceSpec(imageName string, containerName string, httpPort int, gossipPort int, secrets []*swarm.SecretReference) swarm.ServiceSpec {
 	restartDelay := time.Duration(10 * time.Second)
 	replicas := uint64(1)
 

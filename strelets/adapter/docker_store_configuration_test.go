@@ -13,13 +13,13 @@ func TestDockerAPI_StoreConfiguration(t *testing.T) {
 
 	require.NoError(t, err)
 
-	err = storeConfiguration("fake-container-name", dir, &AppConfig{
+	err = storeVirtualChainConfiguration("fake-container-name", dir, &AppConfig{
 		KeyPair: []byte("some-keys"),
 		Network: []byte("some-network-config"),
 	})
 	require.NoError(t, err)
 
-	volumes := getDockerContainerVolumes("fake-container-name", dir)
+	volumes := getVirtualChainDockerContainerVolumes("fake-container-name", dir)
 
 	require.DirExists(t, volumes.configRootDir)
 	require.DirExists(t, volumes.logsDir)

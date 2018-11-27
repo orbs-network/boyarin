@@ -16,7 +16,7 @@ func Test_getDockerVolumes(t *testing.T) {
 	require.EqualValues(t, "/tmp/node1-chain-42/config/network.json", volumes.networkConfigFile)
 }
 
-const expectedDockerConfig = `{
+const expectedVirtualChainContainerConfig = `{
    "CMD":[
       "/opt/orbs/orbs-node",
       "--silent",
@@ -50,7 +50,7 @@ const expectedDockerConfig = `{
    "Image":"orbs:export"
 }`
 
-func Test_buildDockerConfig(t *testing.T) {
+func Test_getVirtualChainContainerConfig(t *testing.T) {
 	exposedPorts := make(map[string]interface{})
 	exposedPorts["8080/tcp"] = struct{}{}
 
@@ -64,8 +64,8 @@ func Test_buildDockerConfig(t *testing.T) {
 		logsDir:           "/tmp/root/v1/logs",
 	}
 
-	cfg := buildDockerConfig("orbs:export", exposedPorts, portBindings, volumes)
+	cfg := getVirtualChainContainerConfig("orbs:export", exposedPorts, portBindings, volumes)
 	jsonConfig, _ := json.Marshal(cfg)
 
-	require.JSONEq(t, expectedDockerConfig, string(jsonConfig), "expected config does not match generated config")
+	require.JSONEq(t, expectedVirtualChainContainerConfig, string(jsonConfig), "expected config does not match generated config")
 }

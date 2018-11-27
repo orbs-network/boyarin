@@ -42,13 +42,13 @@ func Test_getServiceSpec(t *testing.T) {
 			{
 				Protocol:      "tcp",
 				PublishMode:   swarm.PortConfigPublishModeIngress,
-				PublishedPort: uint32(16160),
+				PublishedPort: 16160,
 				TargetPort:    8080,
 			},
 			{
 				Protocol:      "tcp",
 				PublishMode:   swarm.PortConfigPublishModeIngress,
-				PublishedPort: uint32(8800),
+				PublishedPort: 8800,
 				TargetPort:    4400,
 			},
 		},

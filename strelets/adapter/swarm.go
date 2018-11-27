@@ -59,38 +59,3 @@ func (d *dockerSwarm) RemoveContainer(ctx context.Context, containerName string)
 func getServiceId(input string) string {
 	return "stack-" + input
 }
-
-func (d *dockerSwarm) PrepareReverseProxy(ctx context.Context, config string) (Runner, error) {
-	storedSecrets, err := d.storeNginxConfiguration(ctx, config)
-	if err != nil {
-		return nil, err
-	}
-
-	secrets := []*swarm.SecretReference{
-		{
-			SecretName: getSwarmSecretName(PROXY_CONTAINER_NAME, "nginx.conf"),
-			SecretID:   storedSecrets.nginxConfId,
-			File: &swarm.SecretReferenceFileTarget{
-				Name: "nginx.conf",
-				UID:  "0",
-				GID:  "0",
-			},
-		},
-		{
-			SecretName: getSwarmSecretName(PROXY_CONTAINER_NAME, "vchains.conf"),
-			SecretID:   storedSecrets.vchainConfId,
-			File: &swarm.SecretReferenceFileTarget{
-				Name: "vchains.conf",
-				UID:  "0",
-				GID:  "0",
-			},
-		},
-	}
-
-	spec := getNginxServiceSpec(secrets)
-
-	return &dockerSwarmRunner{
-		client: d.client,
-		spec:   spec,
-	}, nil
-}

@@ -101,37 +101,3 @@ func getVirtualChainServiceSpec(imageName string, containerName string, httpPort
 
 	return spec
 }
-
-func getNginxServiceSpec(secrets []*swarm.SecretReference) swarm.ServiceSpec {
-	restartDelay := time.Duration(10 * time.Second)
-	replicas := uint64(1)
-
-	spec := swarm.ServiceSpec{
-		TaskTemplate: swarm.TaskSpec{
-			ContainerSpec: &swarm.ContainerSpec{
-				Image:   "nginx:latest",
-				Secrets: secrets,
-				Command: []string{
-					"nginx", "-c", "/var/run/secrets/nginx.conf",
-				},
-			},
-			RestartPolicy: &swarm.RestartPolicy{
-				Delay: &restartDelay,
-			},
-		},
-		Mode: getServiceMode(replicas),
-		EndpointSpec: &swarm.EndpointSpec{
-			Ports: []swarm.PortConfig{
-				{
-					Protocol:      "tcp",
-					PublishMode:   swarm.PortConfigPublishModeIngress,
-					PublishedPort: uint32(80),
-					TargetPort:    80,
-				},
-			},
-		},
-	}
-	spec.Name = getServiceId(PROXY_CONTAINER_NAME)
-
-	return spec
-}

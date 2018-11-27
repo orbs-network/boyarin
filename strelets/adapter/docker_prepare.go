@@ -11,7 +11,7 @@ func (d *dockerAPI) Prepare(ctx context.Context, imageName string, containerName
 	}
 
 	exposedPorts, portBindings := buildDockerNetworkOptions(httpPort, gossipPort)
-	config := buildDockerConfig(imageName, exposedPorts, portBindings, getVirtualChainDockerContainerVolumes(containerName, d.root))
+	config := getVirtualChainContainerConfig(imageName, exposedPorts, portBindings, getVirtualChainDockerContainerVolumes(containerName, d.root))
 
 	return &dockerRunner{
 		client:        d.client,
@@ -32,7 +32,7 @@ func buildDockerNetworkOptions(httpPort int, gossipPort int) (exposedPorts map[s
 	return
 }
 
-func buildDockerConfig(
+func getVirtualChainContainerConfig(
 	imageName string,
 	exposedPorts map[string]interface{},
 	portBindings map[string][]dockerPortBinding,

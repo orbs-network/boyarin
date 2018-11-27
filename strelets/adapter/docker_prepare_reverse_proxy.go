@@ -17,6 +17,14 @@ func (d *dockerAPI) PrepareReverseProxy(ctx context.Context, config string) (Run
 		return nil, err
 	}
 
+	return &dockerRunner{
+		client:        d.client,
+		config:        getNginxContainerConfig(image, nginxConfigDir),
+		containerName: PROXY_CONTAINER_NAME,
+	}, nil
+}
+
+func getNginxContainerConfig(image string, nginxConfigDir string) map[string]interface{} {
 	configMap := make(map[string]interface{})
 	configMap["Image"] = image
 
@@ -36,9 +44,5 @@ func (d *dockerAPI) PrepareReverseProxy(ctx context.Context, config string) (Run
 
 	configMap["HostConfig"] = hostConfigMap
 
-	return &dockerRunner{
-		client:        d.client,
-		config:        configMap,
-		containerName: PROXY_CONTAINER_NAME,
-	}, nil
+	return configMap
 }

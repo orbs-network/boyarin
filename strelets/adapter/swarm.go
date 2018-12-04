@@ -6,6 +6,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
+	"os"
 )
 
 type dockerSwarm struct {
@@ -42,8 +43,22 @@ func (d *dockerSwarm) PullImage(ctx context.Context, imageName string) error {
 }
 
 func (r *dockerSwarmRunner) Run(ctx context.Context) error {
+	imageName := r.spec.TaskTemplate.ContainerSpec.Image
+
+	var registryAuth string
+	if username, password, err := getAuthForRepository(os.Getenv("HOME"), imageName); err != nil {
+		fmt.Println(err)
+	} else {
+		registryAuth = encodeAuthConfig(&types.AuthConfig{
+			Username:      username,
+			Password:      password,
+			ServerAddress: getRepoName(imageName),
+		})
+	}
+
 	if resp, err := r.client.ServiceCreate(ctx, r.spec, types.ServiceCreateOptions{
-		QueryRegistry: true,
+		QueryRegistry:       true,
+		EncodedRegistryAuth: registryAuth,
 	}); err != nil {
 		return err
 	} else {

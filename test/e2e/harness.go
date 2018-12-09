@@ -106,9 +106,9 @@ func (h *harness) getMetrics() (map[string]interface{}, error) {
 	return h.getMetricsForPort(8081)()
 }
 
-func (h *harness) getMetricsForPort(httpPort int) func() (map[string]interface{}, error) {
+func (h *harness) getMetricsForEndpoint(getEndpoint func() string) func() (map[string]interface{}, error) {
 	return func() (map[string]interface{}, error) {
-		data, err := h.httpGet(h.getMetricsEndpoint(httpPort))
+		data, err := h.httpGet(getEndpoint())
 		if err != nil {
 			return nil, err
 		}
@@ -120,6 +120,18 @@ func (h *harness) getMetricsForPort(httpPort int) func() (map[string]interface{}
 
 		return metrics, nil
 	}
+}
+
+func (h *harness) getMetricsForVchain(port int, vchainId int) func() (map[string]interface{}, error) {
+	return h.getMetricsForEndpoint(func() string {
+		return "http://" + test.LocalIP() + ":" + strconv.Itoa(port) + "/vchains/" + strconv.Itoa(vchainId) + "/metrics"
+	})
+}
+
+func (h *harness) getMetricsForPort(httpPort int) func() (map[string]interface{}, error) {
+	return h.getMetricsForEndpoint(func() string {
+		return h.getMetricsEndpoint(httpPort)
+	})
 }
 
 func DockerConfig(node string) *strelets.DockerImageConfig {

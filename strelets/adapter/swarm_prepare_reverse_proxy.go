@@ -7,14 +7,15 @@ import (
 )
 
 func (d *dockerSwarm) PrepareReverseProxy(ctx context.Context, config string) (Runner, error) {
-	storedSecrets, err := d.storeNginxConfiguration(ctx, config)
-	if err != nil {
-		return nil, err
-	}
-
 	return &dockerSwarmRunner{
 		client: d.client,
-		spec:   getNginxServiceSpec(storedSecrets),
+		spec: func() (swarm.ServiceSpec, error) {
+			storedSecrets, err := d.storeNginxConfiguration(ctx, config)
+			if err != nil {
+				return swarm.ServiceSpec{}, err
+			}
+			return getNginxServiceSpec(storedSecrets), nil
+		},
 	}, nil
 }
 

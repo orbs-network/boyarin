@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
 	"os"
@@ -19,8 +20,10 @@ type dockerSwarmSecretsConfig struct {
 }
 
 type dockerSwarmRunner struct {
-	client *client.Client
-	spec   swarm.ServiceSpec
+	client      *client.Client
+	spec        func() (swarm.ServiceSpec, error)
+	serviceName string
+	imageName   string
 }
 
 type dockerSwarmNginxSecretsConfig struct {
@@ -43,7 +46,7 @@ func (d *dockerSwarm) PullImage(ctx context.Context, imageName string) error {
 }
 
 func (r *dockerSwarmRunner) Run(ctx context.Context) error {
-	imageName := r.spec.TaskTemplate.ContainerSpec.Image
+	imageName := r.imageName
 
 	var registryAuth string
 	if username, password, err := getAuthForRepository(os.Getenv("HOME"), imageName); err != nil {
@@ -56,13 +59,35 @@ func (r *dockerSwarmRunner) Run(ctx context.Context) error {
 		})
 	}
 
-	if resp, err := r.client.ServiceCreate(ctx, r.spec, types.ServiceCreateOptions{
+	if services, err := r.client.ServiceList(ctx, types.ServiceListOptions{
+		Filters: filters.NewArgs(filters.KeyValuePair{
+			"name",
+			r.serviceName,
+		}),
+	}); err != nil {
+		return fmt.Errorf("could not list swarm services: %s", err)
+	} else {
+		for _, service := range services {
+			if err := r.client.ServiceRemove(ctx, service.ID); err != nil {
+				fmt.Println("failed to remove service:", err)
+			} else {
+				fmt.Println("successfully removed service:", service.ID)
+			}
+		}
+	}
+
+	spec, err := r.spec()
+	if err != nil {
+		return err
+	}
+
+	if resp, err := r.client.ServiceCreate(ctx, spec, types.ServiceCreateOptions{
 		QueryRegistry:       true,
 		EncodedRegistryAuth: registryAuth,
 	}); err != nil {
 		return err
 	} else {
-		fmt.Println("Starting Docker Swarm stack:", resp.ID)
+		fmt.Println("Starting Docker Swarm service:", resp.ID)
 		return nil
 	}
 }

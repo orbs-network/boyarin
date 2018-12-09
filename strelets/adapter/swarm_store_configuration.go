@@ -3,6 +3,8 @@ package adapter
 import (
 	"context"
 	"fmt"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
 	"strings"
 )
@@ -27,7 +29,23 @@ func (d *dockerSwarm) storeVirtualChainConfiguration(ctx context.Context, contai
 
 func (d *dockerSwarm) saveSwarmSecret(ctx context.Context, containerName string, secretName string, content []byte) (string, error) {
 	secretId := getSwarmSecretName(containerName, secretName)
-	d.client.SecretRemove(ctx, secretId)
+
+	if secrets, err := d.client.SecretList(ctx, types.SecretListOptions{
+		Filters: filters.NewArgs(filters.KeyValuePair{
+			"name",
+			secretId,
+		}),
+	}); err != nil {
+		return "", fmt.Errorf("could not list swarm secrets: %s", err)
+	} else {
+		for _, secret := range secrets {
+			if err := d.client.SecretRemove(ctx, secret.ID); err != nil {
+				fmt.Println("failed to removed a secret:", err)
+			} else {
+				fmt.Println("successfully removed a secret:", secret.ID)
+			}
+		}
+	}
 
 	secretSpec := swarm.SecretSpec{
 		Data: content,

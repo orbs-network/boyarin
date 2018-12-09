@@ -136,3 +136,30 @@ func TestE2EAddNewVirtualChainWithDockerAndBoyar(t *testing.T) {
 	waitForBlock(t, h.getMetricsForPort(9125), 3, 20*time.Second)
 	waitForBlock(t, h.getMetricsForPort(9175), 0, 20*time.Second)
 }
+
+func TestE2EAddNewVirtualChainWithSwarmAndBoyar(t *testing.T) {
+	skipUnlessSwarmIsEnabled(t)
+
+	swarm, err := adapter.NewDockerSwarm()
+	require.NoError(t, err)
+	h := newHarness(t, swarm)
+
+	s := strelets.NewStrelets("_tmp", swarm)
+
+	for i := 1; i <= 3; i++ {
+		provisionVchains(t, h, s, HTTP_PORT, GOSSIP_PORT, i, 42)
+	}
+	// FIXME boyar should take care of it, not the harness
+	defer h.stopChains(t, 42)
+	//defer swarm.RemoveContainer(context.Background(), "http-api-reverse-proxy")
+
+	waitForBlock(t, h.getMetricsForPort(8125), 3, 60*time.Second)
+
+	for i := 1; i <= 3; i++ {
+		provisionVchains(t, h, s, HTTP_PORT+1000, GOSSIP_PORT+1000, i, 42, 92)
+	}
+	defer h.stopChains(t, 92)
+
+	waitForBlock(t, h.getMetricsForPort(9125), 3, 20*time.Second)
+	waitForBlock(t, h.getMetricsForPort(9175), 0, 20*time.Second)
+}

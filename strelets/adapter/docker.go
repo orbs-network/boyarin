@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/runconfig"
 	"path/filepath"
@@ -50,9 +51,33 @@ func (r *dockerRunner) Run(ctx context.Context) error {
 		return fmt.Errorf("could not parse Docker config: %s", err)
 	}
 
+	containers, err := r.client.ContainerList(ctx, types.ContainerListOptions{
+		All: true,
+		Filters: filters.NewArgs(filters.KeyValuePair{
+			"name",
+			r.containerName,
+		}),
+	})
+
+	if err != nil {
+		return fmt.Errorf("could not get a list of containers: %s", err)
+	}
+
+	if len(containers) > 0 {
+		for _, container := range containers {
+			if err := r.client.ContainerRemove(ctx, container.ID, types.ContainerRemoveOptions{
+				Force: true,
+			}); err != nil {
+				fmt.Println("Failed to remove container:", err)
+			} else {
+				fmt.Println("Removed container:", container.ID)
+			}
+		}
+	}
+
 	resp, err := r.client.ContainerCreate(ctx, config, hostConfig, networkConfig, r.containerName)
 	if err != nil {
-		return fmt.Errorf("could not create container: %s", err)
+		return fmt.Errorf("could not create contaiconner: %s", err)
 	}
 
 	if err := r.client.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {

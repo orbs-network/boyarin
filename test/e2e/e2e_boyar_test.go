@@ -22,7 +22,7 @@ func getBoyarConfig(httpPort int, gossipPort int, nodeIndex int, vchainIds ...in
 		network = append(network, &strelets.FederationNode{
 			Key:  key,
 			IP:   ip,
-			Port: gossipPort + i + 1,
+			Port: gossipPort + vchainIds[0] + i + 1,
 		})
 	}
 
@@ -33,8 +33,8 @@ func getBoyarConfig(httpPort int, gossipPort int, nodeIndex int, vchainIds ...in
 	for _, vchainId := range vchainIds {
 		chain := &strelets.VirtualChain{
 			Id:         strelets.VirtualChainId(vchainId),
-			HttpPort:   httpPort + nodeIndex,
-			GossipPort: gossipPort + nodeIndex,
+			HttpPort:   httpPort + vchainId + nodeIndex,
+			GossipPort: gossipPort + vchainId + nodeIndex,
 			DockerConfig: &strelets.DockerImageConfig{
 				ContainerNamePrefix: fmt.Sprintf("node%d", nodeIndex),
 				Image:               "orbs",
@@ -73,5 +73,30 @@ func TestE2EWithDockerAndBoyar(t *testing.T) {
 	// FIXME boyar should take care of it, not the harness
 	defer h.stopChain(t)
 
-	waitForBlock(t, h.getMetricsForPort(8083), 3, 20*time.Second)
+	waitForBlock(t, h.getMetricsForPort(8125), 3, 20*time.Second)
+}
+
+func TestE2EAddNewVirtualChainWithDockerAndBoyar(t *testing.T) {
+	skipUnlessDockerIsEnabled(t)
+
+	realDocker, err := adapter.NewDockerAPI("_tmp")
+	require.NoError(t, err)
+	h := newHarness(t, realDocker)
+
+	s := strelets.NewStrelets("_tmp", realDocker)
+
+	for i := 1; i <= 3; i++ {
+		boyarConfig := getBoyarConfig(8080, 4400, i, 42, 92)
+		config, err := boyar.NewStringConfigurationSource(string(boyarConfig))
+		require.NoError(t, err)
+
+		b := boyar.NewBoyar(s, config, fmt.Sprintf("%s/node%d/keys.json", h.configPath, i))
+		err = b.ProvisionVirtualChains(context.Background())
+		require.NoError(t, err)
+	}
+	// FIXME boyar should take care of it, not the harness
+	defer h.stopChains(t, 42, 92)
+
+	waitForBlock(t, h.getMetricsForPort(8125), 3, 20*time.Second)
+	waitForBlock(t, h.getMetricsForPort(8175), 0, 20*time.Second)
 }

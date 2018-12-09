@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -60,20 +61,26 @@ func (h *harness) startChain(t *testing.T) {
 }
 
 func (h *harness) stopChain(t *testing.T) {
+	h.stopChains(t, 42)
+}
+
+func (h *harness) stopChains(t *testing.T, vchainIds ...int) {
 	ctx := context.Background()
 
-	for i := 1; i <= 3; i++ {
-		h.s.RemoveVirtualChain(ctx, &strelets.RemoveVirtualChainInput{
-			VirtualChain: &strelets.VirtualChain{
-				Id:           42,
-				DockerConfig: DockerConfig(fmt.Sprintf("node%d", i)),
-			},
-		})
+	for _, vchainId := range vchainIds {
+		for i := 1; i <= 3; i++ {
+			h.s.RemoveVirtualChain(ctx, &strelets.RemoveVirtualChainInput{
+				VirtualChain: &strelets.VirtualChain{
+					Id:           strelets.VirtualChainId(vchainId),
+					DockerConfig: DockerConfig(fmt.Sprintf("node%d", i)),
+				},
+			})
+		}
 	}
 }
 
-func (h *harness) getMetricsEndpoint() string {
-	return "http://" + test.LocalIP() + ":8081/metrics"
+func (h *harness) getMetricsEndpoint(port int) string {
+	return "http://" + test.LocalIP() + ":" + strconv.Itoa(port) + "/metrics"
 }
 
 func (h *harness) httpGet(url string) ([]byte, error) {
@@ -96,17 +103,23 @@ func (h *harness) httpGet(url string) ([]byte, error) {
 }
 
 func (h *harness) getMetrics() (map[string]interface{}, error) {
-	data, err := h.httpGet(h.getMetricsEndpoint())
-	if err != nil {
-		return nil, err
-	}
+	return h.getMetricsForPort(8081)()
+}
 
-	metrics := make(map[string]interface{})
-	if err := json.Unmarshal(data, &metrics); err != nil {
-		return nil, err
-	}
+func (h *harness) getMetricsForPort(httpPort int) func() (map[string]interface{}, error) {
+	return func() (map[string]interface{}, error) {
+		data, err := h.httpGet(h.getMetricsEndpoint(httpPort))
+		if err != nil {
+			return nil, err
+		}
 
-	return metrics, nil
+		metrics := make(map[string]interface{})
+		if err := json.Unmarshal(data, &metrics); err != nil {
+			return nil, err
+		}
+
+		return metrics, nil
+	}
 }
 
 func DockerConfig(node string) *strelets.DockerImageConfig {

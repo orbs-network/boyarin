@@ -7,21 +7,23 @@ import (
 )
 
 func (d *dockerSwarm) Prepare(ctx context.Context, imageName string, containerName string, httpPort int, gossipPort int, appConfig *AppConfig) (Runner, error) {
-	config, err := d.storeVirtualChainConfiguration(ctx, containerName, appConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	secrets := []*swarm.SecretReference{
-		getSecretReference(containerName, config.keysSecretId, "keyPair", "keys.json"),
-		getSecretReference(containerName, config.networkSecretId, "network", "network.json"),
-	}
-
-	spec := getVirtualChainServiceSpec(imageName, containerName, httpPort, gossipPort, secrets)
-
 	return &dockerSwarmRunner{
 		client: d.client,
-		spec:   spec,
+		spec: func() (swarm.ServiceSpec, error) {
+			config, err := d.storeVirtualChainConfiguration(ctx, containerName, appConfig)
+			if err != nil {
+				return swarm.ServiceSpec{}, err
+			}
+
+			secrets := []*swarm.SecretReference{
+				getSecretReference(containerName, config.keysSecretId, "keyPair", "keys.json"),
+				getSecretReference(containerName, config.networkSecretId, "network", "network.json"),
+			}
+
+			return getVirtualChainServiceSpec(imageName, containerName, httpPort, gossipPort, secrets), nil
+		},
+		serviceName: getServiceId(containerName),
+		imageName:   imageName,
 	}, nil
 }
 

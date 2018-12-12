@@ -2,9 +2,6 @@ package boyar
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"github.com/orbs-network/boyarin/config"
 	"github.com/orbs-network/boyarin/strelets"
@@ -60,10 +57,4 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
 	// TODO is there a better way to get a loopback interface?
 	return b.strelets.UpdateReverseProxy(ctx, b.config.Chains(), test.LocalIP())
-}
-
-func (n *nodeConfiguration) hash() string {
-	bytes, _ := json.Marshal(n)
-	checksum := sha256.Sum256(bytes)
-	return hex.EncodeToString(checksum[:])
 }

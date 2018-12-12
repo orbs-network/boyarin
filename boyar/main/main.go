@@ -62,14 +62,15 @@ func main() {
 	flag.Parse()
 
 	if *daemonizePtr {
-		configHash := ""
-		var err error
+		successfulConfigHash := ""
 
 		for true {
-			if err, configHash = build(*orchestratorPtr, *keyPairConfigPathPtr, *configUrlPtr, configHash); err != nil {
+			if err, configHash := build(*orchestratorPtr, *keyPairConfigPathPtr, *configUrlPtr, successfulConfigHash); err != nil {
 				fmt.Println("ERROR:", err)
+				fmt.Println("Latest successful configuration", successfulConfigHash)
 			} else {
 				fmt.Println("Successfully updated to latest configuration:", configHash)
+				successfulConfigHash = configHash
 			}
 			<-time.After(time.Duration(*pollingIntervalPtr) * time.Second)
 		}

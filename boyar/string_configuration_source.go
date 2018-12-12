@@ -19,3 +19,7 @@ func (c *stringConfigurationSource) Chains() []*strelets.VirtualChain {
 func (c *stringConfigurationSource) FederationNodes() []*strelets.FederationNode {
 	return c.value.FederationNodes
 }
+
+func (c *stringConfigurationSource) Hash() string {
+	return c.value.hash()
+}

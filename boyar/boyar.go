@@ -16,6 +16,7 @@ type nodeConfiguration struct {
 type NodeConfiguration interface {
 	FederationNodes() []*strelets.FederationNode
 	Chains() []*strelets.VirtualChain
+	Hash() string
 }
 
 type Boyar interface {

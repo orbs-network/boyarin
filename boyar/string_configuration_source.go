@@ -6,6 +6,7 @@ import (
 
 type stringConfigurationSource struct {
 	value nodeConfiguration
+	hash  string
 }
 
 func NewStringConfigurationSource(input string) (NodeConfiguration, error) {
@@ -18,4 +19,8 @@ func (c *stringConfigurationSource) Chains() []*strelets.VirtualChain {
 
 func (c *stringConfigurationSource) FederationNodes() []*strelets.FederationNode {
 	return c.value.FederationNodes
+}
+
+func (c *stringConfigurationSource) Hash() string {
+	return c.hash
 }

@@ -16,6 +16,7 @@ func (d *dockerSwarm) PrepareReverseProxy(ctx context.Context, config string) (R
 			}
 			return getNginxServiceSpec(storedSecrets), nil
 		},
+		serviceName: getServiceId(PROXY_CONTAINER_NAME),
 	}, nil
 }
 

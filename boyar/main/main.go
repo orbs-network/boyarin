@@ -27,6 +27,8 @@ func build(orchestratorName string, keyPairConfigPath string, configUrl string, 
 		return err, ""
 	}
 
+	defer orchestrator.Close()
+
 	config, err := boyar.NewUrlConfigurationSource(configUrl)
 	if err != nil {
 		return err, ""

@@ -54,3 +54,8 @@ func (d *MockOrchestratorAdapter) PrepareReverseProxy(ctx context.Context, confi
 	panic("not implemented")
 	return nil, nil
 }
+
+func (d *MockOrchestratorAdapter) Close() error {
+	panic("not implemented")
+	return nil
+}

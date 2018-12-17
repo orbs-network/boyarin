@@ -95,3 +95,7 @@ func (d *dockerAPI) RemoveContainer(ctx context.Context, containerName string) e
 		RemoveVolumes: false,
 	})
 }
+
+func (d *dockerAPI) Close() error {
+	return d.client.Close()
+}

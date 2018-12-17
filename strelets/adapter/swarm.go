@@ -99,3 +99,7 @@ func (d *dockerSwarm) RemoveContainer(ctx context.Context, containerName string)
 func getServiceId(input string) string {
 	return "stack-" + input
 }
+
+func (d *dockerSwarm) Close() error {
+	return d.client.Close()
+}

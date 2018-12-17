@@ -29,4 +29,6 @@ type Orchestrator interface {
 	RemoveContainer(ctx context.Context, containerName string) error
 
 	PrepareReverseProxy(ctx context.Context, config string) (Runner, error)
+
+	Close() error
 }

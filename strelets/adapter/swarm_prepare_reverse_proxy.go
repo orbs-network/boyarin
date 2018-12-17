@@ -37,6 +37,7 @@ func getNginxServiceSpec(storedSecrets *dockerSwarmNginxSecretsConfig) swarm.Ser
 				Command: []string{
 					"nginx", "-c", "/var/run/secrets/nginx.conf",
 				},
+				Sysctls: getSysctls(),
 			},
 			RestartPolicy: &swarm.RestartPolicy{
 				Delay: &restartDelay,

@@ -27,7 +27,7 @@ func (s *strelets) ProvisionVirtualChain(ctx context.Context, input *ProvisionVi
 	imageName := chain.DockerConfig.FullImageName()
 	if chain.DockerConfig.Pull {
 		if err := s.orchestrator.PullImage(ctx, imageName); err != nil {
-			return err
+			return fmt.Errorf("could not pull docker image: %s", err)
 		}
 	}
 

@@ -30,6 +30,7 @@ func Test_getServiceSpec(t *testing.T) {
 				"--config", "/var/run/secrets/some-secret.json",
 			},
 			Secrets: secrets,
+			Sysctls: getSysctls(),
 		},
 		RestartPolicy: &swarm.RestartPolicy{
 			Condition: "",

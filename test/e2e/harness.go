@@ -146,8 +146,8 @@ func DockerConfig(node string) *strelets.DockerImageConfig {
 func Peers(ip string) *strelets.PeersMap {
 	peers := make(strelets.PeersMap)
 
-	for i, key := range test.PublicKeys() {
-		peers[strelets.PublicKey(key)] = &strelets.Peer{
+	for i, key := range test.NodeAddresses() {
+		peers[strelets.NodeAddress(key)] = &strelets.Peer{
 			IP:   ip,
 			Port: 4400 + i + 1,
 		}

@@ -1,5 +1,5 @@
 {
-  "node-public-key": "92d469d7c004cc0b24a192d9457836bf38effa27536627ef60718b00b0f33152",
-  "node-private-key": "3b24b5f9e6b1371c3b5de2e402a96930eeafe52111bb4a1b003e5ecad3fab53892d469d7c004cc0b24a192d9457836bf38effa27536627ef60718b00b0f33152",
-  "constant-consensus-leader": "dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173"
+  "node-address": "d27e2e7398e2582f63d0800330010b3e58952ff6",
+  "node-private-key": "87a210586f57890ae3642c62ceb58f0f0a54e787891054a5a54c80e1da418253",
+  "constant-consensus-leader": "a328846cd5b4979d68a8c58a9bdfeee657b34de7"
 }

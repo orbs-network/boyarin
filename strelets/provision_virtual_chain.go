@@ -18,9 +18,9 @@ type Peer struct {
 	Port int
 }
 
-type PublicKey string
+type NodeAddress string
 
-type PeersMap map[PublicKey]*Peer
+type PeersMap map[NodeAddress]*Peer
 
 func (s *strelets) ProvisionVirtualChain(ctx context.Context, input *ProvisionVirtualChainInput) error {
 	chain := input.VirtualChain

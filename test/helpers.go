@@ -32,11 +32,11 @@ func LocalIP() string {
 	return "127.0.0.1"
 }
 
-func PublicKeys() []string {
+func NodeAddresses() []string {
 	return []string{
-		"dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173",
-		"92d469d7c004cc0b24a192d9457836bf38effa27536627ef60718b00b0f33152",
-		"a899b318e65915aa2de02841eeb72fe51fddad96014b73800ca788a547f8cce0",
+		"a328846cd5b4979d68a8c58a9bdfeee657b34de7",
+		"d27e2e7398e2582f63d0800330010b3e58952ff6",
+		"6e2cb55e4cbe97bf5b1e731d51cc2c285d83cbf9",
 	}
 }
 

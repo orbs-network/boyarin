@@ -6,17 +6,17 @@ import (
 )
 
 type FederationNode struct {
-	Key  string
-	IP   string
-	Port int
+	Key  string `json:"address"`
+	IP   string `json:"ip"`
+	Port int    `json:"port"`
 }
 
 func getNetworkConfigJSON(peers *PeersMap) []byte {
 	jsonMap := make(map[string]interface{})
 
 	var nodes []FederationNode
-	for key, peer := range *peers {
-		nodes = append(nodes, FederationNode{string(key), peer.IP, peer.Port})
+	for address, peer := range *peers {
+		nodes = append(nodes, FederationNode{string(address), peer.IP, peer.Port})
 	}
 
 	// A workaround for tests because range does not preserve key order over iteration

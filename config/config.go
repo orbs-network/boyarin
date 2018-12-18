@@ -127,7 +127,7 @@ func getPeersFromConfig(peers string, peerKeys string, peersConfig string, gossi
 		tokens := strings.Split(peer, ":")
 		port, _ := strconv.ParseInt(tokens[1], 10, 16)
 
-		peersMap[strelets.PublicKey(keys[i])] = &strelets.Peer{tokens[0], int(port)}
+		peersMap[strelets.NodeAddress(keys[i])] = &strelets.Peer{tokens[0], int(port)}
 	}
 
 	return &peersMap, nil
@@ -143,7 +143,7 @@ func GetPeersMap(nodes []*strelets.FederationNode, gossipPort int) *strelets.Pee
 			port = gossipPort
 		}
 
-		peersMap[strelets.PublicKey(node.Key)] = &strelets.Peer{
+		peersMap[strelets.NodeAddress(node.Key)] = &strelets.Peer{
 			node.IP, port,
 		}
 	}

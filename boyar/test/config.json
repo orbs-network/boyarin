@@ -12,6 +12,9 @@
         "Image":  "506367651493.dkr.ecr.us-west-2.amazonaws.com/orbs-network-v1",
         "Tag":    "master",
         "Pull":   false
+      },
+      "Config": {
+        "ethereum-endpoint": "http://localhost:8545"
       }
     }
   ]

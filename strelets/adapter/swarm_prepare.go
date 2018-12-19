@@ -16,6 +16,7 @@ func (d *dockerSwarm) Prepare(ctx context.Context, imageName string, containerNa
 			}
 
 			secrets := []*swarm.SecretReference{
+				getSecretReference(containerName, config.configSecretId, "config", "config.json"),
 				getSecretReference(containerName, config.keysSecretId, "keyPair", "keys.json"),
 				getSecretReference(containerName, config.networkSecretId, "network", "network.json"),
 			}

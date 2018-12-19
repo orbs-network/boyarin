@@ -1,8 +1,8 @@
 package strelets
 
 import (
+	"encoding/json"
 	"fmt"
-	"io/ioutil"
 )
 
 type VirtualChainId uint32
@@ -12,17 +12,20 @@ type VirtualChain struct {
 	HttpPort     int
 	GossipPort   int
 	DockerConfig *DockerImageConfig `json:"DockerConfig"`
+	Config       map[string]interface{}
 }
 
 func (v *VirtualChain) getContainerName() string {
 	return fmt.Sprintf("%s-chain-%d", v.DockerConfig.ContainerNamePrefix, v.Id)
 }
 
-func copyFile(source string, destination string) error {
-	data, err := ioutil.ReadFile(source)
-	if err != nil {
-		return fmt.Errorf("%s: %s", err, source)
+func (c *VirtualChain) getSerializedConfig() []byte {
+	m := make(map[string]interface{})
+	for k, v := range c.Config {
+		m[k] = v
 	}
+	m["virtual-chain-id"] = c.Id
 
-	return ioutil.WriteFile(destination, data, 0600)
+	rawJSON, _ := json.Marshal(m)
+	return rawJSON
 }

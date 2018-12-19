@@ -12,6 +12,12 @@ import (
 func (d *dockerSwarm) storeVirtualChainConfiguration(ctx context.Context, containerName string, config *AppConfig) (*dockerSwarmSecretsConfig, error) {
 	secrets := &dockerSwarmSecretsConfig{}
 
+	if configSecretId, err := d.saveSwarmSecret(ctx, containerName, "config", config.Config); err != nil {
+		return nil, fmt.Errorf("could not store config secret: %s", err)
+	} else {
+		secrets.configSecretId = configSecretId
+	}
+
 	if keyPairSecretId, err := d.saveSwarmSecret(ctx, containerName, "keyPair", config.KeyPair); err != nil {
 		return nil, fmt.Errorf("could not store key pair secret: %s", err)
 	} else {

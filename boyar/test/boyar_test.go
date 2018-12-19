@@ -35,3 +35,10 @@ func Test_BoyarProvisionVirtualChains(t *testing.T) {
 	require.NoError(t, err)
 	streletsMock.VerifyMocks(t)
 }
+
+func Test_StringConfigurationSource(t *testing.T) {
+	source, err := boyar.NewStringConfigurationSource(getJSONConfig())
+	require.NoError(t, err)
+
+	require.Equal(t, "http://localhost:8545", source.Chains()[0].Config["ethereum-endpoint"])
+}

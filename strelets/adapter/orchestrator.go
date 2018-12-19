@@ -17,6 +17,7 @@ type dockerAPI struct {
 type AppConfig struct {
 	KeyPair []byte
 	Network []byte
+	Config  []byte
 }
 
 type Runner interface {

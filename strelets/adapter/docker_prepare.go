@@ -44,6 +44,7 @@ func getVirtualChainContainerConfig(
 	configMap["CMD"] = []string{
 		"/opt/orbs/orbs-node",
 		"--silent",
+		"--config", "/opt/orbs/config/config.json",
 		"--config", "/opt/orbs/config/keys.json",
 		"--config", "/opt/orbs/config/network.json",
 		"--log", "/opt/orbs/logs/node.log",
@@ -51,6 +52,7 @@ func getVirtualChainContainerConfig(
 
 	hostConfigMap := make(map[string]interface{})
 	hostConfigMap["Binds"] = []string{
+		volumes.generalConfigFile + ":/opt/orbs/config/config.json",
 		volumes.keyPairConfigFile + ":/opt/orbs/config/keys.json",
 		volumes.networkConfigFile + ":/opt/orbs/config/network.json",
 		volumes.logsDir + ":/opt/orbs/logs/",

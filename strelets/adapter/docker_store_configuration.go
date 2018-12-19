@@ -20,6 +20,10 @@ func storeVirtualChainConfiguration(containerName string, containerRoot string, 
 		return fmt.Errorf("could not write network config: %s at %s", err, vchainVolumes.networkConfigFile)
 	}
 
+	if err := ioutil.WriteFile(vchainVolumes.generalConfigFile, config.Config, 0644); err != nil {
+		return fmt.Errorf("count not write general config: %s at %s", err, vchainVolumes.generalConfigFile)
+	}
+
 	return nil
 }
 
@@ -29,6 +33,7 @@ type virtualChainVolumes struct {
 
 	keyPairConfigFile string
 	networkConfigFile string
+	generalConfigFile string
 }
 
 func (v *virtualChainVolumes) createDirs() {
@@ -48,6 +53,7 @@ func getVirtualChainDockerContainerVolumes(containerName string, root string) *v
 		logsDir:           filepath.Join(root, containerName, "logs"),
 		keyPairConfigFile: filepath.Join(absolutePathToConfigDir, "keys.json"),
 		networkConfigFile: filepath.Join(absolutePathToConfigDir, "network.json"),
+		generalConfigFile: filepath.Join(absolutePathToConfigDir, "config.json"),
 	}
 }
 

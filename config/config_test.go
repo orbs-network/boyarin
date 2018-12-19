@@ -20,6 +20,9 @@ func TestGetProvisionVirtualChainInputFromJSON(t *testing.T) {
 		Port: 4401,
 	}
 
+	config := make(map[string]interface{})
+	config["ethereum-endpoint"] = "http://localhost:8545"
+
 	expectedInput := &strelets.ProvisionVirtualChainInput{
 		VirtualChain: &strelets.VirtualChain{
 			Id:         99,
@@ -31,6 +34,7 @@ func TestGetProvisionVirtualChainInputFromJSON(t *testing.T) {
 				Tag:                 "export",
 				Pull:                true,
 			},
+			Config: config,
 		},
 		KeyPairConfigPath: "../e2e-config/node1-keys.json",
 		Peers:             &expectedPeers,

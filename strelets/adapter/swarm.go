@@ -15,6 +15,7 @@ type dockerSwarm struct {
 }
 
 type dockerSwarmSecretsConfig struct {
+	configSecretId  string
 	networkSecretId string
 	keysSecretId    string
 }

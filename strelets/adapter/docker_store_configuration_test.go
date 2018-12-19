@@ -26,4 +26,5 @@ func TestDockerAPI_StoreConfiguration(t *testing.T) {
 
 	require.FileExists(t, volumes.keyPairConfigFile)
 	require.FileExists(t, volumes.networkConfigFile)
+	require.FileExists(t, volumes.generalConfigFile)
 }

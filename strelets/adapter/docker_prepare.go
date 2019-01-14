@@ -55,7 +55,6 @@ func getVirtualChainContainerConfig(
 		volumes.generalConfigFile + ":/opt/orbs/config/config.json",
 		volumes.keyPairConfigFile + ":/opt/orbs/config/keys.json",
 		volumes.networkConfigFile + ":/opt/orbs/config/network.json",
-		volumes.logsDir + ":/opt/orbs/logs/",
 	}
 	hostConfigMap["PortBindings"] = portBindings
 

@@ -29,7 +29,6 @@ func storeVirtualChainConfiguration(containerName string, containerRoot string, 
 
 type virtualChainVolumes struct {
 	configRootDir string
-	logsDir       string
 
 	keyPairConfigFile string
 	networkConfigFile string
@@ -38,7 +37,6 @@ type virtualChainVolumes struct {
 
 func (v *virtualChainVolumes) createDirs() {
 	createDir(v.configRootDir)
-	createDir(v.logsDir)
 }
 
 func createDir(path string) error {
@@ -50,7 +48,6 @@ func getVirtualChainDockerContainerVolumes(containerName string, root string) *v
 
 	return &virtualChainVolumes{
 		configRootDir:     absolutePathToConfigDir,
-		logsDir:           filepath.Join(root, containerName, "logs"),
 		keyPairConfigFile: filepath.Join(absolutePathToConfigDir, "keys.json"),
 		networkConfigFile: filepath.Join(absolutePathToConfigDir, "network.json"),
 		generalConfigFile: filepath.Join(absolutePathToConfigDir, "config.json"),

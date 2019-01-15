@@ -23,9 +23,20 @@ func (d *dockerSwarm) provisionVolumes(ctx context.Context, containerName string
 }
 
 func (d *dockerSwarm) provisionVolume(ctx context.Context, volumeName string, target string) (mount.Mount, error) {
+	driver := "local"
+	if d.options.StorageDriver() != "" {
+		driver = d.options.StorageDriver()
+	}
+
+	driverOptions := make(map[string]string)
+	if len(d.options.StorageOptions()) > 0 {
+		driverOptions = d.options.StorageOptions()
+	}
+
 	_, err := d.client.VolumeCreate(ctx, volume.VolumeCreateBody{
-		Name:   volumeName,
-		Driver: "local",
+		Name:       volumeName,
+		Driver:     driver,
+		DriverOpts: driverOptions,
 	})
 
 	if err != nil {

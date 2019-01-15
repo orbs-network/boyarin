@@ -30,5 +30,5 @@ type Orchestrator interface {
 
 type OrchestratorOptions interface {
 	StorageDriver() string
-	StorageOptions() map[string]interface{}
+	StorageOptions() map[string]string
 }

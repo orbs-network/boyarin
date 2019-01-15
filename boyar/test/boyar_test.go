@@ -45,5 +45,5 @@ func Test_StringConfigurationSource(t *testing.T) {
 	require.NotNil(t, source.OrchestratorOptions())
 	require.Equal(t, "ebs", source.OrchestratorOptions().StorageDriver())
 	require.NotNil(t, source.OrchestratorOptions().StorageOptions())
-	require.Equal(t, 100.0, source.OrchestratorOptions().StorageOptions()["maxRetries"])
+	require.Equal(t, "100", source.OrchestratorOptions().StorageOptions()["maxRetries"])
 }

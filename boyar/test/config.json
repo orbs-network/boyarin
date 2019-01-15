@@ -5,7 +5,7 @@
   "orchestrator": {
     "storage-driver": "ebs",
     "storage-options": {
-      "maxRetries": 100
+      "maxRetries": "100"
     }
   },
   "chains": [

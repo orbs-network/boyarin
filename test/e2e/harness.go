@@ -204,6 +204,10 @@ func skipUnlessSwarmIsEnabled(t *testing.T) {
 }
 
 func removeAllDockerVolumes(t *testing.T) {
+	if !(os.Getenv("ENABLE_DOCKER") == "true" || os.Getenv("ENABLE_SWARM") == "true") {
+		return
+	}
+
 	t.Log("Removing all docker volumes")
 
 	ctx := context.Background()

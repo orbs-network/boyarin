@@ -30,11 +30,11 @@ func build(orchestratorName string, keyPairConfigPath string, configUrl string, 
 	s := strelets.NewStrelets("_tmp", orchestrator)
 	b := boyar.NewBoyar(s, config, keyPairConfigPath)
 
-	if err := b.ProvisionVirtualChains(context.Background()); err != nil {
+	if err = b.ProvisionVirtualChains(context.Background()); err != nil {
 		return
 	}
 
-	if err := b.ProvisionHttpAPIEndpoint(context.Background()); err != nil {
+	if err = b.ProvisionHttpAPIEndpoint(context.Background()); err != nil {
 		return
 	}
 
@@ -78,7 +78,7 @@ func main() {
 			<-time.After(time.Duration(*pollingIntervalPtr) * time.Second)
 		}
 	} else {
-		if err, _ := build(*orchestratorPtr, *keyPairConfigPathPtr, *configUrlPtr, ""); err != nil {
+		if _, err := build(*orchestratorPtr, *keyPairConfigPathPtr, *configUrlPtr, ""); err != nil {
 			fmt.Println("ERROR:", err)
 			os.Exit(1)
 		}

@@ -9,13 +9,15 @@ import (
 )
 
 type nodeConfiguration struct {
-	Chains          []*strelets.VirtualChain   `json:"chains"`
-	FederationNodes []*strelets.FederationNode `json:"network"`
+	Chains              []*strelets.VirtualChain      `json:"chains"`
+	FederationNodes     []*strelets.FederationNode    `json:"network"`
+	OrchestratorOptions *strelets.OrchestratorOptions `json:"orchestrator"`
 }
 
 type NodeConfiguration interface {
 	FederationNodes() []*strelets.FederationNode
 	Chains() []*strelets.VirtualChain
+	OrchestratorOptions() *strelets.OrchestratorOptions
 	Hash() string
 }
 

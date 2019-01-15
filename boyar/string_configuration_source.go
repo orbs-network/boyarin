@@ -24,3 +24,7 @@ func (c *stringConfigurationSource) FederationNodes() []*strelets.FederationNode
 func (c *stringConfigurationSource) Hash() string {
 	return c.hash
 }
+
+func (c *stringConfigurationSource) OrchestratorOptions() *strelets.OrchestratorOptions {
+	return c.value.OrchestratorOptions
+}

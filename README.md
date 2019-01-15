@@ -6,30 +6,7 @@
 
 Management layer that provisions virtual chains for [ORBS blockchain](https://github.com/orbs-network/orbs-network-go/).
 
-## CLI
-
-To create new virtual chain
-
-```
-strelets provision-virtual-chain \
-   --chain 42 \
-   --container-name-prefix node1 \
-   --chain-config ./e2e-config/node1/vchain.json \
-   --keys-config ./e2e-config/node1/keys.json \
-   --http-port 8080 \
-   --gossip-port 4400 \
-   --peers 10.4.12.46:4400 \
-   --peerKeys dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173 \
-   --docker-image orbs \
-   --docker-tag export
-```
-
-To remove already provisioned virtual chain
-
-```
-strelets remove-virtual-chain \
-    --chain 42
-```
+Works together with [Nebula](https://github.com/orbs-network/nebula).
 
 ## Tips
 

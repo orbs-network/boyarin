@@ -1,6 +1,4 @@
-#!/bin/bash -x
-
-CGO_ENABLED=0 time go build -ldflags '-w -extldflags "-static"' -o strelets.bin -a main.go
+#!/bin/bash -xe
 
 CGO_ENABLED=0 time go build -ldflags '-w -extldflags "-static"' -o boyar.bin -a ./boyar/main/main.go
 

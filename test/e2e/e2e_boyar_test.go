@@ -140,7 +140,7 @@ func TestE2EAddNewVirtualChainWithDockerAndBoyar(t *testing.T) {
 func TestE2EAddNewVirtualChainWithSwarmAndBoyar(t *testing.T) {
 	skipUnlessSwarmIsEnabled(t)
 
-	swarm, err := adapter.NewDockerSwarm()
+	swarm, err := adapter.NewDockerSwarm(&strelets.OrchestratorOptions{})
 	require.NoError(t, err)
 	h := newHarness(t, swarm)
 

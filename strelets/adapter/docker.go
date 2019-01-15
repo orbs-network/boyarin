@@ -13,6 +13,11 @@ import (
 	"path/filepath"
 )
 
+type dockerAPI struct {
+	client *client.Client
+	root   string
+}
+
 type dockerRunner struct {
 	client *client.Client
 

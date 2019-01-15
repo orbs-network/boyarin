@@ -64,6 +64,6 @@ func Test_UpdateReverseProxyWithSwarm(t *testing.T) {
 	skipUnlessSwarmIsEnabled(t)
 
 	testUpdateReverseProxy(t, func() (adapter.Orchestrator, error) {
-		return adapter.NewDockerSwarm()
+		return adapter.NewDockerSwarm(&strelets.OrchestratorOptions{})
 	})
 }

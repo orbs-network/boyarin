@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"fmt"
+	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -41,7 +42,7 @@ func TestE2EWithDocker(t *testing.T) {
 func TestE2EWithDockerSwarm(t *testing.T) {
 	skipUnlessSwarmIsEnabled(t)
 
-	realDocker, err := adapter.NewDockerSwarm()
+	realDocker, err := adapter.NewDockerSwarm(&strelets.OrchestratorOptions{})
 	require.NoError(t, err)
 	h := newHarness(t, realDocker)
 
@@ -74,7 +75,7 @@ func TestE2EKeepVolumesBetweenReloadsWithDocker(t *testing.T) {
 func TestE2EKeepVolumesBetweenReloadsWithSwarm(t *testing.T) {
 	skipUnlessSwarmIsEnabled(t)
 
-	swarm, err := adapter.NewDockerSwarm()
+	swarm, err := adapter.NewDockerSwarm(&strelets.OrchestratorOptions{})
 	require.NoError(t, err)
 	h := newHarness(t, swarm)
 

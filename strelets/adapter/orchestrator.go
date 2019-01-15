@@ -2,17 +2,11 @@ package adapter
 
 import (
 	"context"
-	"github.com/docker/docker/client"
 )
 
 const DOCKER_API_VERSION = "1.38"
 
 const PROXY_CONTAINER_NAME = "http-api-reverse-proxy"
-
-type dockerAPI struct {
-	client *client.Client
-	root   string
-}
 
 type AppConfig struct {
 	KeyPair []byte
@@ -32,4 +26,9 @@ type Orchestrator interface {
 	PrepareReverseProxy(ctx context.Context, config string) (Runner, error)
 
 	Close() error
+}
+
+type OrchestratorOptions interface {
+	StorageDriver() string
+	StorageOptions() map[string]interface{}
 }

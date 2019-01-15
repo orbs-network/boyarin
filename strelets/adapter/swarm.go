@@ -11,7 +11,8 @@ import (
 )
 
 type dockerSwarm struct {
-	client *client.Client
+	client  *client.Client
+	options OrchestratorOptions
 }
 
 type dockerSwarmSecretsConfig struct {
@@ -32,14 +33,14 @@ type dockerSwarmNginxSecretsConfig struct {
 	vchainConfId string
 }
 
-func NewDockerSwarm() (Orchestrator, error) {
+func NewDockerSwarm(options OrchestratorOptions) (Orchestrator, error) {
 	client, err := client.NewClientWithOpts(client.WithVersion(DOCKER_API_VERSION))
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &dockerSwarm{client: client}, nil
+	return &dockerSwarm{client: client, options: options}, nil
 }
 
 func (d *dockerSwarm) PullImage(ctx context.Context, imageName string) error {

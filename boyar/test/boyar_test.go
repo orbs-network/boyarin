@@ -43,7 +43,7 @@ func Test_StringConfigurationSource(t *testing.T) {
 	require.Equal(t, "http://localhost:8545", source.Chains()[0].Config["ethereum-endpoint"])
 
 	require.NotNil(t, source.OrchestratorOptions())
-	require.Equal(t, "ebs", source.OrchestratorOptions().StorageDriver)
-	require.NotNil(t, source.OrchestratorOptions().StorageOptions)
-	require.Equal(t, 100.0, source.OrchestratorOptions().StorageOptions["maxRetries"])
+	require.Equal(t, "ebs", source.OrchestratorOptions().StorageDriver())
+	require.NotNil(t, source.OrchestratorOptions().StorageOptions())
+	require.Equal(t, 100.0, source.OrchestratorOptions().StorageOptions()["maxRetries"])
 }

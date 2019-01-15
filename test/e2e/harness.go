@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/client"
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test"
@@ -22,6 +24,8 @@ type harness struct {
 }
 
 func newHarness(t *testing.T, docker adapter.Orchestrator) *harness {
+	removeAllDockerVolumes(t)
+
 	configPath := "../../e2e-config/"
 	if configPathFromEnv := os.Getenv("E2E_CONFIG"); configPathFromEnv != "" {
 		configPath = configPathFromEnv
@@ -196,5 +200,28 @@ func skipUnlessDockerIsEnabled(t *testing.T) {
 func skipUnlessSwarmIsEnabled(t *testing.T) {
 	if os.Getenv("ENABLE_SWARM") != "true" {
 		t.Skip("skipping test, docker swarm is disabled")
+	}
+}
+
+func removeAllDockerVolumes(t *testing.T) {
+	t.Log("Removing all docker volumes")
+
+	ctx := context.Background()
+	client, err := client.NewClientWithOpts(client.WithVersion(adapter.DOCKER_API_VERSION))
+	if err != nil {
+		t.Errorf("could not connect to docker: %s", err)
+		t.FailNow()
+	}
+
+	if volumes, err := client.VolumeList(ctx, filters.Args{}); err != nil {
+		t.Errorf("could not list docker volumes: %s", err)
+		t.FailNow()
+	} else {
+		for _, v := range volumes.Volumes {
+			if err := client.VolumeRemove(ctx, v.Name, true); err != nil {
+				t.Errorf("could not list docker volumes: %s", err)
+				t.FailNow()
+			}
+		}
 	}
 }

@@ -70,7 +70,7 @@ func (r *dockerSwarmRunner) Run(ctx context.Context) error {
 	} else {
 		for _, service := range services {
 			if err := r.client.ServiceRemove(ctx, service.ID); err != nil {
-				fmt.Println("failed to remove service:", err)
+				return fmt.Errorf("failed to remove service: %s", err)
 			} else {
 				fmt.Println("successfully removed service:", service.ID)
 			}

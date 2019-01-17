@@ -11,46 +11,47 @@ import (
 	"time"
 )
 
-func build(orchestratorName string, keyPairConfigPath string, configUrl string, prevConfigHash string) (err error, configHash string) {
-	var orchestrator adapter.Orchestrator
-
-	switch orchestratorName {
-	case "docker":
-		orchestrator, err = adapter.NewDockerAPI("_tmp")
-	case "swarm":
-		orchestrator, err = adapter.NewDockerSwarm()
-	default:
-		err = fmt.Errorf("could not recognize orchestrator: %s", orchestratorName)
-	}
-
-	if err != nil {
-		return err, ""
-	}
-
-	defer orchestrator.Close()
-
+func build(orchestratorName string, keyPairConfigPath string, configUrl string, prevConfigHash string) (configHash string, err error) {
 	config, err := boyar.NewUrlConfigurationSource(configUrl)
 	if err != nil {
-		return err, ""
+		return
 	}
 	configHash = config.Hash()
-
 	if configHash == prevConfigHash {
-		return nil, configHash
+		return
 	}
+
+	orchestrator, err := getOrchestrator(orchestratorName, config.OrchestratorOptions())
+	if err != nil {
+		return
+	}
+	defer orchestrator.Close()
 
 	s := strelets.NewStrelets("_tmp", orchestrator)
 	b := boyar.NewBoyar(s, config, keyPairConfigPath)
 
-	if err := b.ProvisionVirtualChains(context.Background()); err != nil {
-		return err, configHash
+	if err = b.ProvisionVirtualChains(context.Background()); err != nil {
+		return
 	}
 
-	if err := b.ProvisionHttpAPIEndpoint(context.Background()); err != nil {
-		return err, configHash
+	if err = b.ProvisionHttpAPIEndpoint(context.Background()); err != nil {
+		return
 	}
 
-	return nil, configHash
+	return
+}
+
+func getOrchestrator(orchestratorName string, options *strelets.OrchestratorOptions) (orchestrator adapter.Orchestrator, err error) {
+	switch orchestratorName {
+	case "docker":
+		orchestrator, err = adapter.NewDockerAPI("_tmp")
+	case "swarm":
+		orchestrator, err = adapter.NewDockerSwarm(options)
+	default:
+		err = fmt.Errorf("could not recognize orchestrator: %s", orchestratorName)
+	}
+
+	return orchestrator, err
 }
 
 func main() {
@@ -67,7 +68,7 @@ func main() {
 		successfulConfigHash := ""
 
 		for true {
-			if err, configHash := build(*orchestratorPtr, *keyPairConfigPathPtr, *configUrlPtr, successfulConfigHash); err != nil {
+			if configHash, err := build(*orchestratorPtr, *keyPairConfigPathPtr, *configUrlPtr, successfulConfigHash); err != nil {
 				fmt.Println("ERROR:", err)
 				fmt.Println("Latest successful configuration", successfulConfigHash)
 			} else {
@@ -77,7 +78,7 @@ func main() {
 			<-time.After(time.Duration(*pollingIntervalPtr) * time.Second)
 		}
 	} else {
-		if err, _ := build(*orchestratorPtr, *keyPairConfigPathPtr, *configUrlPtr, ""); err != nil {
+		if _, err := build(*orchestratorPtr, *keyPairConfigPathPtr, *configUrlPtr, ""); err != nil {
 			fmt.Println("ERROR:", err)
 			os.Exit(1)
 		}

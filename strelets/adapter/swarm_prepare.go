@@ -2,6 +2,8 @@ package adapter
 
 import (
 	"context"
+	"fmt"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/swarm"
 	"time"
 )
@@ -21,7 +23,12 @@ func (d *dockerSwarm) Prepare(ctx context.Context, imageName string, containerNa
 				getSecretReference(containerName, config.networkSecretId, "network", "network.json"),
 			}
 
-			return getVirtualChainServiceSpec(imageName, containerName, httpPort, gossipPort, secrets), nil
+			mounts, err := d.provisionVolumes(ctx, containerName)
+			if err != nil {
+				return swarm.ServiceSpec{}, fmt.Errorf("failed to provision volumes: %s", err)
+			}
+
+			return getVirtualChainServiceSpec(imageName, containerName, httpPort, gossipPort, secrets, mounts), nil
 		},
 		serviceName: getServiceId(containerName),
 		imageName:   imageName,
@@ -40,12 +47,11 @@ func getSecretReference(containerName string, secretId string, secretName string
 	}
 }
 
-func getContainerSpec(imageName string, secrets []*swarm.SecretReference) *swarm.ContainerSpec {
+func getContainerSpec(imageName string, secrets []*swarm.SecretReference, mounts []mount.Mount) *swarm.ContainerSpec {
 	command := []string{
 		"/opt/orbs/orbs-node",
 		"--silent",
-		// FIXME add separate volume for logs
-		"--log", "/opt/orbs/node.log",
+		"--log", "/opt/orbs/logs/node.log",
 	}
 
 	for _, secret := range secrets {
@@ -57,6 +63,7 @@ func getContainerSpec(imageName string, secrets []*swarm.SecretReference) *swarm
 		Command: command,
 		Secrets: secrets,
 		Sysctls: getSysctls(),
+		Mounts:  mounts,
 	}
 }
 
@@ -87,13 +94,13 @@ func getEndpointsSpec(httpPort int, gossipPort int) *swarm.EndpointSpec {
 	}
 }
 
-func getVirtualChainServiceSpec(imageName string, containerName string, httpPort int, gossipPort int, secrets []*swarm.SecretReference) swarm.ServiceSpec {
+func getVirtualChainServiceSpec(imageName string, containerName string, httpPort int, gossipPort int, secrets []*swarm.SecretReference, mounts []mount.Mount) swarm.ServiceSpec {
 	restartDelay := time.Duration(10 * time.Second)
 	replicas := uint64(1)
 
 	spec := swarm.ServiceSpec{
 		TaskTemplate: swarm.TaskSpec{
-			ContainerSpec: getContainerSpec(imageName, secrets),
+			ContainerSpec: getContainerSpec(imageName, secrets, mounts),
 			RestartPolicy: &swarm.RestartPolicy{
 				Delay: &restartDelay,
 			},

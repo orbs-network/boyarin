@@ -11,7 +11,6 @@ func Test_getDockerVolumes(t *testing.T) {
 
 	require.NotNil(t, volumes)
 	require.EqualValues(t, "/tmp/node1-chain-42/config", volumes.configRootDir)
-	require.EqualValues(t, "/tmp/node1-chain-42/logs", volumes.logsDir)
 	require.EqualValues(t, "/tmp/node1-chain-42/config/keys.json", volumes.keyPairConfigFile)
 	require.EqualValues(t, "/tmp/node1-chain-42/config/network.json", volumes.networkConfigFile)
 	require.EqualValues(t, "/tmp/node1-chain-42/config/config.json", volumes.generalConfigFile)
@@ -39,8 +38,7 @@ const expectedVirtualChainContainerConfig = `{
       "Binds":[
 		 "/tmp/root/v1/config/config.json:/opt/orbs/config/config.json",
          "/tmp/root/v1/config/keys.json:/opt/orbs/config/keys.json",
-         "/tmp/root/v1/config/network.json:/opt/orbs/config/network.json",
-         "/tmp/root/v1/logs:/opt/orbs/logs/"
+         "/tmp/root/v1/config/network.json:/opt/orbs/config/network.json"
       ],
       "PortBindings":{
          "8080/tcp":[
@@ -66,7 +64,6 @@ func Test_getVirtualChainContainerConfig(t *testing.T) {
 		keyPairConfigFile: "/tmp/root/v1/config/keys.json",
 		networkConfigFile: "/tmp/root/v1/config/network.json",
 		generalConfigFile: "/tmp/root/v1/config/config.json",
-		logsDir:           "/tmp/root/v1/logs",
 	}
 
 	cfg := getVirtualChainContainerConfig("orbs:export", exposedPorts, portBindings, volumes)

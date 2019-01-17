@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/client"
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test"
@@ -22,6 +24,8 @@ type harness struct {
 }
 
 func newHarness(t *testing.T, docker adapter.Orchestrator) *harness {
+	removeAllDockerVolumes(t)
+
 	configPath := "../../e2e-config/"
 	if configPathFromEnv := os.Getenv("E2E_CONFIG"); configPathFromEnv != "" {
 		configPath = configPathFromEnv
@@ -36,6 +40,7 @@ func newHarness(t *testing.T, docker adapter.Orchestrator) *harness {
 	}
 }
 
+// FIXME use proper chain id
 func chain(i int) *strelets.VirtualChain {
 	return &strelets.VirtualChain{
 		Id:           42,
@@ -46,17 +51,8 @@ func chain(i int) *strelets.VirtualChain {
 }
 
 func (h *harness) startChain(t *testing.T) {
-	localIP := test.LocalIP()
-	ctx := context.Background()
-
 	for i := 1; i <= 3; i++ {
-		err := h.s.ProvisionVirtualChain(ctx, &strelets.ProvisionVirtualChainInput{
-			VirtualChain:      chain(i),
-			Peers:             Peers(localIP),
-			KeyPairConfigPath: fmt.Sprintf("%s/node%d/keys.json", h.configPath, i),
-		})
-
-		require.NoError(t, err)
+		h.startChainInstance(t, i)
 	}
 }
 
@@ -65,18 +61,35 @@ func (h *harness) stopChain(t *testing.T) {
 }
 
 func (h *harness) stopChains(t *testing.T, vchainIds ...int) {
-	ctx := context.Background()
-
 	for _, vchainId := range vchainIds {
 		for i := 1; i <= 3; i++ {
-			h.s.RemoveVirtualChain(ctx, &strelets.RemoveVirtualChainInput{
-				VirtualChain: &strelets.VirtualChain{
-					Id:           strelets.VirtualChainId(vchainId),
-					DockerConfig: DockerConfig(fmt.Sprintf("node%d", i)),
-				},
-			})
+			h.stopChainInstance(t, vchainId, i)
 		}
 	}
+}
+
+func (h *harness) stopChainInstance(t *testing.T, vchainId int, i int) {
+	err := h.s.RemoveVirtualChain(context.Background(), &strelets.RemoveVirtualChainInput{
+		VirtualChain: &strelets.VirtualChain{
+			Id:           strelets.VirtualChainId(vchainId),
+			DockerConfig: DockerConfig(fmt.Sprintf("node%d", i)),
+		},
+	})
+
+	require.NoError(t, err)
+}
+
+func (h *harness) startChainInstance(t *testing.T, i int) {
+	localIP := test.LocalIP()
+	ctx := context.Background()
+
+	err := h.s.ProvisionVirtualChain(ctx, &strelets.ProvisionVirtualChainInput{
+		VirtualChain:      chain(i),
+		Peers:             Peers(localIP),
+		KeyPairConfigPath: fmt.Sprintf("%s/node%d/keys.json", h.configPath, i),
+	})
+
+	require.NoError(t, err)
 }
 
 func (h *harness) getMetricsEndpoint(port int) string {
@@ -128,6 +141,17 @@ func (h *harness) getMetricsForVchain(port int, vchainId int) func() (map[string
 	})
 }
 
+func getBlockHeight(getMetrics func() (map[string]interface{}, error)) (int, error) {
+	metrics, err := getMetrics()
+	if err != nil {
+		return 0, err
+	}
+
+	blockHeight := int(metrics["BlockStorage.BlockHeight"].(map[string]interface{})["Value"].(float64))
+	fmt.Println("blockHeight", blockHeight)
+	return blockHeight, nil
+}
+
 func (h *harness) getMetricsForPort(httpPort int) func() (map[string]interface{}, error) {
 	return h.getMetricsForEndpoint(func() string {
 		return h.getMetricsEndpoint(httpPort)
@@ -158,13 +182,10 @@ func Peers(ip string) *strelets.PeersMap {
 
 func waitForBlock(t *testing.T, getMetrics func() (map[string]interface{}, error), targetBlockHeight int, timeout time.Duration) {
 	require.True(t, test.Eventually(timeout, func() bool {
-		metrics, err := getMetrics()
+		blockHeight, err := getBlockHeight(getMetrics)
 		if err != nil {
 			return false
 		}
-
-		blockHeight := int(metrics["BlockStorage.BlockHeight"].(map[string]interface{})["Value"].(float64))
-		fmt.Println("blockHeight", blockHeight)
 
 		return blockHeight >= targetBlockHeight
 	}))
@@ -179,5 +200,32 @@ func skipUnlessDockerIsEnabled(t *testing.T) {
 func skipUnlessSwarmIsEnabled(t *testing.T) {
 	if os.Getenv("ENABLE_SWARM") != "true" {
 		t.Skip("skipping test, docker swarm is disabled")
+	}
+}
+
+func removeAllDockerVolumes(t *testing.T) {
+	if !(os.Getenv("ENABLE_DOCKER") == "true" || os.Getenv("ENABLE_SWARM") == "true") {
+		return
+	}
+
+	t.Log("Removing all docker volumes")
+
+	ctx := context.Background()
+	client, err := client.NewClientWithOpts(client.WithVersion(adapter.DOCKER_API_VERSION))
+	if err != nil {
+		t.Errorf("could not connect to docker: %s", err)
+		t.FailNow()
+	}
+
+	if volumes, err := client.VolumeList(ctx, filters.Args{}); err != nil {
+		t.Errorf("could not list docker volumes: %s", err)
+		t.FailNow()
+	} else {
+		for _, v := range volumes.Volumes {
+			if err := client.VolumeRemove(ctx, v.Name, true); err != nil {
+				t.Errorf("could not list docker volumes: %s", err)
+				t.FailNow()
+			}
+		}
 	}
 }

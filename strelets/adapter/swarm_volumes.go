@@ -4,16 +4,18 @@ import (
 	"context"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/volume"
+	"strconv"
+	"strings"
 )
 
 func (d *dockerSwarm) provisionVolumes(ctx context.Context, containerName string) (mounts []mount.Mount, err error) {
-	if logsMount, err := d.provisionVolume(ctx, containerName+"-logs", "/opt/orbs/logs"); err != nil {
+	if logsMount, err := d.provisionVolume(ctx, containerName+"-logs", "/opt/orbs/logs", 2); err != nil {
 		return mounts, err
 	} else {
 		mounts = append(mounts, logsMount)
 	}
 
-	if blocksMount, err := d.provisionVolume(ctx, containerName+"-blocks", "/usr/local/var/orbs"); err != nil {
+	if blocksMount, err := d.provisionVolume(ctx, containerName+"-blocks", "/usr/local/var/orbs", 8); err != nil {
 		return mounts, err
 	} else {
 		mounts = append(mounts, blocksMount)
@@ -22,7 +24,8 @@ func (d *dockerSwarm) provisionVolumes(ctx context.Context, containerName string
 	return mounts, nil
 }
 
-func (d *dockerSwarm) provisionVolume(ctx context.Context, volumeName string, target string) (mount.Mount, error) {
+// FIXME propagate maxSize from the config
+func (d *dockerSwarm) provisionVolume(ctx context.Context, volumeName string, target string, maxSizeInGb int) (mount.Mount, error) {
 	driver := "local"
 	if d.options.StorageDriver() != "" {
 		driver = d.options.StorageDriver()
@@ -31,6 +34,11 @@ func (d *dockerSwarm) provisionVolume(ctx context.Context, volumeName string, ta
 	driverOptions := make(map[string]string)
 	if len(d.options.StorageOptions()) > 0 {
 		driverOptions = d.options.StorageOptions()
+	}
+
+	// Only enable size option for supported drivers
+	if strings.HasPrefix(driver, "rexray/ebs") {
+		driverOptions["size"] = strconv.Itoa(maxSizeInGb)
 	}
 
 	_, err := d.client.VolumeCreate(ctx, volume.VolumeCreateBody{

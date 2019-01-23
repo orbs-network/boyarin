@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/orbs-network/boyarin/strelets"
@@ -217,12 +218,25 @@ func removeAllDockerVolumes(t *testing.T) {
 		t.FailNow()
 	}
 
+	if containers, err := client.ContainerList(ctx, types.ContainerListOptions{}); err != nil {
+		t.Errorf("could not list docker containers: %s", err)
+		t.FailNow()
+	} else {
+		for _, c := range containers {
+			t.Log("container", c.Names[0], "is still up with state", c.State)
+		}
+	}
+
 	if volumes, err := client.VolumeList(ctx, filters.Args{}); err != nil {
 		t.Errorf("could not list docker volumes: %s", err)
 		t.FailNow()
 	} else {
 		for _, v := range volumes.Volumes {
-			if err := client.VolumeRemove(ctx, v.Name, true); err != nil {
+			fmt.Println("removing volume:", v.Name)
+
+			if err := strelets.Try(ctx, 10, 1*time.Second, 100*time.Millisecond, func(ctxWithTimeout context.Context) error {
+				return client.VolumeRemove(ctx, v.Name, true)
+			}); err != nil {
 				t.Errorf("could not list docker volumes: %s", err)
 				t.FailNow()
 			}

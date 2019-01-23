@@ -46,9 +46,9 @@ func (d *dockerSwarm) saveSwarmSecret(ctx context.Context, containerName string,
 	} else {
 		for _, secret := range secrets {
 			if err := d.client.SecretRemove(ctx, secret.ID); err != nil {
-				fmt.Println("failed to removed a secret:", err)
+				fmt.Println(fmt.Sprintf("failed to removed a secret %s: :%s", secret.Spec.Name, err))
 			} else {
-				fmt.Println("successfully removed a secret:", secret.ID)
+				fmt.Println("successfully removed a secret:", secret.Spec.Name)
 			}
 		}
 	}

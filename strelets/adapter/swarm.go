@@ -71,9 +71,9 @@ func (r *dockerSwarmRunner) Run(ctx context.Context) error {
 	} else {
 		for _, service := range services {
 			if err := r.client.ServiceRemove(ctx, service.ID); err != nil {
-				return fmt.Errorf("failed to remove service: %s", err)
+				return fmt.Errorf("failed to remove service %s: %s", service.Spec.Name, err)
 			} else {
-				fmt.Println("successfully removed service:", service.ID)
+				fmt.Println("successfully removed service:", service.Spec.Name)
 			}
 		}
 	}
@@ -83,18 +83,19 @@ func (r *dockerSwarmRunner) Run(ctx context.Context) error {
 		return err
 	}
 
-	if resp, err := r.client.ServiceCreate(ctx, spec, types.ServiceCreateOptions{
+	if _, err := r.client.ServiceCreate(ctx, spec, types.ServiceCreateOptions{
 		QueryRegistry:       true,
 		EncodedRegistryAuth: registryAuth,
 	}); err != nil {
 		return err
 	} else {
-		fmt.Println("Starting Docker Swarm service:", resp.ID)
+		fmt.Println("starting Docker Swarm service:", spec.Name)
 		return nil
 	}
 }
 
 func (d *dockerSwarm) RemoveContainer(ctx context.Context, containerName string) error {
+	fmt.Println("removing Docker Swarm service:", getServiceId(containerName))
 	return d.client.ServiceRemove(ctx, getServiceId(containerName))
 }
 

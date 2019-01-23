@@ -52,14 +52,6 @@ func testUpdateReverseProxy(t *testing.T, apiProvider func() (adapter.Orchestrat
 	}))
 }
 
-func Test_UpdateReverseProxyWithDocker(t *testing.T) {
-	skipUnlessDockerIsEnabled(t)
-
-	testUpdateReverseProxy(t, func() (adapter.Orchestrator, error) {
-		return adapter.NewDockerAPI("_tmp")
-	})
-}
-
 func Test_UpdateReverseProxyWithSwarm(t *testing.T) {
 	skipUnlessSwarmIsEnabled(t)
 

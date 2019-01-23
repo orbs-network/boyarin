@@ -71,33 +71,14 @@ func provisionVchains(t *testing.T, h *harness, s strelets.Strelets, httpPort in
 	//require.NoError(t, err)
 }
 
-func TestE2EWithDockerAndBoyar(t *testing.T) {
-	skipUnlessDockerIsEnabled(t)
+func TestE2EProvisionMultipleVchainsWithSwarmAndBoyar(t *testing.T) {
+	skipUnlessSwarmIsEnabled(t)
 
-	realDocker, err := adapter.NewDockerAPI("_tmp")
+	swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
 	require.NoError(t, err)
-	h := newHarness(t, realDocker)
+	h := newHarness(t, swarm)
 
-	s := strelets.NewStrelets("_tmp", realDocker)
-
-	for i := 1; i <= 3; i++ {
-		provisionVchains(t, h, s, HTTP_PORT, GOSSIP_PORT, i, 42)
-	}
-	// FIXME boyar should take care of it, not the harness
-	defer h.stopChain(t)
-	//defer realDocker.RemoveContainer(context.Background(), "http-api-reverse-proxy")
-
-	waitForBlock(t, h.getMetricsForPort(8125), 3, 20*time.Second)
-}
-
-func TestE2EProvisionMultipleVchainsWithDockerAndBoyar(t *testing.T) {
-	skipUnlessDockerIsEnabled(t)
-
-	realDocker, err := adapter.NewDockerAPI("_tmp")
-	require.NoError(t, err)
-	h := newHarness(t, realDocker)
-
-	s := strelets.NewStrelets("_tmp", realDocker)
+	s := strelets.NewStrelets("_tmp", swarm)
 
 	for i := 1; i <= 3; i++ {
 		provisionVchains(t, h, s, HTTP_PORT, GOSSIP_PORT, i, 42, 92)
@@ -108,33 +89,6 @@ func TestE2EProvisionMultipleVchainsWithDockerAndBoyar(t *testing.T) {
 
 	waitForBlock(t, h.getMetricsForPort(8125), 3, 20*time.Second)
 	waitForBlock(t, h.getMetricsForPort(8175), 0, 20*time.Second)
-}
-
-func TestE2EAddNewVirtualChainWithDockerAndBoyar(t *testing.T) {
-	skipUnlessDockerIsEnabled(t)
-
-	realDocker, err := adapter.NewDockerAPI("_tmp")
-	require.NoError(t, err)
-	h := newHarness(t, realDocker)
-
-	s := strelets.NewStrelets("_tmp", realDocker)
-
-	for i := 1; i <= 3; i++ {
-		provisionVchains(t, h, s, HTTP_PORT, GOSSIP_PORT, i, 42)
-	}
-	// FIXME boyar should take care of it, not the harness
-	defer h.stopChains(t, 42)
-	//defer realDocker.RemoveContainer(context.Background(), "http-api-reverse-proxy")
-
-	waitForBlock(t, h.getMetricsForPort(8125), 3, 20*time.Second)
-
-	for i := 1; i <= 3; i++ {
-		provisionVchains(t, h, s, HTTP_PORT+1000, GOSSIP_PORT+1000, i, 42, 92)
-	}
-	defer h.stopChains(t, 92)
-
-	waitForBlock(t, h.getMetricsForPort(9125), 3, 20*time.Second)
-	waitForBlock(t, h.getMetricsForPort(9175), 0, 20*time.Second)
 }
 
 func TestE2EAddNewVirtualChainWithSwarmAndBoyar(t *testing.T) {

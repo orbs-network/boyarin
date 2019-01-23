@@ -32,11 +32,8 @@ func newHarness(t *testing.T, docker adapter.Orchestrator) *harness {
 		configPath = configPathFromEnv
 	}
 
-	root := "_tmp"
-	os.RemoveAll(root)
-
 	return &harness{
-		s:          strelets.NewStrelets(root, docker),
+		s:          strelets.NewStrelets(docker),
 		configPath: configPath,
 	}
 }

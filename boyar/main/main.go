@@ -27,7 +27,7 @@ func build(keyPairConfigPath string, configUrl string, prevConfigHash string) (c
 	}
 	defer orchestrator.Close()
 
-	s := strelets.NewStrelets("_tmp", orchestrator)
+	s := strelets.NewStrelets(orchestrator)
 	b := boyar.NewBoyar(s, config, keyPairConfigPath)
 
 	if err = b.ProvisionVirtualChains(context.Background()); err != nil {

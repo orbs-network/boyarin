@@ -23,7 +23,7 @@ func testUpdateReverseProxy(t *testing.T, apiProvider func() (adapter.Orchestrat
 	api, err := apiProvider()
 	require.NoError(t, err)
 
-	s := strelets.NewStrelets("_tmp", api)
+	s := strelets.NewStrelets(api)
 	chain := chain(1)
 	chain.HttpPort = server.Port()
 

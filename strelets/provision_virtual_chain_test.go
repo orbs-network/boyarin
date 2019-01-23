@@ -58,7 +58,7 @@ func (m *mockRunner) Run(ctx context.Context) (err error) {
 
 func TestStrelets_ProvisionVirtualChain(t *testing.T) {
 	orchestrator := &mockOrchestrator{}
-	s := NewStrelets("_tmp", orchestrator)
+	s := NewStrelets(orchestrator)
 
 	runner := &mockRunner{failedAttempts: 0}
 	runner.On("Run", mock.Anything).Return(nil)
@@ -81,7 +81,7 @@ func TestStrelets_ProvisionVirtualChain(t *testing.T) {
 
 func TestStrelets_ProvisionVirtualChainWithRetries(t *testing.T) {
 	orchestrator := &mockOrchestrator{}
-	s := NewStrelets("_tmp", orchestrator)
+	s := NewStrelets(orchestrator)
 
 	runner := &mockRunner{failedAttempts: 2}
 	runner.On("Run", mock.Anything).Return(nil)

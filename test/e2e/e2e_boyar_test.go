@@ -78,7 +78,7 @@ func TestE2EProvisionMultipleVchainsWithSwarmAndBoyar(t *testing.T) {
 	require.NoError(t, err)
 	h := newHarness(t, swarm)
 
-	s := strelets.NewStrelets("_tmp", swarm)
+	s := strelets.NewStrelets(swarm)
 
 	for i := 1; i <= 3; i++ {
 		provisionVchains(t, h, s, HTTP_PORT, GOSSIP_PORT, i, 42, 92)
@@ -98,7 +98,7 @@ func TestE2EAddNewVirtualChainWithSwarmAndBoyar(t *testing.T) {
 	require.NoError(t, err)
 	h := newHarness(t, swarm)
 
-	s := strelets.NewStrelets("_tmp", swarm)
+	s := strelets.NewStrelets(swarm)
 
 	for i := 1; i <= 3; i++ {
 		provisionVchains(t, h, s, HTTP_PORT, GOSSIP_PORT, i, 42)

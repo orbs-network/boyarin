@@ -11,7 +11,7 @@ type VirtualChain struct {
 	Id           VirtualChainId
 	HttpPort     int
 	GossipPort   int
-	DockerConfig *DockerImageConfig `json:"DockerConfig"`
+	DockerConfig DockerImageConfig `json:"DockerConfig"`
 	Config       map[string]interface{}
 }
 

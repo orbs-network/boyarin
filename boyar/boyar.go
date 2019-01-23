@@ -4,19 +4,20 @@ import (
 	"context"
 	"fmt"
 	"github.com/orbs-network/boyarin/strelets"
+	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test"
 )
 
 type nodeConfiguration struct {
-	Chains              []*strelets.VirtualChain      `json:"chains"`
-	FederationNodes     []*strelets.FederationNode    `json:"network"`
-	OrchestratorOptions *strelets.OrchestratorOptions `json:"orchestrator"`
+	Chains              []*strelets.VirtualChain    `json:"chains"`
+	FederationNodes     []*strelets.FederationNode  `json:"network"`
+	OrchestratorOptions adapter.OrchestratorOptions `json:"orchestrator"`
 }
 
 type NodeConfiguration interface {
 	FederationNodes() []*strelets.FederationNode
 	Chains() []*strelets.VirtualChain
-	OrchestratorOptions() *strelets.OrchestratorOptions
+	OrchestratorOptions() adapter.OrchestratorOptions
 	Hash() string
 }
 

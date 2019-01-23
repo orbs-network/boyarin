@@ -40,10 +40,23 @@ func Test_StringConfigurationSource(t *testing.T) {
 	source, err := boyar.NewStringConfigurationSource(getJSONConfig())
 	require.NoError(t, err)
 
+	require.NotEmpty(t, source.Hash())
+
 	require.Equal(t, "http://localhost:8545", source.Chains()[0].Config["ethereum-endpoint"])
 
 	require.NotNil(t, source.OrchestratorOptions())
-	require.Equal(t, "ebs", source.OrchestratorOptions().StorageDriver())
-	require.NotNil(t, source.OrchestratorOptions().StorageOptions())
-	require.Equal(t, "100", source.OrchestratorOptions().StorageOptions()["maxRetries"])
+	require.Equal(t, "ebs", source.OrchestratorOptions().StorageDriver)
+	require.NotNil(t, source.OrchestratorOptions().StorageOptions)
+	require.Equal(t, "100", source.OrchestratorOptions().StorageOptions["maxRetries"])
+}
+
+func Test_StringConfigurationSourceFromEmptyConfig(t *testing.T) {
+	source, err := boyar.NewStringConfigurationSource("{}")
+	require.NoError(t, err)
+
+	require.NotEmpty(t, source.Hash())
+	require.Empty(t, source.Chains())
+	require.Empty(t, source.FederationNodes())
+	require.NotNil(t, source.OrchestratorOptions())
+
 }

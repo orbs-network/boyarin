@@ -41,7 +41,7 @@ func build(orchestratorName string, keyPairConfigPath string, configUrl string, 
 	return
 }
 
-func getOrchestrator(orchestratorName string, options *strelets.OrchestratorOptions) (orchestrator adapter.Orchestrator, err error) {
+func getOrchestrator(orchestratorName string, options adapter.OrchestratorOptions) (orchestrator adapter.Orchestrator, err error) {
 	switch orchestratorName {
 	case "docker":
 		orchestrator, err = adapter.NewDockerAPI("_tmp")

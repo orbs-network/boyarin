@@ -2,6 +2,7 @@ package boyar
 
 import (
 	"github.com/orbs-network/boyarin/strelets"
+	"github.com/orbs-network/boyarin/strelets/adapter"
 )
 
 type stringConfigurationSource struct {
@@ -25,6 +26,6 @@ func (c *stringConfigurationSource) Hash() string {
 	return c.hash
 }
 
-func (c *stringConfigurationSource) OrchestratorOptions() *strelets.OrchestratorOptions {
+func (c *stringConfigurationSource) OrchestratorOptions() adapter.OrchestratorOptions {
 	return c.value.OrchestratorOptions
 }

@@ -1,29 +1,11 @@
 package e2e
 
 import (
-	"fmt"
 	"github.com/orbs-network/boyarin/strelets/adapter"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
 )
-
-func TestE2E(t *testing.T) {
-	docker := NewMockDockerAdapter()
-	h := newHarness(t, docker)
-
-	for i := 1; i <= 3; i++ {
-		docker.mock.On("Prepare", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once()
-		docker.runner.mock.On("Run", mock.Anything).Once()
-		docker.mock.On("RemoveContainer", mock.Anything, fmt.Sprintf("node%d-chain-42", i)).Once()
-	}
-
-	h.startChain(t)
-	h.stopChain(t)
-
-	docker.VerifyMocks(t)
-}
 
 func TestE2EWithDockerSwarm(t *testing.T) {
 	skipUnlessSwarmIsEnabled(t)

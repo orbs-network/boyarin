@@ -28,9 +28,9 @@ func TestE2E(t *testing.T) {
 func TestE2EWithDockerSwarm(t *testing.T) {
 	skipUnlessSwarmIsEnabled(t)
 
-	realDocker, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
+	swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
 	require.NoError(t, err)
-	h := newHarness(t, realDocker)
+	h := newHarness(t, swarm)
 
 	h.startChain(t)
 	defer h.stopChain(t)

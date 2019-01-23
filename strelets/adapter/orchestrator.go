@@ -28,7 +28,7 @@ type Orchestrator interface {
 	Close() error
 }
 
-type OrchestratorOptions interface {
-	StorageDriver() string
-	StorageOptions() map[string]string
+type OrchestratorOptions struct {
+	StorageDriver  string            `json:"storage-driver"`
+	StorageOptions map[string]string `json:"storage-options"`
 }

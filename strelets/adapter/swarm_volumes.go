@@ -27,13 +27,13 @@ func (d *dockerSwarm) provisionVolumes(ctx context.Context, containerName string
 // FIXME propagate maxSize from the config
 func (d *dockerSwarm) provisionVolume(ctx context.Context, volumeName string, target string, maxSizeInGb int) (mount.Mount, error) {
 	driver := "local"
-	if d.options.StorageDriver() != "" {
-		driver = d.options.StorageDriver()
+	if d.options.StorageDriver != "" {
+		driver = d.options.StorageDriver
 	}
 
 	driverOptions := make(map[string]string)
-	if len(d.options.StorageOptions()) > 0 {
-		driverOptions = d.options.StorageOptions()
+	if len(d.options.StorageOptions) > 0 {
+		driverOptions = d.options.StorageOptions
 	}
 
 	// Only enable size option for supported drivers

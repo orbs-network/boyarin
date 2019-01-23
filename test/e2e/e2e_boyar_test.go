@@ -21,7 +21,7 @@ func getBoyarVchains(httpPort int, gossipPort int, nodeIndex int, vchainIds ...i
 			Id:         strelets.VirtualChainId(vchainId),
 			HttpPort:   httpPort + vchainId + nodeIndex,
 			GossipPort: gossipPort + vchainId + nodeIndex,
-			DockerConfig: &strelets.DockerImageConfig{
+			DockerConfig: strelets.DockerImageConfig{
 				ContainerNamePrefix: fmt.Sprintf("node%d", nodeIndex),
 				Image:               "orbs",
 				Tag:                 "export",
@@ -140,7 +140,7 @@ func TestE2EAddNewVirtualChainWithDockerAndBoyar(t *testing.T) {
 func TestE2EAddNewVirtualChainWithSwarmAndBoyar(t *testing.T) {
 	skipUnlessSwarmIsEnabled(t)
 
-	swarm, err := adapter.NewDockerSwarm(&strelets.OrchestratorOptions{})
+	swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
 	require.NoError(t, err)
 	h := newHarness(t, swarm)
 

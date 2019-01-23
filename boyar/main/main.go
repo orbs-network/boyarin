@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func build(orchestratorName string, keyPairConfigPath string, configUrl string, prevConfigHash string) (configHash string, err error) {
+func build(keyPairConfigPath string, configUrl string, prevConfigHash string) (configHash string, err error) {
 	config, err := boyar.NewUrlConfigurationSource(configUrl)
 	if err != nil {
 		return
@@ -21,7 +21,7 @@ func build(orchestratorName string, keyPairConfigPath string, configUrl string, 
 		return
 	}
 
-	orchestrator, err := getOrchestrator(orchestratorName, config.OrchestratorOptions())
+	orchestrator, err := adapter.NewDockerSwarm(config.OrchestratorOptions())
 	if err != nil {
 		return
 	}
@@ -41,21 +41,7 @@ func build(orchestratorName string, keyPairConfigPath string, configUrl string, 
 	return
 }
 
-func getOrchestrator(orchestratorName string, options adapter.OrchestratorOptions) (orchestrator adapter.Orchestrator, err error) {
-	switch orchestratorName {
-	case "docker":
-		orchestrator, err = adapter.NewDockerAPI("_tmp")
-	case "swarm":
-		orchestrator, err = adapter.NewDockerSwarm(options)
-	default:
-		err = fmt.Errorf("could not recognize orchestrator: %s", orchestratorName)
-	}
-
-	return orchestrator, err
-}
-
 func main() {
-	orchestratorPtr := flag.String("orchestrator", "docker", "docker|swarm")
 	configUrlPtr := flag.String("config-url", "", "http://my-config/config.json")
 	keyPairConfigPathPtr := flag.String("keys", "", "path to public/private key pair in json format")
 
@@ -68,7 +54,7 @@ func main() {
 		successfulConfigHash := ""
 
 		for true {
-			if configHash, err := build(*orchestratorPtr, *keyPairConfigPathPtr, *configUrlPtr, successfulConfigHash); err != nil {
+			if configHash, err := build(*keyPairConfigPathPtr, *configUrlPtr, successfulConfigHash); err != nil {
 				fmt.Println("ERROR:", err)
 				fmt.Println("Latest successful configuration", successfulConfigHash)
 			} else {
@@ -78,7 +64,7 @@ func main() {
 			<-time.After(time.Duration(*pollingIntervalPtr) * time.Second)
 		}
 	} else {
-		if _, err := build(*orchestratorPtr, *keyPairConfigPathPtr, *configUrlPtr, ""); err != nil {
+		if _, err := build(*keyPairConfigPathPtr, *configUrlPtr, ""); err != nil {
 			fmt.Println("ERROR:", err)
 			os.Exit(1)
 		}

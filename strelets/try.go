@@ -21,7 +21,7 @@ func Try(parentContext context.Context, tries int, timeoutPerTry time.Duration, 
 			return
 		}
 
-		fmt.Println(fmt.Printf("attempt #%d, retry in %s: %s", i, retryAfter, err))
+		fmt.Println(fmt.Sprintf("attempt #%d, retry in %s: %s", i, retryAfter, err))
 		time.Sleep(retryAfter)
 		retryAfter = retryAfter * 2
 	}

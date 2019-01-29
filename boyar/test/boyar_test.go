@@ -61,15 +61,20 @@ func Test_StringConfigurationSourceFromEmptyConfig(t *testing.T) {
 }
 
 func TestBoyar_ProvisionVirtualChainsWithNoConfigChanges(t *testing.T) {
-	t.Skip("temp skip")
-
 	config, _ := boyar.NewStringConfigurationSource(getJSONConfig())
 
-	orchestrator := &OrchestratorMock{}
+	orchestrator, runner := NewOrchestratorAndRunnerMocks()
 
 	s := strelets.NewStrelets(orchestrator)
 	b := boyar.NewBoyar(s, config, "./config.json")
 
 	err := b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
+	orchestrator.AssertNumberOfCalls(t, "Prepare", 1)
+	runner.AssertNumberOfCalls(t, "Run", 1)
+
+	err = b.ProvisionVirtualChains(context.Background())
+	require.NoError(t, err)
+	orchestrator.AssertNumberOfCalls(t, "Prepare", 1)
+	runner.AssertNumberOfCalls(t, "Run", 1)
 }

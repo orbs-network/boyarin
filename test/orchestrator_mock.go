@@ -34,3 +34,14 @@ func (a *OrchestratorMock) Close() error {
 	panic("not implemented")
 	return nil
 }
+
+func NewOrchestratorAndRunnerMocks() (*OrchestratorMock, *RunnerMock) {
+	orchestrator := &OrchestratorMock{}
+
+	runner := &RunnerMock{}
+	runner.On("Run", mock.Anything).Return(nil)
+
+	orchestrator.On("Prepare", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(runner, nil)
+
+	return orchestrator, runner
+}

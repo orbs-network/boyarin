@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 )
@@ -53,6 +54,10 @@ func testUpdateReverseProxy(t *testing.T, apiProvider func() (adapter.Orchestrat
 }
 
 func Test_UpdateReverseProxyWithSwarm(t *testing.T) {
+	if os.Getenv("CI") == "true" {
+		t.Skip("skip because of CI flakiness")
+	}
+
 	skipUnlessSwarmIsEnabled(t)
 
 	testUpdateReverseProxy(t, func() (adapter.Orchestrator, error) {

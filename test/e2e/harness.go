@@ -9,7 +9,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
-	"github.com/orbs-network/boyarin/test"
+	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"net/http"
@@ -78,7 +78,7 @@ func (h *harness) stopChainInstance(t *testing.T, vchainId int, i int) {
 }
 
 func (h *harness) startChainInstance(t *testing.T, i int) {
-	localIP := test.LocalIP()
+	localIP := helpers.LocalIP()
 	ctx := context.Background()
 
 	err := h.s.ProvisionVirtualChain(ctx, &strelets.ProvisionVirtualChainInput{
@@ -91,7 +91,7 @@ func (h *harness) startChainInstance(t *testing.T, i int) {
 }
 
 func (h *harness) getMetricsEndpoint(port int) string {
-	return "http://" + test.LocalIP() + ":" + strconv.Itoa(port) + "/metrics"
+	return "http://" + helpers.LocalIP() + ":" + strconv.Itoa(port) + "/metrics"
 }
 
 func (h *harness) httpGet(url string) ([]byte, error) {
@@ -135,7 +135,7 @@ func (h *harness) getMetricsForEndpoint(getEndpoint func() string) func() (map[s
 
 func (h *harness) getMetricsForVchain(port int, vchainId int) func() (map[string]interface{}, error) {
 	return h.getMetricsForEndpoint(func() string {
-		return "http://" + test.LocalIP() + ":" + strconv.Itoa(port) + "/vchains/" + strconv.Itoa(vchainId) + "/metrics"
+		return "http://" + helpers.LocalIP() + ":" + strconv.Itoa(port) + "/vchains/" + strconv.Itoa(vchainId) + "/metrics"
 	})
 }
 
@@ -168,7 +168,7 @@ func DockerConfig(node string) strelets.DockerImageConfig {
 func Peers(ip string) *strelets.PeersMap {
 	peers := make(strelets.PeersMap)
 
-	for i, key := range test.NodeAddresses() {
+	for i, key := range helpers.NodeAddresses() {
 		peers[strelets.NodeAddress(key)] = &strelets.Peer{
 			IP:   ip,
 			Port: 4400 + i + 1,
@@ -179,7 +179,7 @@ func Peers(ip string) *strelets.PeersMap {
 }
 
 func waitForBlock(t *testing.T, getMetrics func() (map[string]interface{}, error), targetBlockHeight int, timeout time.Duration) {
-	require.True(t, test.Eventually(timeout, func() bool {
+	require.True(t, helpers.Eventually(timeout, func() bool {
 		blockHeight, err := getBlockHeight(getMetrics)
 		if err != nil {
 			return false

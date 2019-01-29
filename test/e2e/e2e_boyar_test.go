@@ -7,7 +7,7 @@ import (
 	"github.com/orbs-network/boyarin/boyar"
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
-	"github.com/orbs-network/boyarin/test"
+	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -36,11 +36,11 @@ func getBoyarVchains(httpPort int, gossipPort int, nodeIndex int, vchainIds ...i
 }
 
 func getBoyarConfig(gossipPort int, vchains []*strelets.VirtualChain) []byte {
-	ip := test.LocalIP()
+	ip := helpers.LocalIP()
 
 	configMap := make(map[string]interface{})
 	var network []*strelets.FederationNode
-	for i, key := range test.NodeAddresses() {
+	for i, key := range helpers.NodeAddresses() {
 		network = append(network, &strelets.FederationNode{
 			Key:  key,
 			IP:   ip,

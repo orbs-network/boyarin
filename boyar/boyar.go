@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
-	"github.com/orbs-network/boyarin/test"
+	"github.com/orbs-network/boyarin/test/helpers"
 )
 
 type nodeConfiguration struct {
@@ -56,9 +56,39 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 	return nil
 }
 
+func RunOnce(keyPairConfigPath string, configUrl string, prevConfigHash string) (configHash string, err error) {
+	config, err := NewUrlConfigurationSource(configUrl)
+	if err != nil {
+		return
+	}
+	configHash = config.Hash()
+	if configHash == prevConfigHash {
+		return
+	}
+
+	orchestrator, err := adapter.NewDockerSwarm(config.OrchestratorOptions())
+	if err != nil {
+		return
+	}
+	defer orchestrator.Close()
+
+	s := strelets.NewStrelets(orchestrator)
+	b := NewBoyar(s, config, keyPairConfigPath)
+
+	if err = b.ProvisionVirtualChains(context.Background()); err != nil {
+		return
+	}
+
+	if err = b.ProvisionHttpAPIEndpoint(context.Background()); err != nil {
+		return
+	}
+
+	return
+}
+
 func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
 	// TODO is there a better way to get a loopback interface?
-	return b.strelets.UpdateReverseProxy(ctx, b.config.Chains(), test.LocalIP())
+	return b.strelets.UpdateReverseProxy(ctx, b.config.Chains(), helpers.LocalIP())
 }
 
 func buildPeersMap(nodes []*strelets.FederationNode, gossipPort int) *strelets.PeersMap {

@@ -2,7 +2,7 @@ package strelets
 
 import (
 	"fmt"
-	"github.com/orbs-network/boyarin/test"
+	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -10,7 +10,7 @@ import (
 func Test_getNetworkConfigJSON(t *testing.T) {
 	peers := make(PeersMap)
 
-	for i, key := range test.NodeAddresses() {
+	for i, key := range helpers.NodeAddresses() {
 		peers[NodeAddress(key)] = &Peer{
 			IP:   fmt.Sprintf("10.0.0.%d", i+1),
 			Port: 4400 + i,

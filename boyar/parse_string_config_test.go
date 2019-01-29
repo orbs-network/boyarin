@@ -2,7 +2,7 @@ package boyar
 
 import (
 	"github.com/orbs-network/boyarin/strelets"
-	"github.com/orbs-network/boyarin/test"
+	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"net/http"
@@ -55,7 +55,7 @@ func TestNewStringConfigurationSource(t *testing.T) {
 }
 
 func TestNewUrlConfigurationSource(t *testing.T) {
-	server := test.CreateHttpServer("/", func(writer http.ResponseWriter, request *http.Request) {
+	server := helpers.CreateHttpServer("/", func(writer http.ResponseWriter, request *http.Request) {
 		writer.Write([]byte(getJSONConfig()))
 	})
 	server.Start()

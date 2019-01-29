@@ -30,7 +30,8 @@ func Test_BoyarProvisionVirtualChains(t *testing.T) {
 
 	streletsMock.On("ProvisionVirtualChain", mock.Anything, mock.Anything).Once()
 
-	err = b.ProvisionVirtualChains(context.Background())
+	cache := make(boyar.BoyarConfigCache)
+	_, err = b.ProvisionVirtualChains(context.Background(), cache)
 
 	require.NoError(t, err)
 	streletsMock.VerifyMocks(t)
@@ -68,13 +69,40 @@ func TestBoyar_ProvisionVirtualChainsWithNoConfigChanges(t *testing.T) {
 	s := strelets.NewStrelets(orchestrator)
 	b := boyar.NewBoyar(s, config, "./config.json")
 
-	err := b.ProvisionVirtualChains(context.Background())
-	require.NoError(t, err)
-	orchestrator.AssertNumberOfCalls(t, "Prepare", 1)
-	runner.AssertNumberOfCalls(t, "Run", 1)
+	cache := make(boyar.BoyarConfigCache)
 
-	err = b.ProvisionVirtualChains(context.Background())
+	cache, err := b.ProvisionVirtualChains(context.Background(), cache)
 	require.NoError(t, err)
 	orchestrator.AssertNumberOfCalls(t, "Prepare", 1)
 	runner.AssertNumberOfCalls(t, "Run", 1)
+	require.EqualValues(t, "4d775e0cd37e6c71e4aa4e0329fa56f8c47141ba202a8e900c5c46b05740e83d", cache[strelets.VirtualChainId(42)])
+
+	cache, err = b.ProvisionVirtualChains(context.Background(), cache)
+	require.NoError(t, err)
+	orchestrator.AssertNumberOfCalls(t, "Prepare", 1)
+	runner.AssertNumberOfCalls(t, "Run", 1)
+}
+
+func TestBoyar_ProvisionVirtualChainsReprovisionsIfConfigChanges(t *testing.T) {
+	config, _ := boyar.NewStringConfigurationSource(getJSONConfig())
+
+	orchestrator, runner := NewOrchestratorAndRunnerMocks()
+
+	s := strelets.NewStrelets(orchestrator)
+	b := boyar.NewBoyar(s, config, "./config.json")
+
+	cache := make(boyar.BoyarConfigCache)
+
+	cache, err := b.ProvisionVirtualChains(context.Background(), cache)
+	require.NoError(t, err)
+	orchestrator.AssertNumberOfCalls(t, "Prepare", 1)
+	runner.AssertNumberOfCalls(t, "Run", 1)
+	require.EqualValues(t, "4d775e0cd37e6c71e4aa4e0329fa56f8c47141ba202a8e900c5c46b05740e83d", cache[strelets.VirtualChainId(42)])
+
+	config.Chains()[0].Config["active-consensus-algo"] = 999
+
+	cache, err = b.ProvisionVirtualChains(context.Background(), cache)
+	require.NoError(t, err)
+	orchestrator.AssertNumberOfCalls(t, "Prepare", 2)
+	runner.AssertNumberOfCalls(t, "Run", 2)
 }

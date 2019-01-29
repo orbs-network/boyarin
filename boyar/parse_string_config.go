@@ -1,15 +1,9 @@
 package boyar
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
+	"github.com/orbs-network/boyarin/crypto"
 )
-
-func hash(input []byte) string {
-	checksum := sha256.Sum256(input)
-	return hex.EncodeToString(checksum[:])
-}
 
 func parseStringConfig(input string) (*stringConfigurationSource, error) {
 	var value nodeConfiguration
@@ -19,6 +13,6 @@ func parseStringConfig(input string) (*stringConfigurationSource, error) {
 
 	return &stringConfigurationSource{
 		value: value,
-		hash:  hash([]byte(input)),
+		hash:  crypto.CalculateHash([]byte(input)),
 	}, nil
 }

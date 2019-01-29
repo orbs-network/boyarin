@@ -2,7 +2,9 @@ package boyar
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/orbs-network/boyarin/crypto"
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test/helpers"
@@ -21,8 +23,10 @@ type NodeConfiguration interface {
 	Hash() string
 }
 
+type BoyarConfigCache map[strelets.VirtualChainId]string
+
 type Boyar interface {
-	ProvisionVirtualChains(ctx context.Context) error
+	ProvisionVirtualChains(ctx context.Context, configCache BoyarConfigCache) (BoyarConfigCache, error)
 	ProvisionHttpAPIEndpoint(ctx context.Context) error
 }
 
@@ -40,20 +44,31 @@ func NewBoyar(strelets strelets.Strelets, config NodeConfiguration, keyPairConfi
 	}
 }
 
-func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
+func (b *boyar) ProvisionVirtualChains(ctx context.Context, configCache BoyarConfigCache) (BoyarConfigCache, error) {
 	for _, chain := range b.config.Chains() {
 		peers := buildPeersMap(b.config.FederationNodes(), chain.GossipPort)
 
-		if err := b.strelets.ProvisionVirtualChain(ctx, &strelets.ProvisionVirtualChainInput{
+		input := &strelets.ProvisionVirtualChainInput{
 			VirtualChain:      chain,
 			KeyPairConfigPath: b.keyPairConfigPath,
 			Peers:             peers,
-		}); err != nil {
-			return fmt.Errorf("failed to provision virtual chain %d: %s", chain.Id, err)
 		}
+
+		data, _ := json.Marshal(input)
+		hash := crypto.CalculateHash(data)
+
+		if hash == configCache[chain.Id] {
+			return configCache, nil
+		}
+
+		if err := b.strelets.ProvisionVirtualChain(ctx, input); err != nil {
+			return nil, fmt.Errorf("failed to provision virtual chain %d: %s", chain.Id, err)
+		}
+
+		configCache[chain.Id] = hash
 	}
 
-	return nil
+	return configCache, nil
 }
 
 func RunOnce(keyPairConfigPath string, configUrl string, prevConfigHash string) (configHash string, err error) {
@@ -75,7 +90,8 @@ func RunOnce(keyPairConfigPath string, configUrl string, prevConfigHash string) 
 	s := strelets.NewStrelets(orchestrator)
 	b := NewBoyar(s, config, keyPairConfigPath)
 
-	if err = b.ProvisionVirtualChains(context.Background()); err != nil {
+	cache := make(BoyarConfigCache)
+	if _, err = b.ProvisionVirtualChains(context.Background(), cache); err != nil {
 		return
 	}
 

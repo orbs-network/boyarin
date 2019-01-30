@@ -26,7 +26,7 @@ func execute(daemonize bool, keyPairConfigPath string, configUrl string, polling
 	configCache := make(boyar.BoyarConfigCache)
 
 	if daemonize {
-		supervized.GoForever(func() {
+		<-supervized.GoForever(func() {
 			if err := boyar.RunOnce(keyPairConfigPath, configUrl, configCache); err != nil {
 				fmt.Println("ERROR:", err)
 			}

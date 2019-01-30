@@ -9,22 +9,24 @@ import (
 	"strings"
 )
 
-// Runs f() in a goroutine; if it panics, logs the error and stack trace to the specified Errorer
+// Runs f() in a goroutine; if it panics, logs the error and stack trace
 func GoOnce(f func()) {
 	go func() {
 		tryOnce(f)
 	}()
 }
 
-// Runs f() in a goroutine; if it panics, logs the error and stack trace to the specified Errorer
-// If the provided Context isn't closed, re-runs f()
+// Runs f() in a goroutine; if it panics, logs the error and stack trace
 // Returns a channel that is closed when the goroutine has quit due to context ending
-func GoForever(f func()) {
+func GoForever(f func()) chan interface{} {
+	c := make(chan interface{})
 	go func() {
 		for {
 			tryOnce(f)
 		}
 	}()
+
+	return c
 }
 
 // this function is needed so that we don't return out of the goroutine when it panics
@@ -36,7 +38,8 @@ func tryOnce(f func()) {
 func recoverPanics() {
 	if p := recover(); p != nil {
 		e := fmt.Errorf("goroutine panicked at [%s]: %v", identifyPanic(), p)
-		fmt.Println(fmt.Errorf("recovered panic: %s\n%s", e.Error(), string(debug.Stack())))
+		fmt.Println(e)
+		fmt.Println(string(debug.Stack()))
 	}
 }
 

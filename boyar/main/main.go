@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar"
+	"github.com/orbs-network/boyarin/supervized"
 	"os"
 	"time"
 )
@@ -17,11 +18,16 @@ func main() {
 
 	flag.Parse()
 
+	execute(*daemonizePtr, *keyPairConfigPathPtr, *configUrlPtr, *pollingIntervalPtr)
+}
+
+func execute(daemonize bool, keyPairConfigPath string, configUrl string, pollingInterval uint) {
+	// Even if something crashed, things still were provisioned, meaning the cache should stay
 	configCache := make(boyar.BoyarConfigCache)
 
-	if *daemonizePtr {
-		for true {
-			if err := boyar.RunOnce(*keyPairConfigPathPtr, *configUrlPtr, configCache); err != nil {
+	if daemonize {
+		supervized.GoForever(func() {
+			if err := boyar.RunOnce(keyPairConfigPath, configUrl, configCache); err != nil {
 				fmt.Println("ERROR:", err)
 			}
 
@@ -29,13 +35,12 @@ func main() {
 				fmt.Println(fmt.Sprintf("Latest successful configuration for vchain %s: %s", vcid, hash))
 			}
 
-			<-time.After(time.Duration(*pollingIntervalPtr) * time.Second)
-		}
+			<-time.After(time.Duration(pollingInterval) * time.Second)
+		})
 	} else {
-		if err := boyar.RunOnce(*keyPairConfigPathPtr, *configUrlPtr, configCache); err != nil {
+		if err := boyar.RunOnce(keyPairConfigPath, configUrl, configCache); err != nil {
 			fmt.Println("ERROR:", err)
 			os.Exit(1)
 		}
 	}
-
 }

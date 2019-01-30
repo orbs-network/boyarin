@@ -17,21 +17,22 @@ func main() {
 
 	flag.Parse()
 
-	if *daemonizePtr {
-		successfulConfigHash := ""
+	configCache := make(boyar.BoyarConfigCache)
 
+	if *daemonizePtr {
 		for true {
-			if configHash, err := boyar.RunOnce(*keyPairConfigPathPtr, *configUrlPtr, successfulConfigHash); err != nil {
+			if err := boyar.RunOnce(*keyPairConfigPathPtr, *configUrlPtr, configCache); err != nil {
 				fmt.Println("ERROR:", err)
-				fmt.Println("Latest successful configuration", successfulConfigHash)
-			} else {
-				fmt.Println("Successfully updated to latest configuration:", configHash)
-				successfulConfigHash = configHash
 			}
+
+			for vcid, hash := range configCache {
+				fmt.Println(fmt.Sprintf("Latest successful configuration for vchain %s: %s", vcid, hash))
+			}
+
 			<-time.After(time.Duration(*pollingIntervalPtr) * time.Second)
 		}
 	} else {
-		if _, err := boyar.RunOnce(*keyPairConfigPathPtr, *configUrlPtr, ""); err != nil {
+		if err := boyar.RunOnce(*keyPairConfigPathPtr, *configUrlPtr, configCache); err != nil {
 			fmt.Println("ERROR:", err)
 			os.Exit(1)
 		}

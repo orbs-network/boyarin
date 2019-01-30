@@ -9,7 +9,7 @@ import (
 )
 
 func TestStrelets_ProvisionVirtualChain(t *testing.T) {
-	orchestrator, runner := NewOrchestratorAndRunnerMocks()
+	orchestrator, runner, _ := NewOrchestratorAndRunnerMocks()
 	runner.FailedAttempts = 0
 
 	s := strelets.NewStrelets(orchestrator)
@@ -29,7 +29,7 @@ func TestStrelets_ProvisionVirtualChain(t *testing.T) {
 }
 
 func TestStrelets_ProvisionVirtualChainWithRetries(t *testing.T) {
-	orchestrator, runner := NewOrchestratorAndRunnerMocks()
+	orchestrator, runner, _ := NewOrchestratorAndRunnerMocks()
 	runner.FailedAttempts = 2
 
 	s := strelets.NewStrelets(orchestrator)

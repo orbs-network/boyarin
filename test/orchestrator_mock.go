@@ -26,8 +26,8 @@ func (a *OrchestratorMock) RemoveContainer(ctx context.Context, containerName st
 }
 
 func (a *OrchestratorMock) PrepareReverseProxy(ctx context.Context, config string) (adapter.Runner, error) {
-	panic("not implemented")
-	return nil, nil
+	res := a.MethodCalled("PrepareReverseProxy", ctx, config)
+	return res.Get(0).(adapter.Runner), res.Error(1)
 }
 
 func (a *OrchestratorMock) Close() error {
@@ -35,13 +35,17 @@ func (a *OrchestratorMock) Close() error {
 	return nil
 }
 
-func NewOrchestratorAndRunnerMocks() (*OrchestratorMock, *RunnerMock) {
-	orchestrator := &OrchestratorMock{}
+func NewOrchestratorAndRunnerMocks() (orchestrator *OrchestratorMock, virtualChainRunner *RunnerMock, reverseProxyRunner *RunnerMock) {
+	orchestrator = &OrchestratorMock{}
 
-	runner := &RunnerMock{}
-	runner.On("Run", mock.Anything).Return(nil)
+	virtualChainRunner = &RunnerMock{}
+	virtualChainRunner.On("Run", mock.Anything).Return(nil)
 
-	orchestrator.On("Prepare", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(runner, nil)
+	reverseProxyRunner = &RunnerMock{}
+	reverseProxyRunner.On("Run", mock.Anything).Return(nil)
 
-	return orchestrator, runner
+	orchestrator.On("Prepare", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(virtualChainRunner, nil)
+	orchestrator.On("PrepareReverseProxy", mock.Anything, mock.Anything).Return(reverseProxyRunner, nil)
+
+	return
 }

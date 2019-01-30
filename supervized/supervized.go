@@ -4,7 +4,6 @@ package supervized
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"runtime"
 	"runtime/debug"
 	"strings"
@@ -36,7 +35,7 @@ func tryOnce(f func()) {
 
 func recoverPanics() {
 	if p := recover(); p != nil {
-		e := errors.Errorf("goroutine panicked at [%s]: %v", identifyPanic(), p)
+		e := fmt.Errorf("goroutine panicked at [%s]: %v", identifyPanic(), p)
 		fmt.Println(fmt.Errorf("recovered panic: %s\n%s", e.Error(), string(debug.Stack())))
 	}
 }

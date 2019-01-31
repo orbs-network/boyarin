@@ -4,19 +4,15 @@ import (
 	"context"
 	"github.com/orbs-network/boyarin/strelets"
 	. "github.com/orbs-network/boyarin/test"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 func TestStrelets_ProvisionVirtualChain(t *testing.T) {
-	orchestrator := &OrchestratorMock{}
+	orchestrator, runner, _ := NewOrchestratorAndRunnerMocks()
+	runner.FailedAttempts = 0
+
 	s := strelets.NewStrelets(orchestrator)
-
-	runner := &RunnerMock{FailedAttempts: 0}
-	runner.On("Run", mock.Anything).Return(nil)
-
-	orchestrator.On("Prepare", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(runner, nil)
 
 	peers := make(strelets.PeersMap)
 	err := s.ProvisionVirtualChain(context.Background(), &strelets.ProvisionVirtualChainInput{
@@ -33,13 +29,10 @@ func TestStrelets_ProvisionVirtualChain(t *testing.T) {
 }
 
 func TestStrelets_ProvisionVirtualChainWithRetries(t *testing.T) {
-	orchestrator := &OrchestratorMock{}
+	orchestrator, runner, _ := NewOrchestratorAndRunnerMocks()
+	runner.FailedAttempts = 2
+
 	s := strelets.NewStrelets(orchestrator)
-
-	runner := &RunnerMock{FailedAttempts: 2}
-	runner.On("Run", mock.Anything).Return(nil)
-
-	orchestrator.On("Prepare", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(runner, nil)
 
 	peers := make(strelets.PeersMap)
 	err := s.ProvisionVirtualChain(context.Background(), &strelets.ProvisionVirtualChainInput{

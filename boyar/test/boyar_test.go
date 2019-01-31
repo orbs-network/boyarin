@@ -26,7 +26,8 @@ func Test_BoyarProvisionVirtualChains(t *testing.T) {
 	source, err := boyar.NewStringConfigurationSource(getJSONConfig())
 	require.NoError(t, err)
 
-	b := boyar.NewBoyar(streletsMock, source, "/tmp/fake-key-pair.json")
+	cache := make(boyar.BoyarConfigCache)
+	b := boyar.NewBoyar(streletsMock, source, cache, "/tmp/fake-key-pair.json")
 
 	streletsMock.On("ProvisionVirtualChain", mock.Anything, mock.Anything).Once()
 
@@ -61,15 +62,89 @@ func Test_StringConfigurationSourceFromEmptyConfig(t *testing.T) {
 }
 
 func TestBoyar_ProvisionVirtualChainsWithNoConfigChanges(t *testing.T) {
-	t.Skip("temp skip")
-
 	config, _ := boyar.NewStringConfigurationSource(getJSONConfig())
 
-	orchestrator := &OrchestratorMock{}
+	orchestrator, virtualChainRunner, _ := NewOrchestratorAndRunnerMocks()
 
 	s := strelets.NewStrelets(orchestrator)
-	b := boyar.NewBoyar(s, config, "./config.json")
+	cache := make(boyar.BoyarConfigCache)
+	b := boyar.NewBoyar(s, config, cache, "./config.json")
 
 	err := b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
+	orchestrator.AssertNumberOfCalls(t, "Prepare", 1)
+	virtualChainRunner.AssertNumberOfCalls(t, "Run", 1)
+	require.EqualValues(t, "4d775e0cd37e6c71e4aa4e0329fa56f8c47141ba202a8e900c5c46b05740e83d", cache["42"])
+
+	err = b.ProvisionVirtualChains(context.Background())
+	require.NoError(t, err)
+	orchestrator.AssertNumberOfCalls(t, "Prepare", 1)
+	virtualChainRunner.AssertNumberOfCalls(t, "Run", 1)
+}
+
+func TestBoyar_ProvisionVirtualChainsReprovisionsIfConfigChanges(t *testing.T) {
+	config, _ := boyar.NewStringConfigurationSource(getJSONConfig())
+
+	orchestrator, virtualChainRunner, _ := NewOrchestratorAndRunnerMocks()
+
+	s := strelets.NewStrelets(orchestrator)
+	cache := make(boyar.BoyarConfigCache)
+	b := boyar.NewBoyar(s, config, cache, "./config.json")
+
+	err := b.ProvisionVirtualChains(context.Background())
+	require.NoError(t, err)
+	orchestrator.AssertNumberOfCalls(t, "Prepare", 1)
+	virtualChainRunner.AssertNumberOfCalls(t, "Run", 1)
+	require.EqualValues(t, "4d775e0cd37e6c71e4aa4e0329fa56f8c47141ba202a8e900c5c46b05740e83d", cache["42"])
+
+	config.Chains()[0].Config["active-consensus-algo"] = 999
+
+	err = b.ProvisionVirtualChains(context.Background())
+	require.NoError(t, err)
+	orchestrator.AssertNumberOfCalls(t, "Prepare", 2)
+	virtualChainRunner.AssertNumberOfCalls(t, "Run", 2)
+}
+
+func TestBoyar_ProvisionHttpAPIEndpointWithNoConfigChanges(t *testing.T) {
+	config, _ := boyar.NewStringConfigurationSource(getJSONConfig())
+
+	orchestrator, _, httpProxyRunner := NewOrchestratorAndRunnerMocks()
+
+	s := strelets.NewStrelets(orchestrator)
+	cache := make(boyar.BoyarConfigCache)
+	b := boyar.NewBoyar(s, config, cache, "./config.json")
+
+	err := b.ProvisionHttpAPIEndpoint(context.Background())
+	require.NoError(t, err)
+	orchestrator.AssertNumberOfCalls(t, "PrepareReverseProxy", 1)
+	httpProxyRunner.AssertNumberOfCalls(t, "Run", 1)
+	require.EqualValues(t, "35288ee37aae40450bbe3afffd1219f16eef1117fc989552095ea6878b55e78b", cache[boyar.HTTP_REVERSE_PROXY_HASH])
+
+	err = b.ProvisionHttpAPIEndpoint(context.Background())
+	require.NoError(t, err)
+	orchestrator.AssertNumberOfCalls(t, "PrepareReverseProxy", 1)
+	httpProxyRunner.AssertNumberOfCalls(t, "Run", 1)
+}
+
+func TestBoyar_ProvisionHttpAPIEndpointReprovisionsIfConfigChanges(t *testing.T) {
+	config, _ := boyar.NewStringConfigurationSource(getJSONConfig())
+
+	orchestrator, _, httpProxyRunner := NewOrchestratorAndRunnerMocks()
+
+	s := strelets.NewStrelets(orchestrator)
+	cache := make(boyar.BoyarConfigCache)
+	b := boyar.NewBoyar(s, config, cache, "./config.json")
+
+	err := b.ProvisionHttpAPIEndpoint(context.Background())
+	require.NoError(t, err)
+	orchestrator.AssertNumberOfCalls(t, "PrepareReverseProxy", 1)
+	httpProxyRunner.AssertNumberOfCalls(t, "Run", 1)
+	require.EqualValues(t, "35288ee37aae40450bbe3afffd1219f16eef1117fc989552095ea6878b55e78b", cache[boyar.HTTP_REVERSE_PROXY_HASH])
+
+	config.Chains()[0].HttpPort = 9125
+
+	err = b.ProvisionHttpAPIEndpoint(context.Background())
+	require.NoError(t, err)
+	orchestrator.AssertNumberOfCalls(t, "PrepareReverseProxy", 2)
+	httpProxyRunner.AssertNumberOfCalls(t, "Run", 2)
 }

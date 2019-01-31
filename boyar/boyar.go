@@ -2,7 +2,9 @@ package boyar
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/orbs-network/boyarin/crypto"
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test/helpers"
@@ -21,6 +23,16 @@ type NodeConfiguration interface {
 	Hash() string
 }
 
+type BoyarConfigCache map[string]string
+
+type httpReverseProxyCompositeKey struct {
+	Id         strelets.VirtualChainId
+	HttpPort   int
+	GossipPort int
+}
+
+const HTTP_REVERSE_PROXY_HASH = "HTTP_REVERSE_PROXY_HASH"
+
 type Boyar interface {
 	ProvisionVirtualChains(ctx context.Context) error
 	ProvisionHttpAPIEndpoint(ctx context.Context) error
@@ -29,13 +41,15 @@ type Boyar interface {
 type boyar struct {
 	strelets          strelets.Strelets
 	config            NodeConfiguration
+	configCache       BoyarConfigCache
 	keyPairConfigPath string
 }
 
-func NewBoyar(strelets strelets.Strelets, config NodeConfiguration, keyPairConfigPath string) Boyar {
+func NewBoyar(strelets strelets.Strelets, config NodeConfiguration, configCache BoyarConfigCache, keyPairConfigPath string) Boyar {
 	return &boyar{
 		strelets:          strelets,
 		config:            config,
+		configCache:       configCache,
 		keyPairConfigPath: keyPairConfigPath,
 	}
 }
@@ -44,25 +58,32 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 	for _, chain := range b.config.Chains() {
 		peers := buildPeersMap(b.config.FederationNodes(), chain.GossipPort)
 
-		if err := b.strelets.ProvisionVirtualChain(ctx, &strelets.ProvisionVirtualChainInput{
+		input := &strelets.ProvisionVirtualChainInput{
 			VirtualChain:      chain,
 			KeyPairConfigPath: b.keyPairConfigPath,
 			Peers:             peers,
-		}); err != nil {
+		}
+
+		data, _ := json.Marshal(input)
+		hash := crypto.CalculateHash(data)
+
+		if hash == b.configCache[chain.Id.String()] {
+			return nil
+		}
+
+		if err := b.strelets.ProvisionVirtualChain(ctx, input); err != nil {
 			return fmt.Errorf("failed to provision virtual chain %d: %s", chain.Id, err)
 		}
+
+		b.configCache[chain.Id.String()] = hash
 	}
 
 	return nil
 }
 
-func RunOnce(keyPairConfigPath string, configUrl string, prevConfigHash string) (configHash string, err error) {
+func RunOnce(keyPairConfigPath string, configUrl string, configCache BoyarConfigCache) (err error) {
 	config, err := NewUrlConfigurationSource(configUrl)
 	if err != nil {
-		return
-	}
-	configHash = config.Hash()
-	if configHash == prevConfigHash {
 		return
 	}
 
@@ -73,7 +94,7 @@ func RunOnce(keyPairConfigPath string, configUrl string, prevConfigHash string) 
 	defer orchestrator.Close()
 
 	s := strelets.NewStrelets(orchestrator)
-	b := NewBoyar(s, config, keyPairConfigPath)
+	b := NewBoyar(s, config, configCache, keyPairConfigPath)
 
 	if err = b.ProvisionVirtualChains(context.Background()); err != nil {
 		return
@@ -87,8 +108,30 @@ func RunOnce(keyPairConfigPath string, configUrl string, prevConfigHash string) 
 }
 
 func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
+	var keys []httpReverseProxyCompositeKey
+
+	for _, chain := range b.config.Chains() {
+		keys = append(keys, httpReverseProxyCompositeKey{
+			Id:         chain.Id,
+			HttpPort:   chain.HttpPort,
+			GossipPort: chain.HttpPort,
+		})
+	}
+
+	data, _ := json.Marshal(keys)
+	hash := crypto.CalculateHash(data)
+
+	if hash == b.configCache[HTTP_REVERSE_PROXY_HASH] {
+		return nil
+	}
+
 	// TODO is there a better way to get a loopback interface?
-	return b.strelets.UpdateReverseProxy(ctx, b.config.Chains(), helpers.LocalIP())
+	if err := b.strelets.UpdateReverseProxy(ctx, b.config.Chains(), helpers.LocalIP()); err != nil {
+		return err
+	}
+
+	b.configCache[HTTP_REVERSE_PROXY_HASH] = hash
+	return nil
 }
 
 func buildPeersMap(nodes []*strelets.FederationNode, gossipPort int) *strelets.PeersMap {

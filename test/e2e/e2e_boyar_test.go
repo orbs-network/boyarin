@@ -64,7 +64,8 @@ func provisionVchains(t *testing.T, h *harness, s strelets.Strelets, httpPort in
 	config, err := boyar.NewStringConfigurationSource(string(boyarConfig))
 	require.NoError(t, err)
 
-	b := boyar.NewBoyar(s, config, fmt.Sprintf("%s/node%d/keys.json", h.configPath, i))
+	cache := make(boyar.BoyarConfigCache)
+	b := boyar.NewBoyar(s, config, cache, fmt.Sprintf("%s/node%d/keys.json", h.configPath, i))
 	err = b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
 	//err = s.UpdateReverseProxy(context.Background(), vchains, test.LocalIP())

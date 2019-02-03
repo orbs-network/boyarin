@@ -22,6 +22,20 @@
       "Config": {
         "ethereum-endpoint": "http://localhost:8545"
       }
+    },
+    {
+      "Id":        1991,
+      "HttpPort":   8081,
+      "GossipPort": 4401,
+      "DockerConfig": {
+        "ContainerNamePrefix": "node1",
+        "Image":  "506367651493.dkr.ecr.us-west-2.amazonaws.com/orbs-network-v1",
+        "Tag":    "master",
+        "Pull":   false
+      },
+      "Config": {
+        "ethereum-endpoint": "http://localhost:8545"
+      }
     }
   ]
 }

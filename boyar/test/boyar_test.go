@@ -29,7 +29,7 @@ func Test_BoyarProvisionVirtualChains(t *testing.T) {
 	cache := make(boyar.BoyarConfigCache)
 	b := boyar.NewBoyar(streletsMock, source, cache, "/tmp/fake-key-pair.json")
 
-	streletsMock.On("ProvisionVirtualChain", mock.Anything, mock.Anything).Once()
+	streletsMock.On("ProvisionVirtualChain", mock.Anything, mock.Anything).Twice()
 
 	err = b.ProvisionVirtualChains(context.Background())
 
@@ -72,14 +72,14 @@ func TestBoyar_ProvisionVirtualChainsWithNoConfigChanges(t *testing.T) {
 
 	err := b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
-	orchestrator.AssertNumberOfCalls(t, "Prepare", 1)
-	virtualChainRunner.AssertNumberOfCalls(t, "Run", 1)
+	orchestrator.AssertNumberOfCalls(t, "Prepare", 2)
+	virtualChainRunner.AssertNumberOfCalls(t, "Run", 2)
 	require.EqualValues(t, "4d775e0cd37e6c71e4aa4e0329fa56f8c47141ba202a8e900c5c46b05740e83d", cache["42"])
 
 	err = b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
-	orchestrator.AssertNumberOfCalls(t, "Prepare", 1)
-	virtualChainRunner.AssertNumberOfCalls(t, "Run", 1)
+	orchestrator.AssertNumberOfCalls(t, "Prepare", 2)
+	virtualChainRunner.AssertNumberOfCalls(t, "Run", 2)
 }
 
 func TestBoyar_ProvisionVirtualChainsReprovisionsIfConfigChanges(t *testing.T) {
@@ -93,16 +93,39 @@ func TestBoyar_ProvisionVirtualChainsReprovisionsIfConfigChanges(t *testing.T) {
 
 	err := b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
-	orchestrator.AssertNumberOfCalls(t, "Prepare", 1)
-	virtualChainRunner.AssertNumberOfCalls(t, "Run", 1)
+	orchestrator.AssertNumberOfCalls(t, "Prepare", 2)
+	virtualChainRunner.AssertNumberOfCalls(t, "Run", 2)
 	require.EqualValues(t, "4d775e0cd37e6c71e4aa4e0329fa56f8c47141ba202a8e900c5c46b05740e83d", cache["42"])
 
 	config.Chains()[0].Config["active-consensus-algo"] = 999
 
 	err = b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
+	orchestrator.AssertNumberOfCalls(t, "Prepare", 3)
+	virtualChainRunner.AssertNumberOfCalls(t, "Run", 3)
+}
+
+func TestBoyar_ProvisionVirtualChainsReprovisionsIfDockerConfigChanges(t *testing.T) {
+	config, _ := boyar.NewStringConfigurationSource(getJSONConfig())
+
+	orchestrator, virtualChainRunner, _ := NewOrchestratorAndRunnerMocks()
+
+	s := strelets.NewStrelets(orchestrator)
+	cache := make(boyar.BoyarConfigCache)
+	b := boyar.NewBoyar(s, config, cache, "./config.json")
+
+	err := b.ProvisionVirtualChains(context.Background())
+	require.NoError(t, err)
 	orchestrator.AssertNumberOfCalls(t, "Prepare", 2)
 	virtualChainRunner.AssertNumberOfCalls(t, "Run", 2)
+	require.EqualValues(t, "4d775e0cd37e6c71e4aa4e0329fa56f8c47141ba202a8e900c5c46b05740e83d", cache["42"])
+
+	config.Chains()[1].DockerConfig.Tag = "beta"
+
+	err = b.ProvisionVirtualChains(context.Background())
+	require.NoError(t, err)
+	orchestrator.AssertNumberOfCalls(t, "Prepare", 3)
+	virtualChainRunner.AssertNumberOfCalls(t, "Run", 3)
 }
 
 func TestBoyar_ProvisionHttpAPIEndpointWithNoConfigChanges(t *testing.T) {
@@ -118,7 +141,7 @@ func TestBoyar_ProvisionHttpAPIEndpointWithNoConfigChanges(t *testing.T) {
 	require.NoError(t, err)
 	orchestrator.AssertNumberOfCalls(t, "PrepareReverseProxy", 1)
 	httpProxyRunner.AssertNumberOfCalls(t, "Run", 1)
-	require.EqualValues(t, "35288ee37aae40450bbe3afffd1219f16eef1117fc989552095ea6878b55e78b", cache[boyar.HTTP_REVERSE_PROXY_HASH])
+	require.EqualValues(t, "c8a7873c3324a608d8290a24e3a5168950a9588ef6b288043596e09f1977d058", cache[boyar.HTTP_REVERSE_PROXY_HASH])
 
 	err = b.ProvisionHttpAPIEndpoint(context.Background())
 	require.NoError(t, err)
@@ -139,7 +162,7 @@ func TestBoyar_ProvisionHttpAPIEndpointReprovisionsIfConfigChanges(t *testing.T)
 	require.NoError(t, err)
 	orchestrator.AssertNumberOfCalls(t, "PrepareReverseProxy", 1)
 	httpProxyRunner.AssertNumberOfCalls(t, "Run", 1)
-	require.EqualValues(t, "35288ee37aae40450bbe3afffd1219f16eef1117fc989552095ea6878b55e78b", cache[boyar.HTTP_REVERSE_PROXY_HASH])
+	require.EqualValues(t, "c8a7873c3324a608d8290a24e3a5168950a9588ef6b288043596e09f1977d058", cache[boyar.HTTP_REVERSE_PROXY_HASH])
 
 	config.Chains()[0].HttpPort = 9125
 

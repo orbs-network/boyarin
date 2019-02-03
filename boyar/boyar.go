@@ -68,7 +68,7 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 		hash := crypto.CalculateHash(data)
 
 		if hash == b.configCache[chain.Id.String()] {
-			return nil
+			continue
 		}
 
 		if err := b.strelets.ProvisionVirtualChain(ctx, input); err != nil {

@@ -26,7 +26,7 @@ func verifySource(t *testing.T, source NodeConfiguration) {
 		},
 	}, source.FederationNodes())
 
-	require.EqualValues(t, 1, len(source.Chains()))
+	require.EqualValues(t, 2, len(source.Chains()))
 
 	chain := source.Chains()[0]
 

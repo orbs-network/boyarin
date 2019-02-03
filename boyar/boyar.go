@@ -81,30 +81,30 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 	return nil
 }
 
-func RunOnce(keyPairConfigPath string, configUrl string, configCache BoyarConfigCache) (err error) {
+func RunOnce(keyPairConfigPath string, configUrl string, configCache BoyarConfigCache) error {
 	config, err := NewUrlConfigurationSource(configUrl)
 	if err != nil {
-		return
+		return err
 	}
 
 	orchestrator, err := adapter.NewDockerSwarm(config.OrchestratorOptions())
 	if err != nil {
-		return
+		return err
 	}
 	defer orchestrator.Close()
 
 	s := strelets.NewStrelets(orchestrator)
 	b := NewBoyar(s, config, configCache, keyPairConfigPath)
 
-	if err = b.ProvisionVirtualChains(context.Background()); err != nil {
-		return
+	if err := b.ProvisionVirtualChains(context.Background()); err != nil {
+		return err
 	}
 
-	if err = b.ProvisionHttpAPIEndpoint(context.Background()); err != nil {
-		return
+	if err := b.ProvisionHttpAPIEndpoint(context.Background()); err != nil {
+		return err
 	}
 
-	return
+	return nil
 }
 
 func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {

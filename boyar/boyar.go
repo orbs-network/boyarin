@@ -8,6 +8,7 @@ import (
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test/helpers"
+	"time"
 )
 
 type nodeConfiguration struct {
@@ -76,6 +77,8 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 		}
 
 		b.configCache[chain.Id.String()] = hash
+		fmt.Println(time.Now(), fmt.Sprintf("INFO: updated virtual chain %d with configuration %s", chain.Id, hash))
+		fmt.Println(string(data))
 	}
 
 	return nil

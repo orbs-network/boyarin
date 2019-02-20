@@ -28,18 +28,18 @@ func execute(daemonize bool, keyPairConfigPath string, configUrl string, polling
 	if daemonize {
 		<-supervized.GoForever(func() {
 			if err := boyar.RunOnce(keyPairConfigPath, configUrl, configCache); err != nil {
-				fmt.Println("ERROR:", err)
+				fmt.Println(time.Now(), "ERROR:", err)
 			}
 
 			for vcid, hash := range configCache {
-				fmt.Println(fmt.Sprintf("Latest successful configuration for vchain %s: %s", vcid, hash))
+				fmt.Println(time.Now(), fmt.Sprintf("Latest successful configuration for vchain %s: %s", vcid, hash))
 			}
 
 			<-time.After(time.Duration(pollingInterval) * time.Second)
 		})
 	} else {
 		if err := boyar.RunOnce(keyPairConfigPath, configUrl, configCache); err != nil {
-			fmt.Println("ERROR:", err)
+			fmt.Println(time.Now(), "ERROR:", err)
 			os.Exit(1)
 		}
 	}

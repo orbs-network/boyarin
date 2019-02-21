@@ -67,7 +67,7 @@ func (rpc *EthereumRpcConnection) HeaderByNumber(ctx context.Context, number *bi
 func StringToEthereumAddress(input string) (common.Address, error) {
 	address, err := common.NewMixedcaseAddressFromString(input)
 	if err != nil {
-		return common.Address{}, fmt.Errorf("failed to parse topology contract ethereum address", err)
+		return common.Address{}, fmt.Errorf("failed to parse topology contract ethereum address: %s", err)
 	}
 
 	return address.Address(), nil

@@ -16,18 +16,21 @@ func main() {
 	daemonizePtr := flag.Bool("daemonize", false, "do not exit the program and keep polling for changes")
 	pollingIntervalPtr := flag.Uint("polling-interval", 60, "how often to poll for configuration in daemon mode (in seconds)")
 
+	ethereumEndpointPtr := flag.String("ethereum-endpoint", "", "Ethereum endpoint")
+	topologyContractAddressPtr := flag.String("topology-contract-address", "", "Ethereum address for topology contract")
+
 	flag.Parse()
 
-	execute(*daemonizePtr, *keyPairConfigPathPtr, *configUrlPtr, *pollingIntervalPtr)
+	execute(*daemonizePtr, *keyPairConfigPathPtr, *configUrlPtr, *pollingIntervalPtr, *ethereumEndpointPtr, *topologyContractAddressPtr)
 }
 
-func execute(daemonize bool, keyPairConfigPath string, configUrl string, pollingInterval uint) {
+func execute(daemonize bool, keyPairConfigPath string, configUrl string, pollingInterval uint, ethereumEndpoint string, topologyContractAddress string) {
 	// Even if something crashed, things still were provisioned, meaning the cache should stay
 	configCache := make(boyar.BoyarConfigCache)
 
 	if daemonize {
 		<-supervized.GoForever(func() {
-			if err := boyar.RunOnce(keyPairConfigPath, configUrl, configCache); err != nil {
+			if err := boyar.RunOnce(keyPairConfigPath, configUrl, ethereumEndpoint, topologyContractAddress, configCache); err != nil {
 				fmt.Println(time.Now(), "ERROR:", err)
 			}
 
@@ -38,7 +41,7 @@ func execute(daemonize bool, keyPairConfigPath string, configUrl string, polling
 			<-time.After(time.Duration(pollingInterval) * time.Second)
 		})
 	} else {
-		if err := boyar.RunOnce(keyPairConfigPath, configUrl, configCache); err != nil {
+		if err := boyar.RunOnce(keyPairConfigPath, configUrl, ethereumEndpoint, topologyContractAddress, configCache); err != nil {
 			fmt.Println(time.Now(), "ERROR:", err)
 			os.Exit(1)
 		}

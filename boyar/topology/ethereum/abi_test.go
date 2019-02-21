@@ -47,22 +47,6 @@ func TestABI_UnpackFunctionOutput(t *testing.T) {
 	require.Equal(t, "are belong to us", ret.StringValue, "text part from eth")
 }
 
-func TestABI_UnpackAllEventArgument(t *testing.T) {
-	ABIEvent := `[{"anonymous": false,"inputs": [{"indexed": true,"name": "tuid","type": "uint256"},{"indexed": false,"name": "value","type": "uint256"}],"name": "MyEvent","type": "event"}]`
-	parsedAbi := parseABIForTests(t, ABIEvent)
-	outputData := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 22}
-
-	ret := new(struct { // this is the struct this data will fit into
-		Tuid  *big.Int
-		Value *big.Int
-	})
-
-	err := ABIUnpackAllEventArguments(parsedAbi, ret, "MyEvent", outputData)
-	require.NoError(t, err, "unpack should not fail")
-	require.EqualValues(t, 11, ret.Tuid.Int64(), "Tuid from eth")
-	require.EqualValues(t, 22, ret.Value.Int64(), "Value from eth")
-}
-
 func parseABIForTests(t *testing.T, jsonAbi string) abi.ABI {
 	parsedABI, err := abi.JSON(strings.NewReader(jsonAbi))
 	require.NoError(t, err, "problem parsing ABI")

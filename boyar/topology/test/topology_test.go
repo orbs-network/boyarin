@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/orbs-network/boyarin/boyar/topology"
 	"github.com/orbs-network/boyarin/boyar/topology/ethereum"
 	"github.com/orbs-network/boyarin/test"
 	"github.com/stretchr/testify/require"
@@ -36,8 +35,14 @@ func TestTopologyE2EWithGanache(t *testing.T) {
 		require.Len(t, value.NodeAddresses, 1)
 		require.Len(t, value.IpAddresses, 1)
 
-		require.EqualValues(t, "255.255.255.255", topology.IpToString(value.IpAddresses[0]))
-		require.EqualValues(t, "0000000000000000000000000000000000000000", topology.EthereumToOrbsAddress(value.NodeAddresses[0].Hex()))
+		ip := ethereum.IpToString(value.IpAddresses[0])
+		nodeAddress := ethereum.EthereumToOrbsAddress(value.NodeAddresses[0].Hex())
+
+		fmt.Println(ip)
+		fmt.Println(nodeAddress)
+
+		require.EqualValues(t, "255.255.255.255", ip)
+		require.EqualValues(t, "0000000000000000000000000000000000000000", nodeAddress)
 	})
 }
 

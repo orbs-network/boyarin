@@ -3,13 +3,12 @@ package test
 import (
 	"context"
 	"fmt"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/orbs-network/boyarin/boyar/topology"
 	"github.com/orbs-network/boyarin/boyar/topology/ethereum"
 	"github.com/orbs-network/boyarin/test"
 	"github.com/stretchr/testify/require"
 	"os"
-	"strings"
 	"testing"
 )
 
@@ -27,13 +26,7 @@ func TestTopologyE2EWithGanache(t *testing.T) {
 
 		fmt.Println(hexutil.Encode(contractAddress[:]))
 
-		parsedABI, err := abi.JSON(strings.NewReader(string(ethereum.TopologyContractABI)))
-		require.NoError(t, err, "abi parse failed for simple storage contract")
-
-		ethCallData, err := ethereum.ABIPackFunctionInputArguments(parsedABI, ethereum.TopologyContractMethodName, nil)
-		require.NoError(t, err, "this means we couldn't pack the params for ethereum, something is broken with the harness")
-
-		packedOutput, err := h.rpcAdapter.CallContract(ctx, contractAddress.Bytes(), ethCallData, nil)
+		packedOutput, err := ethereum.CallTopologyContract(ctx, h.rpcAdapter, contractAddress)
 		require.NoError(t, err, "expecting call to succeed")
 		require.True(t, len(packedOutput) > 0, "expecting packedOutput to have some data")
 
@@ -43,7 +36,8 @@ func TestTopologyE2EWithGanache(t *testing.T) {
 		require.Len(t, value.NodeAddresses, 1)
 		require.Len(t, value.IpAddresses, 1)
 
-		fmt.Println(value)
+		require.EqualValues(t, "255.255.255.255", topology.IpToString(value.IpAddresses[0]))
+		require.EqualValues(t, "0000000000000000000000000000000000000000", topology.EthereumToOrbsAddress(value.NodeAddresses[0].Hex()))
 	})
 }
 

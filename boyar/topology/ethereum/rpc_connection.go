@@ -2,6 +2,8 @@ package ethereum
 
 import (
 	"context"
+	"fmt"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"math/big"
@@ -52,6 +54,7 @@ func (rpc *EthereumRpcConnection) dialIfNeededAndReturnClient() (*ethclient.Clie
 	return rpc.mu.client, nil
 }
 
+// FIXME remove
 func (rpc *EthereumRpcConnection) HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error) {
 	client, err := rpc.dialIfNeededAndReturnClient()
 	if err != nil {
@@ -59,4 +62,13 @@ func (rpc *EthereumRpcConnection) HeaderByNumber(ctx context.Context, number *bi
 	}
 
 	return client.HeaderByNumber(ctx, number)
+}
+
+func StringToEthereumAddress(input string) (common.Address, error) {
+	address, err := common.NewMixedcaseAddressFromString(input)
+	if err != nil {
+		return common.Address{}, fmt.Errorf("failed to parse topology contract ethereum address", err)
+	}
+
+	return address.Address(), nil
 }

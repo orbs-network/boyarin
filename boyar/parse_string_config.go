@@ -2,17 +2,15 @@ package boyar
 
 import (
 	"encoding/json"
-	"github.com/orbs-network/boyarin/crypto"
 )
 
-func parseStringConfig(input string) (*stringConfigurationSource, error) {
+func parseStringConfig(input string) (*nodeConfigurationContainer, error) {
 	var value nodeConfiguration
 	if err := json.Unmarshal([]byte(input), &value); err != nil {
 		return nil, err
 	}
 
-	return &stringConfigurationSource{
+	return &nodeConfigurationContainer{
 		value: value,
-		hash:  crypto.CalculateHash([]byte(input)),
 	}, nil
 }

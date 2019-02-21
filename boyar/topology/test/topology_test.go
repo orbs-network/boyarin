@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/orbs-network/boyarin/boyar"
 	"github.com/orbs-network/boyarin/boyar/topology/ethereum"
 	"github.com/orbs-network/boyarin/test"
 	"github.com/stretchr/testify/require"
@@ -11,7 +12,7 @@ import (
 	"testing"
 )
 
-func TestTopologyE2EWithGanache(t *testing.T) {
+func TestRawTopologyE2EWithGanache(t *testing.T) {
 	//if !runningWithDocker() {
 	//	t.Skip("this test relies on external components - ganache, and will be skipped unless running in docker")
 	//}
@@ -46,14 +47,36 @@ func TestTopologyE2EWithGanache(t *testing.T) {
 	})
 }
 
+func TestTopologyE2EWithGanache(t *testing.T) {
+	//if !runningWithDocker() {
+	//	t.Skip("this test relies on external components - ganache, and will be skipped unless running in docker")
+	//}
+
+	test.WithContext(func(ctx context.Context) {
+		h := newRpcEthereumConnectorHarness(t, getConfig())
+
+		contractAddress, err := h.deployContract(ethereum.TopologyContractABI, ethereum.TopologyContractBytecode)
+		require.NoError(t, err, "failed deploying topology to Ethereum")
+		require.NotNil(t, contractAddress, "contract address is empty")
+
+		topology, err := boyar.GetEthereumTopology(ctx, getConfig().EthereumEndpoint(), contractAddress.Hex())
+		require.NoError(t, err, "failed to retrieve topology")
+
+		fmt.Println(topology[0])
+
+		require.EqualValues(t, "255.255.255.255", topology[0].IP)
+		require.EqualValues(t, "0000000000000000000000000000000000000000", topology[0].Key)
+	})
+}
+
 func runningWithDocker() bool {
 	return os.Getenv("EXTERNAL_TEST") == "true"
 }
 
-func getConfig() *ethereumConnectorConfigForTests {
-	var cfg ethereumConnectorConfigForTests
+func getConfig() *ethereumConnectorConfig {
+	var cfg ethereumConnectorConfig
 
-	return &ethereumConnectorConfigForTests{
+	return &ethereumConnectorConfig{
 		endpoint:      "http://localhost:7545",
 		privateKeyHex: "7a16631b19e5a7d121f13c3ece279c10c996ff14d8bebe609bf1eca41211b291", // mnemonic for this pk: pet talent sugar must audit chief biology trash change wheat educate bone
 	}

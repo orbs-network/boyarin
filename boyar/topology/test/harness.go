@@ -11,15 +11,15 @@ import (
 type harness struct {
 	rpcAdapter ethereum.DeployingEthereumConnection
 	address    string
-	config     *ethereumConnectorConfigForTests
+	config     *ethereumConnectorConfig
 }
 
-type ethereumConnectorConfigForTests struct {
+type ethereumConnectorConfig struct {
 	endpoint      string
 	privateKeyHex string
 }
 
-func (c *ethereumConnectorConfigForTests) EthereumEndpoint() string {
+func (c *ethereumConnectorConfig) EthereumEndpoint() string {
 	return c.endpoint
 }
 
@@ -40,7 +40,7 @@ func (h *harness) deployContract(abi string, bytecode string) (*common.Address, 
 	return address, nil
 }
 
-func newRpcEthereumConnectorHarness(tb testing.TB, cfg *ethereumConnectorConfigForTests) *harness {
+func newRpcEthereumConnectorHarness(tb testing.TB, cfg *ethereumConnectorConfig) *harness {
 	a := ethereum.NewEthereumRpcConnection(cfg)
 
 	return &harness{

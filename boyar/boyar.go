@@ -11,29 +11,6 @@ import (
 	"time"
 )
 
-type nodeConfiguration struct {
-	Chains              []*strelets.VirtualChain    `json:"chains"`
-	FederationNodes     []*strelets.FederationNode  `json:"network"`
-	OrchestratorOptions adapter.OrchestratorOptions `json:"orchestrator"`
-}
-
-type NodeConfiguration interface {
-	FederationNodes() []*strelets.FederationNode
-	Chains() []*strelets.VirtualChain
-	OrchestratorOptions() adapter.OrchestratorOptions
-	Hash() string
-}
-
-type BoyarConfigCache map[string]string
-
-type httpReverseProxyCompositeKey struct {
-	Id         strelets.VirtualChainId
-	HttpPort   int
-	GossipPort int
-}
-
-const HTTP_REVERSE_PROXY_HASH = "HTTP_REVERSE_PROXY_HASH"
-
 type Boyar interface {
 	ProvisionVirtualChains(ctx context.Context) error
 	ProvisionHttpAPIEndpoint(ctx context.Context) error

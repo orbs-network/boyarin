@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar"
@@ -19,9 +20,36 @@ func main() {
 	ethereumEndpointPtr := flag.String("ethereum-endpoint", "", "Ethereum endpoint")
 	topologyContractAddressPtr := flag.String("topology-contract-address", "", "Ethereum address for topology contract")
 
+	showConfiguration := flag.Bool("show-configuration", false, "Show configuration and exit")
+
 	flag.Parse()
 
+	if *showConfiguration {
+		printConfiguration(*configUrlPtr, *ethereumEndpointPtr, *topologyContractAddressPtr)
+		return
+	}
+
 	execute(*daemonizePtr, *keyPairConfigPathPtr, *configUrlPtr, *pollingIntervalPtr, *ethereumEndpointPtr, *topologyContractAddressPtr)
+}
+
+func printConfiguration(configUrl string, ethereumEndpoint string, topologyContractAddress string) {
+	config, err := boyar.GetConfiguration(configUrl, ethereumEndpoint, topologyContractAddress)
+	if err != nil {
+		fmt.Println("ERROR: could not pull valid configuration:", err)
+		return
+	}
+
+	fmt.Println("# Orchestrator options:\n# ============================")
+	orchestratorOptions, _ := json.MarshalIndent(config.OrchestratorOptions(), "", "  ")
+	fmt.Println(string(orchestratorOptions))
+
+	fmt.Println("# Peers:\n# ============================")
+	peers, _ := json.MarshalIndent(config.FederationNodes(), "", "  ")
+	fmt.Println(string(peers))
+
+	fmt.Println("# Chains:\n# ============================")
+	chains, _ := json.MarshalIndent(config.Chains(), "", "  ")
+	fmt.Println(string(chains))
 }
 
 func execute(daemonize bool, keyPairConfigPath string, configUrl string, pollingInterval uint, ethereumEndpoint string, topologyContractAddress string) {

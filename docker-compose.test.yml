@@ -1,0 +1,25 @@
+version: "3"
+services:
+  ganache:
+    image: trufflesuite/ganache-cli
+    ports:
+      - 7545:7545
+    command: -m 'pet talent sugar must audit chief biology trash change wheat educate bone' -i 5777 -p 7545
+
+  boyar:
+    image: orbs:build
+    privileged: true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - ganache
+    ports:
+      # for Test_UpdateReverseProxyWithSwarm
+      - 10080:10080
+    environment:
+      ENABLE_ETHEREUM: 'true'
+      ETHEREUM_PRIVATE_KEY: 7a16631b19e5a7d121f13c3ece279c10c996ff14d8bebe609bf1eca41211b291
+      ETHEREUM_ENDPOINT: http://ganache:7545
+      ENABLE_SWARM: 'true'
+      LOCAL_IP: $LOCAL_IP
+    command: sh -c "sleep 5 && ./test.e2e.sh"

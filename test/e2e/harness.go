@@ -179,14 +179,14 @@ func Peers(ip string) *strelets.PeersMap {
 }
 
 func waitForBlock(t *testing.T, getMetrics func() (map[string]interface{}, error), targetBlockHeight int, timeout time.Duration) {
-	require.True(t, helpers.Eventually(timeout, func() bool {
+	require.Truef(t, helpers.Eventually(timeout, func() bool {
 		blockHeight, err := getBlockHeight(getMetrics)
 		if err != nil {
 			return false
 		}
 
 		return blockHeight >= targetBlockHeight
-	}))
+	}), "expected block height to reach %d", targetBlockHeight)
 }
 
 func skipUnlessSwarmIsEnabled(t *testing.T) {

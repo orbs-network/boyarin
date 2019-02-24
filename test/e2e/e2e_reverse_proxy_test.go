@@ -9,19 +9,21 @@ import (
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"testing"
 	"time"
 )
 
-func testUpdateReverseProxy(t *testing.T, apiProvider func() (adapter.Orchestrator, error)) {
-	server := helpers.CreateHttpServer("/test", func(writer http.ResponseWriter, request *http.Request) {
+func Test_UpdateReverseProxyWithSwarm(t *testing.T) {
+	skipUnlessSwarmIsEnabled(t)
+
+	port := 10080
+	server := helpers.CreateHttpServer("/test", port, func(writer http.ResponseWriter, request *http.Request) {
 		writer.Write([]byte("success"))
 	})
 	server.Start()
 	defer server.Shutdown()
 
-	api, err := apiProvider()
+	api, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
 	require.NoError(t, err)
 
 	s := strelets.NewStrelets(api)
@@ -51,16 +53,4 @@ func testUpdateReverseProxy(t *testing.T, apiProvider func() (adapter.Orchestrat
 
 		return res.StatusCode == 200 && string(body) == "success"
 	}))
-}
-
-func Test_UpdateReverseProxyWithSwarm(t *testing.T) {
-	if os.Getenv("CI") == "true" {
-		t.Skip("skip because of CI flakiness")
-	}
-
-	skipUnlessSwarmIsEnabled(t)
-
-	testUpdateReverseProxy(t, func() (adapter.Orchestrator, error) {
-		return adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
-	})
 }

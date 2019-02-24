@@ -8,14 +8,11 @@ import (
 	"github.com/orbs-network/boyarin/boyar/topology/ethereum"
 	"github.com/orbs-network/boyarin/test"
 	"github.com/stretchr/testify/require"
-	"os"
 	"testing"
 )
 
 func TestRawTopologyE2EWithGanache(t *testing.T) {
-	//if !runningWithDocker() {
-	//	t.Skip("this test relies on external components - ganache, and will be skipped unless running in docker")
-	//}
+	skipUnlessEthereumIsEnabled(t)
 
 	test.WithContext(func(ctx context.Context) {
 		h := newRpcEthereumConnectorHarness(t, getConfig())
@@ -48,9 +45,7 @@ func TestRawTopologyE2EWithGanache(t *testing.T) {
 }
 
 func TestTopologyE2EWithGanache(t *testing.T) {
-	//if !runningWithDocker() {
-	//	t.Skip("this test relies on external components - ganache, and will be skipped unless running in docker")
-	//}
+	skipUnlessEthereumIsEnabled(t)
 
 	test.WithContext(func(ctx context.Context) {
 		h := newRpcEthereumConnectorHarness(t, getConfig())
@@ -67,27 +62,4 @@ func TestTopologyE2EWithGanache(t *testing.T) {
 		require.EqualValues(t, "255.255.255.255", topology[0].IP)
 		require.EqualValues(t, "0000000000000000000000000000000000000000", topology[0].Key)
 	})
-}
-
-func runningWithDocker() bool {
-	return os.Getenv("EXTERNAL_TEST") == "true"
-}
-
-func getConfig() *ethereumConnectorConfig {
-	var cfg ethereumConnectorConfig
-
-	return &ethereumConnectorConfig{
-		endpoint:      "http://localhost:7545",
-		privateKeyHex: "7a16631b19e5a7d121f13c3ece279c10c996ff14d8bebe609bf1eca41211b291", // mnemonic for this pk: pet talent sugar must audit chief biology trash change wheat educate bone
-	}
-
-	if endpoint := os.Getenv("ETHEREUM_ENDPOINT"); endpoint != "" {
-		cfg.endpoint = endpoint
-	}
-
-	if privateKey := os.Getenv("ETHEREUM_PRIVATE_KEY"); privateKey != "" {
-		cfg.privateKeyHex = privateKey
-	}
-
-	return &cfg
 }

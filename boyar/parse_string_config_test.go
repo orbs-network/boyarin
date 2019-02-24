@@ -55,7 +55,7 @@ func TestNewStringConfigurationSource(t *testing.T) {
 }
 
 func TestNewUrlConfigurationSource(t *testing.T) {
-	server := helpers.CreateHttpServer("/", func(writer http.ResponseWriter, request *http.Request) {
+	server := helpers.CreateHttpServer("/", 0, func(writer http.ResponseWriter, request *http.Request) {
 		writer.Write([]byte(getJSONConfig()))
 	})
 	server.Start()

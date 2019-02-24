@@ -5,6 +5,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/orbs-network/boyarin/boyar/topology/ethereum"
+	"os"
 	"testing"
 )
 
@@ -56,4 +57,29 @@ func (h *harness) authFromConfig() (*bind.TransactOpts, error) {
 	}
 
 	return bind.NewKeyedTransactor(key), nil
+}
+
+func skipUnlessEthereumIsEnabled(t *testing.T) {
+	if os.Getenv("ENABLE_ETHEREUM") != "true" {
+		t.Skip("skipping test, ethereum is disabled")
+	}
+}
+
+func getConfig() *ethereumConnectorConfig {
+	var cfg ethereumConnectorConfig
+
+	//return &ethereumConnectorConfig{
+	//	endpoint:      "http://localhost:7545",
+	//	privateKeyHex: "7a16631b19e5a7d121f13c3ece279c10c996ff14d8bebe609bf1eca41211b291", // mnemonic for this pk: pet talent sugar must audit chief biology trash change wheat educate bone
+	//}
+
+	if endpoint := os.Getenv("ETHEREUM_ENDPOINT"); endpoint != "" {
+		cfg.endpoint = endpoint
+	}
+
+	if privateKey := os.Getenv("ETHEREUM_PRIVATE_KEY"); privateKey != "" {
+		cfg.privateKeyHex = privateKey
+	}
+
+	return &cfg
 }

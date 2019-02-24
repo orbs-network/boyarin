@@ -17,7 +17,7 @@ func TestRawTopologyE2EWithGanache(t *testing.T) {
 	test.WithContext(func(ctx context.Context) {
 		h := newRpcEthereumConnectorHarness(t, getConfig())
 
-		contractAddress, err := h.deployContract(ethereum.TopologyContractABI, ethereum.TopologyContractBytecode)
+		contractAddress, err := h.deployContract(ethereum.TopologyContractABI, TopologyContractBytecode)
 		require.NoError(t, err, "failed deploying topology to Ethereum")
 		require.NotNil(t, contractAddress, "contract address is empty")
 
@@ -50,7 +50,7 @@ func TestTopologyE2EWithGanache(t *testing.T) {
 	test.WithContext(func(ctx context.Context) {
 		h := newRpcEthereumConnectorHarness(t, getConfig())
 
-		contractAddress, err := h.deployContract(ethereum.TopologyContractABI, ethereum.TopologyContractBytecode)
+		contractAddress, err := h.deployContract(ethereum.TopologyContractABI, TopologyContractBytecode)
 		require.NoError(t, err, "failed deploying topology to Ethereum")
 		require.NotNil(t, contractAddress, "contract address is empty")
 

@@ -1,12 +1,9 @@
 package ethereum
 
 import (
-	"context"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"math/big"
 	"sync"
 )
 
@@ -52,16 +49,6 @@ func (rpc *EthereumRpcConnection) dialIfNeededAndReturnClient() (*ethclient.Clie
 		}
 	}
 	return rpc.mu.client, nil
-}
-
-// FIXME remove
-func (rpc *EthereumRpcConnection) HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error) {
-	client, err := rpc.dialIfNeededAndReturnClient()
-	if err != nil {
-		return nil, err
-	}
-
-	return client.HeaderByNumber(ctx, number)
 }
 
 func StringToEthereumAddress(input string) (common.Address, error) {

@@ -5,10 +5,15 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"time"
 )
 
 func LocalIP() string {
+	if localIp := os.Getenv("LOCAL_IP"); localIp != "" {
+		return localIp
+	}
+
 	ifaces, _ := net.Interfaces()
 
 	for _, i := range ifaces {
@@ -81,8 +86,8 @@ func (h *httpServer) Port() int {
 	return h.listener.Addr().(*net.TCPAddr).Port
 }
 
-func CreateHttpServer(path string, f func(writer http.ResponseWriter, request *http.Request)) HttpServer {
-	listener, err := net.Listen("tcp", "0.0.0.0:0")
+func CreateHttpServer(path string, port int, f func(writer http.ResponseWriter, request *http.Request)) HttpServer {
+	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", port))
 	if err != nil {
 		panic(err)
 	}

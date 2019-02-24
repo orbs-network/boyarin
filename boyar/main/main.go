@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar"
@@ -16,18 +17,48 @@ func main() {
 	daemonizePtr := flag.Bool("daemonize", false, "do not exit the program and keep polling for changes")
 	pollingIntervalPtr := flag.Uint("polling-interval", 60, "how often to poll for configuration in daemon mode (in seconds)")
 
+	ethereumEndpointPtr := flag.String("ethereum-endpoint", "", "Ethereum endpoint")
+	topologyContractAddressPtr := flag.String("topology-contract-address", "", "Ethereum address for topology contract")
+
+	showConfiguration := flag.Bool("show-configuration", false, "Show configuration and exit")
+
 	flag.Parse()
 
-	execute(*daemonizePtr, *keyPairConfigPathPtr, *configUrlPtr, *pollingIntervalPtr)
+	if *showConfiguration {
+		printConfiguration(*configUrlPtr, *ethereumEndpointPtr, *topologyContractAddressPtr)
+		return
+	}
+
+	execute(*daemonizePtr, *keyPairConfigPathPtr, *configUrlPtr, *pollingIntervalPtr, *ethereumEndpointPtr, *topologyContractAddressPtr)
 }
 
-func execute(daemonize bool, keyPairConfigPath string, configUrl string, pollingInterval uint) {
+func printConfiguration(configUrl string, ethereumEndpoint string, topologyContractAddress string) {
+	config, err := boyar.GetConfiguration(configUrl, ethereumEndpoint, topologyContractAddress)
+	if err != nil {
+		fmt.Println("ERROR: could not pull valid configuration:", err)
+		return
+	}
+
+	fmt.Println("# Orchestrator options:\n# ============================")
+	orchestratorOptions, _ := json.MarshalIndent(config.OrchestratorOptions(), "", "  ")
+	fmt.Println(string(orchestratorOptions))
+
+	fmt.Println("# Peers:\n# ============================")
+	peers, _ := json.MarshalIndent(config.FederationNodes(), "", "  ")
+	fmt.Println(string(peers))
+
+	fmt.Println("# Chains:\n# ============================")
+	chains, _ := json.MarshalIndent(config.Chains(), "", "  ")
+	fmt.Println(string(chains))
+}
+
+func execute(daemonize bool, keyPairConfigPath string, configUrl string, pollingInterval uint, ethereumEndpoint string, topologyContractAddress string) {
 	// Even if something crashed, things still were provisioned, meaning the cache should stay
 	configCache := make(boyar.BoyarConfigCache)
 
 	if daemonize {
 		<-supervized.GoForever(func() {
-			if err := boyar.RunOnce(keyPairConfigPath, configUrl, configCache); err != nil {
+			if err := boyar.RunOnce(keyPairConfigPath, configUrl, ethereumEndpoint, topologyContractAddress, configCache); err != nil {
 				fmt.Println(time.Now(), "ERROR:", err)
 			}
 
@@ -38,7 +69,7 @@ func execute(daemonize bool, keyPairConfigPath string, configUrl string, polling
 			<-time.After(time.Duration(pollingInterval) * time.Second)
 		})
 	} else {
-		if err := boyar.RunOnce(keyPairConfigPath, configUrl, configCache); err != nil {
+		if err := boyar.RunOnce(keyPairConfigPath, configUrl, ethereumEndpoint, topologyContractAddress, configCache); err != nil {
 			fmt.Println(time.Now(), "ERROR:", err)
 			os.Exit(1)
 		}

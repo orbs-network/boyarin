@@ -1,6 +1,0 @@
-FROM busybox
-
-ADD ./boyar.bin /opt/orbs/boyar
-
-WORKDIR /opt/orbs
-

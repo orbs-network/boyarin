@@ -11,29 +11,6 @@ import (
 	"time"
 )
 
-type nodeConfiguration struct {
-	Chains              []*strelets.VirtualChain    `json:"chains"`
-	FederationNodes     []*strelets.FederationNode  `json:"network"`
-	OrchestratorOptions adapter.OrchestratorOptions `json:"orchestrator"`
-}
-
-type NodeConfiguration interface {
-	FederationNodes() []*strelets.FederationNode
-	Chains() []*strelets.VirtualChain
-	OrchestratorOptions() adapter.OrchestratorOptions
-	Hash() string
-}
-
-type BoyarConfigCache map[string]string
-
-type httpReverseProxyCompositeKey struct {
-	Id         strelets.VirtualChainId
-	HttpPort   int
-	GossipPort int
-}
-
-const HTTP_REVERSE_PROXY_HASH = "HTTP_REVERSE_PROXY_HASH"
-
 type Boyar interface {
 	ProvisionVirtualChains(ctx context.Context) error
 	ProvisionHttpAPIEndpoint(ctx context.Context) error
@@ -84,8 +61,25 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 	return nil
 }
 
-func RunOnce(keyPairConfigPath string, configUrl string, configCache BoyarConfigCache) error {
+func GetConfiguration(configUrl string, ethereumEndpoint string, topologyContractAddress string) (NodeConfiguration, error) {
 	config, err := NewUrlConfigurationSource(configUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	if ethereumEndpoint != "" && topologyContractAddress != "" {
+		federationNodes, err := GetEthereumTopology(context.Background(), ethereumEndpoint, topologyContractAddress)
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrive topology from Ethereum: %s", err)
+		}
+		config.SetFederationNodes(federationNodes)
+	}
+
+	return config, err
+}
+
+func RunOnce(keyPairConfigPath string, configUrl string, ethereumEndpoint string, topologyContractAddress string, configCache BoyarConfigCache) error {
+	config, err := GetConfiguration(configUrl, ethereumEndpoint, topologyContractAddress)
 	if err != nil {
 		return err
 	}

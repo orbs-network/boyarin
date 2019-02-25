@@ -17,7 +17,7 @@ func TestE2EWithDockerSwarm(t *testing.T) {
 	h.startChain(t)
 	defer h.stopChain(t)
 
-	waitForBlock(t, h.getMetrics, 3, 1*time.Minute)
+	waitForBlock(t, h.getMetrics, 3, 2*time.Minute)
 }
 
 func TestE2EKeepVolumesBetweenReloadsWithSwarm(t *testing.T) {

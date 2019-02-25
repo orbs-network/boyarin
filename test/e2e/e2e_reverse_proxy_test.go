@@ -42,7 +42,7 @@ func Test_UpdateReverseProxyWithSwarm(t *testing.T) {
 	require.NoError(t, err)
 	defer api.RemoveContainer(context.Background(), "http-api-reverse-proxy")
 
-	require.True(t, helpers.Eventually(20*time.Second, func() bool {
+	require.True(t, helpers.Eventually(1*time.Minute, func() bool {
 		url := fmt.Sprintf("http://%s/vchains/%d/test", ip, chain.Id)
 		fmt.Println(url)
 

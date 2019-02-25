@@ -88,7 +88,7 @@ func TestE2EProvisionMultipleVchainsWithSwarmAndBoyar(t *testing.T) {
 	defer h.stopChains(t, 42, 92)
 	//defer realDocker.RemoveContainer(context.Background(), "http-api-reverse-proxy")
 
-	waitForBlock(t, h.getMetricsForPort(8125), 3, 1*time.Minute)
+	waitForBlock(t, h.getMetricsForPort(8125), 3, 2*time.Minute)
 	waitForBlock(t, h.getMetricsForPort(8175), 0, 20*time.Second)
 }
 
@@ -115,6 +115,6 @@ func TestE2EAddNewVirtualChainWithSwarmAndBoyar(t *testing.T) {
 	}
 	defer h.stopChains(t, 92)
 
-	waitForBlock(t, h.getMetricsForPort(9125), 3, 1*time.Minute)
+	waitForBlock(t, h.getMetricsForPort(9125), 3, 2*time.Minute)
 	waitForBlock(t, h.getMetricsForPort(9175), 0, 20*time.Second)
 }

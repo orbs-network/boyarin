@@ -8,6 +8,8 @@ import (
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test/helpers"
+	"strings"
+	"sync"
 	"time"
 )
 
@@ -33,32 +35,43 @@ func NewBoyar(strelets strelets.Strelets, config NodeConfiguration, configCache 
 }
 
 func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
+	var errors []error
+	wg := sync.WaitGroup{}
+
 	for _, chain := range b.config.Chains() {
-		peers := buildPeersMap(b.config.FederationNodes(), chain.GossipPort)
+		wg.Add(1)
 
-		input := &strelets.ProvisionVirtualChainInput{
-			VirtualChain:      chain,
-			KeyPairConfigPath: b.keyPairConfigPath,
-			Peers:             peers,
-		}
+		go func(chain *strelets.VirtualChain) {
+			defer wg.Done()
 
-		data, _ := json.Marshal(input)
-		hash := crypto.CalculateHash(data)
+			peers := buildPeersMap(b.config.FederationNodes(), chain.GossipPort)
 
-		if hash == b.configCache[chain.Id.String()] {
-			continue
-		}
+			input := &strelets.ProvisionVirtualChainInput{
+				VirtualChain:      chain,
+				KeyPairConfigPath: b.keyPairConfigPath,
+				Peers:             peers,
+			}
 
-		if err := b.strelets.ProvisionVirtualChain(ctx, input); err != nil {
-			return fmt.Errorf("failed to provision virtual chain %d: %s", chain.Id, err)
-		}
+			data, _ := json.Marshal(input)
+			hash := crypto.CalculateHash(data)
 
-		b.configCache[chain.Id.String()] = hash
-		fmt.Println(time.Now(), fmt.Sprintf("INFO: updated virtual chain %d with configuration %s", chain.Id, hash))
-		fmt.Println(string(data))
+			if hash == b.configCache[chain.Id.String()] {
+				return
+			}
+
+			if err := b.strelets.ProvisionVirtualChain(ctx, input); err != nil {
+				errors = append(errors, fmt.Errorf("failed to provision virtual chain %d: %s", chain.Id, err))
+			} else {
+				b.configCache[chain.Id.String()] = hash
+				fmt.Println(time.Now(), fmt.Sprintf("INFO: updated virtual chain %d with configuration %s", chain.Id, hash))
+				fmt.Println(string(data))
+			}
+		}(chain)
 	}
 
-	return nil
+	wg.Wait()
+
+	return aggregateErrors(errors)
 }
 
 func GetConfiguration(configUrl string, ethereumEndpoint string, topologyContractAddress string) (NodeConfiguration, error) {
@@ -147,4 +160,18 @@ func buildPeersMap(nodes []*strelets.FederationNode, gossipPort int) *strelets.P
 	}
 
 	return &peersMap
+}
+
+func aggregateErrors(errors []error) error {
+	if errors == nil {
+		return nil
+	}
+
+	var lines []string
+
+	for _, err := range errors {
+		lines = append(lines, err.Error())
+	}
+
+	return fmt.Errorf(strings.Join(lines, "\n"))
 }

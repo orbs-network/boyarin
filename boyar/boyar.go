@@ -69,7 +69,9 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 		}(chain)
 	}
 
-	wg.Wait()
+	if waitTimeout(&wg, 10*time.Minute) {
+		errors = append(errors, fmt.Errorf("Provisioning of virtual chains timed out"))
+	}
 
 	return aggregateErrors(errors)
 }
@@ -174,4 +176,18 @@ func aggregateErrors(errors []error) error {
 	}
 
 	return fmt.Errorf(strings.Join(lines, "\n"))
+}
+
+func waitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
+	c := make(chan struct{})
+	go func() {
+		defer close(c)
+		wg.Wait()
+	}()
+	select {
+	case <-c:
+		return false
+	case <-time.After(timeout):
+		return true
+	}
 }

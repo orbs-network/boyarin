@@ -22,7 +22,14 @@ func main() {
 
 	showConfiguration := flag.Bool("show-configuration", false, "Show configuration and exit")
 
+	help := flag.Bool("help", false, "Show usage")
+
 	flag.Parse()
+
+	if *help {
+		flag.Usage()
+		return
+	}
 
 	if *showConfiguration {
 		printConfiguration(*configUrlPtr, *ethereumEndpointPtr, *topologyContractAddressPtr)
@@ -53,6 +60,16 @@ func printConfiguration(configUrl string, ethereumEndpoint string, topologyContr
 }
 
 func execute(daemonize bool, keyPairConfigPath string, configUrl string, pollingInterval uint, ethereumEndpoint string, topologyContractAddress string) {
+	if configUrl == "" {
+		fmt.Println("--config-url is a required parameter for provisioning flow")
+		os.Exit(1)
+	}
+
+	if keyPairConfigPath == "" {
+		fmt.Println("--keys is a required parameter for provisioning flow")
+		os.Exit(1)
+	}
+
 	// Even if something crashed, things still were provisioned, meaning the cache should stay
 	configCache := make(boyar.BoyarConfigCache)
 

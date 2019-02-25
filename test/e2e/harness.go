@@ -95,8 +95,12 @@ func (h *harness) getMetricsEndpoint(port int) string {
 }
 
 func (h *harness) httpGet(url string) ([]byte, error) {
-	res, err := http.Get(url)
+	client := http.Client{
+		Timeout: 2 * time.Second,
+	}
+	res, err := client.Get(url)
 	if err != nil {
+		fmt.Println("ERROR: could not access", url, ":", err)
 		return nil, err
 	}
 

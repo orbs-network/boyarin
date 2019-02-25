@@ -45,14 +45,20 @@ func Test_UpdateReverseProxyWithSwarm(t *testing.T) {
 	require.True(t, helpers.Eventually(20*time.Second, func() bool {
 		url := fmt.Sprintf("http://%s/vchains/%d/test", ip, chain.Id)
 		fmt.Println(url)
-		res, err := http.Get(url)
+
+		client := http.Client{
+			Timeout: 2 * time.Second,
+		}
+		res, err := client.Get(url)
 		if err != nil {
+			fmt.Println("ERROR: could not access", url, ":", err)
 			return false
 		}
 		defer res.Body.Close()
 
 		body, err := ioutil.ReadAll(res.Body)
 		if err != nil {
+			fmt.Println("ERROR: could not read", url, ":", err)
 			return false
 		}
 

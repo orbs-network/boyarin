@@ -64,7 +64,7 @@ func ABIExtractTopology(packedOutput []byte) (*RawTopology, error) {
 	}
 
 	value := new(RawTopology)
-	err = ABIUnpackFunctionOutputArguments(parsedABI, value, TopologyContractMethodName, packedOutput)
+	err = parsedABI.Unpack(value, TopologyContractMethodName, packedOutput)
 	return value, err
 }
 
@@ -74,7 +74,7 @@ func CallTopologyContract(ctx context.Context, connection DeployingEthereumConne
 		return nil, err
 	}
 
-	ethCallData, err := ABIPackFunctionInputArguments(parsedABI, TopologyContractMethodName, nil)
+	ethCallData, err := parsedABI.Pack(TopologyContractMethodName)
 	if err != nil {
 		return nil, err
 	}

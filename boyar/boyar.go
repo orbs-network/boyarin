@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/orbs-network/boyarin/boyar/topology/ethereum"
 	"github.com/orbs-network/boyarin/crypto"
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
@@ -65,7 +66,7 @@ func GetConfiguration(configUrl string, ethereumEndpoint string, topologyContrac
 	}
 
 	if ethereumEndpoint != "" && topologyContractAddress != "" {
-		federationNodes, err := GetEthereumTopology(context.Background(), ethereumEndpoint, topologyContractAddress)
+		federationNodes, err := ethereum.GetEthereumTopology(context.Background(), ethereumEndpoint, topologyContractAddress)
 		if err != nil {
 			return nil, fmt.Errorf("failed to retrive topology from Ethereum: %s", err)
 		}

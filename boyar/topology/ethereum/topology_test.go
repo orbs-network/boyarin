@@ -33,12 +33,12 @@ func Test_RawTopology_FederationNodes(t *testing.T) {
 
 	require.EqualValues(t, []*strelets.FederationNode{
 		{
-			IP:  NODE_IP_1,
-			Key: NODE_ADDRESS_1,
+			IP:      NODE_IP_1,
+			Address: NODE_ADDRESS_1,
 		},
 		{
-			IP:  NODE_IP_2,
-			Key: NODE_ADDESSS_2,
+			IP:      NODE_IP_2,
+			Address: NODE_ADDESSS_2,
 		},
 	}, federationNodes)
 }

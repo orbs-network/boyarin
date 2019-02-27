@@ -141,7 +141,7 @@ func buildPeersMap(nodes []*strelets.FederationNode, gossipPort int) *strelets.P
 			port = gossipPort
 		}
 
-		peersMap[strelets.NodeAddress(node.Key)] = &strelets.Peer{
+		peersMap[strelets.NodeAddress(node.Address)] = &strelets.Peer{
 			node.IP, port,
 		}
 	}

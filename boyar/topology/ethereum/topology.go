@@ -49,8 +49,8 @@ func EthereumToOrbsAddress(eth string) string {
 func (rawTopology *RawTopology) FederationNodes() (federationNodes []*strelets.FederationNode) {
 	for index, address := range rawTopology.NodeAddresses {
 		federationNodes = append(federationNodes, &strelets.FederationNode{
-			Key: EthereumToOrbsAddress(address.Hex()),
-			IP:  IpToString(rawTopology.IpAddresses[index]),
+			Address: EthereumToOrbsAddress(address.Hex()),
+			IP:      IpToString(rawTopology.IpAddresses[index]),
 		})
 	}
 

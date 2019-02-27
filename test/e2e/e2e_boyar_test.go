@@ -42,9 +42,9 @@ func getBoyarConfig(gossipPort int, vchains []*strelets.VirtualChain) []byte {
 	var network []*strelets.FederationNode
 	for i, key := range helpers.NodeAddresses() {
 		network = append(network, &strelets.FederationNode{
-			Key:  key,
-			IP:   ip,
-			Port: gossipPort + int(vchains[0].Id) + i + 1,
+			Address: key,
+			IP:      ip,
+			Port:    gossipPort + int(vchains[0].Id) + i + 1,
 		})
 	}
 

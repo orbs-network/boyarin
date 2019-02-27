@@ -16,7 +16,7 @@ func TestNodeConfigurationContainer_Hash(t *testing.T) {
 	require.EqualValues(t, oldHash, source.Hash(), "hash can't change if the value didn't change")
 
 	source.value.FederationNodes = []*strelets.FederationNode{
-		{IP: "1.2.3.4", Key: "some-fake-key"},
+		{IP: "1.2.3.4", Address: "some-fake-key"},
 	}
 
 	require.NotEqual(t, oldHash, source.Hash(), "hash should have been changed")

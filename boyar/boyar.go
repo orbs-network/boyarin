@@ -8,6 +8,7 @@ import (
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test/helpers"
+	"strings"
 	"time"
 )
 
@@ -33,32 +34,28 @@ func NewBoyar(strelets strelets.Strelets, config NodeConfiguration, configCache 
 }
 
 func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
-	for _, chain := range b.config.Chains() {
-		peers := buildPeersMap(b.config.FederationNodes(), chain.GossipPort)
+	chains := b.config.Chains()
 
-		input := &strelets.ProvisionVirtualChainInput{
-			VirtualChain:      chain,
-			KeyPairConfigPath: b.keyPairConfigPath,
-			Peers:             peers,
-		}
+	var errors []error
+	errorChannel := make(chan error, len(chains))
 
-		data, _ := json.Marshal(input)
-		hash := crypto.CalculateHash(data)
-
-		if hash == b.configCache[chain.Id.String()] {
-			continue
-		}
-
-		if err := b.strelets.ProvisionVirtualChain(ctx, input); err != nil {
-			return fmt.Errorf("failed to provision virtual chain %d: %s", chain.Id, err)
-		}
-
-		b.configCache[chain.Id.String()] = hash
-		fmt.Println(time.Now(), fmt.Sprintf("INFO: updated virtual chain %d with configuration %s", chain.Id, hash))
-		fmt.Println(string(data))
+	for _, chain := range chains {
+		b.provisionVirtualChain(ctx, chain, errorChannel)
 	}
 
-	return nil
+	for i := 0; i < len(chains); i++ {
+		select {
+		case err := <-errorChannel:
+			if err != nil {
+				errors = append(errors, err)
+
+			}
+		case <-ctx.Done():
+			errors = append(errors, fmt.Errorf("failed to provision virtual chain %s: %s", chains[i].Id, ctx.Err()))
+		}
+	}
+
+	return aggregateErrors(errors)
 }
 
 func GetConfiguration(configUrl string, ethereumEndpoint string, topologyContractAddress string) (NodeConfiguration, error) {
@@ -78,7 +75,7 @@ func GetConfiguration(configUrl string, ethereumEndpoint string, topologyContrac
 	return config, err
 }
 
-func RunOnce(keyPairConfigPath string, configUrl string, ethereumEndpoint string, topologyContractAddress string, configCache BoyarConfigCache) error {
+func RunOnce(ctx context.Context, keyPairConfigPath string, configUrl string, ethereumEndpoint string, topologyContractAddress string, configCache BoyarConfigCache) error {
 	config, err := GetConfiguration(configUrl, ethereumEndpoint, topologyContractAddress)
 	if err != nil {
 		return err
@@ -93,15 +90,17 @@ func RunOnce(keyPairConfigPath string, configUrl string, ethereumEndpoint string
 	s := strelets.NewStrelets(orchestrator)
 	b := NewBoyar(s, config, configCache, keyPairConfigPath)
 
-	if err := b.ProvisionVirtualChains(context.Background()); err != nil {
-		return err
+	var errors []error
+
+	if err := b.ProvisionVirtualChains(ctx); err != nil {
+		errors = append(errors, err)
 	}
 
-	if err := b.ProvisionHttpAPIEndpoint(context.Background()); err != nil {
-		return err
+	if err := b.ProvisionHttpAPIEndpoint(ctx); err != nil {
+		errors = append(errors, err)
 	}
 
-	return nil
+	return aggregateErrors(errors)
 }
 
 func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
@@ -147,4 +146,48 @@ func buildPeersMap(nodes []*strelets.FederationNode, gossipPort int) *strelets.P
 	}
 
 	return &peersMap
+}
+
+func aggregateErrors(errors []error) error {
+	if errors == nil {
+		return nil
+	}
+
+	var lines []string
+
+	for _, err := range errors {
+		lines = append(lines, err.Error())
+	}
+
+	return fmt.Errorf(strings.Join(lines, "\n"))
+}
+
+func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.VirtualChain, errChannel chan error) {
+	go func() {
+		peers := buildPeersMap(b.config.FederationNodes(), chain.GossipPort)
+
+		input := &strelets.ProvisionVirtualChainInput{
+			VirtualChain:      chain,
+			KeyPairConfigPath: b.keyPairConfigPath,
+			Peers:             peers,
+		}
+
+		data, _ := json.Marshal(input)
+		hash := crypto.CalculateHash(data)
+
+		if hash == b.configCache[chain.Id.String()] {
+			errChannel <- nil
+			return
+		}
+
+		if err := b.strelets.ProvisionVirtualChain(ctx, input); err != nil {
+			fmt.Println("there was an error", err)
+			errChannel <- fmt.Errorf("failed to provision virtual chain %d: %s", chain.Id, err)
+		} else {
+			b.configCache[chain.Id.String()] = hash
+			fmt.Println(time.Now(), fmt.Sprintf("INFO: updated virtual chain %d with configuration %s", chain.Id, hash))
+			fmt.Println(string(data))
+			errChannel <- nil
+		}
+	}()
 }

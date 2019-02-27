@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -15,7 +16,9 @@ func main() {
 	keyPairConfigPathPtr := flag.String("keys", "", "path to public/private key pair in json format")
 
 	daemonizePtr := flag.Bool("daemonize", false, "do not exit the program and keep polling for changes")
-	pollingIntervalPtr := flag.Uint("polling-interval", 60, "how often to poll for configuration in daemon mode (in seconds)")
+	pollingIntervalPtr := flag.Duration("polling-interval", 1*time.Minute, "how often to poll for configuration in daemon mode (duration: 1s, 1m, 1h, etc)")
+
+	timeoutPtr := flag.Duration("timeout", 10*time.Minute, "timeout for provisioning all virtual chains (duration: 1s, 1m, 1h, etc)")
 
 	ethereumEndpointPtr := flag.String("ethereum-endpoint", "", "Ethereum endpoint")
 	topologyContractAddressPtr := flag.String("topology-contract-address", "", "Ethereum address for topology contract")
@@ -36,7 +39,7 @@ func main() {
 		return
 	}
 
-	execute(*daemonizePtr, *keyPairConfigPathPtr, *configUrlPtr, *pollingIntervalPtr, *ethereumEndpointPtr, *topologyContractAddressPtr)
+	execute(*daemonizePtr, *keyPairConfigPathPtr, *configUrlPtr, *pollingIntervalPtr, *timeoutPtr, *ethereumEndpointPtr, *topologyContractAddressPtr)
 }
 
 func printConfiguration(configUrl string, ethereumEndpoint string, topologyContractAddress string) {
@@ -59,7 +62,7 @@ func printConfiguration(configUrl string, ethereumEndpoint string, topologyContr
 	fmt.Println(string(chains))
 }
 
-func execute(daemonize bool, keyPairConfigPath string, configUrl string, pollingInterval uint, ethereumEndpoint string, topologyContractAddress string) {
+func execute(daemonize bool, keyPairConfigPath string, configUrl string, pollingInterval time.Duration, timeout time.Duration, ethereumEndpoint string, topologyContractAddress string) {
 	if configUrl == "" {
 		fmt.Println("--config-url is a required parameter for provisioning flow")
 		os.Exit(1)
@@ -75,7 +78,10 @@ func execute(daemonize bool, keyPairConfigPath string, configUrl string, polling
 
 	if daemonize {
 		<-supervized.GoForever(func() {
-			if err := boyar.RunOnce(keyPairConfigPath, configUrl, ethereumEndpoint, topologyContractAddress, configCache); err != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), timeout)
+			defer cancel()
+
+			if err := boyar.RunOnce(ctx, keyPairConfigPath, configUrl, ethereumEndpoint, topologyContractAddress, configCache); err != nil {
 				fmt.Println(time.Now(), "ERROR:", err)
 			}
 
@@ -83,10 +89,13 @@ func execute(daemonize bool, keyPairConfigPath string, configUrl string, polling
 				fmt.Println(time.Now(), fmt.Sprintf("Latest successful configuration for vchain %s: %s", vcid, hash))
 			}
 
-			<-time.After(time.Duration(pollingInterval) * time.Second)
+			<-time.After(pollingInterval)
 		})
 	} else {
-		if err := boyar.RunOnce(keyPairConfigPath, configUrl, ethereumEndpoint, topologyContractAddress, configCache); err != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		defer cancel()
+
+		if err := boyar.RunOnce(ctx, keyPairConfigPath, configUrl, ethereumEndpoint, topologyContractAddress, configCache); err != nil {
 			fmt.Println(time.Now(), "ERROR:", err)
 			os.Exit(1)
 		}

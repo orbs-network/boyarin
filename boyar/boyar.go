@@ -75,7 +75,7 @@ func GetConfiguration(configUrl string, ethereumEndpoint string, topologyContrac
 	return config, err
 }
 
-func RunOnce(keyPairConfigPath string, configUrl string, ethereumEndpoint string, topologyContractAddress string, configCache BoyarConfigCache) error {
+func RunOnce(ctx context.Context, keyPairConfigPath string, configUrl string, ethereumEndpoint string, topologyContractAddress string, configCache BoyarConfigCache) error {
 	config, err := GetConfiguration(configUrl, ethereumEndpoint, topologyContractAddress)
 	if err != nil {
 		return err
@@ -90,15 +90,17 @@ func RunOnce(keyPairConfigPath string, configUrl string, ethereumEndpoint string
 	s := strelets.NewStrelets(orchestrator)
 	b := NewBoyar(s, config, configCache, keyPairConfigPath)
 
-	if err := b.ProvisionVirtualChains(context.Background()); err != nil {
-		return err
+	var errors []error
+
+	if err := b.ProvisionVirtualChains(ctx); err != nil {
+		errors = append(errors, err)
 	}
 
-	if err := b.ProvisionHttpAPIEndpoint(context.Background()); err != nil {
-		return err
+	if err := b.ProvisionHttpAPIEndpoint(ctx); err != nil {
+		errors = append(errors, err)
 	}
 
-	return nil
+	return aggregateErrors(errors)
 }
 
 func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {

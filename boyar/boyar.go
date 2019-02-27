@@ -9,7 +9,6 @@ import (
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test/helpers"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -39,21 +38,21 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 
 	var errors []error
 	errorChannel := make(chan error, len(chains))
-	wg := sync.WaitGroup{}
 
 	for _, chain := range chains {
-		wg.Add(1)
-		b.provisionVirtualChain(ctx, chain, &wg, errorChannel)
+		b.provisionVirtualChain(ctx, chain, errorChannel)
 	}
 
 	for i := 0; i < len(chains); i++ {
-		if err := <-errorChannel; err != nil {
-			errors = append(errors, err)
-		}
-	}
+		select {
+		case err := <-errorChannel:
+			if err != nil {
+				errors = append(errors, err)
 
-	if waitTimeout(&wg, 10*time.Minute) {
-		errors = append(errors, fmt.Errorf("Provisioning of virtual chains timed out"))
+			}
+		case <-ctx.Done():
+			errors = append(errors, fmt.Errorf("failed to provision virtual chain %s: timed out", chains[i].Id))
+		}
 	}
 
 	return aggregateErrors(errors)
@@ -161,23 +160,7 @@ func aggregateErrors(errors []error) error {
 	return fmt.Errorf(strings.Join(lines, "\n"))
 }
 
-func waitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
-	c := make(chan struct{})
-	go func() {
-		defer close(c)
-		wg.Wait()
-	}()
-	select {
-	case <-c:
-		return false
-	case <-time.After(timeout):
-		return true
-	}
-}
-
-func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.VirtualChain, wg *sync.WaitGroup, errChannel chan error) {
-	defer wg.Done()
-
+func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.VirtualChain, errChannel chan error) {
 	go func() {
 		peers := buildPeersMap(b.config.FederationNodes(), chain.GossipPort)
 

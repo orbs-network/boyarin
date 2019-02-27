@@ -1,4 +1,4 @@
-package boyar
+package config
 
 import (
 	"encoding/json"
@@ -11,9 +11,15 @@ type NodeConfiguration interface {
 	FederationNodes() []*strelets.FederationNode
 	Chains() []*strelets.VirtualChain
 	OrchestratorOptions() adapter.OrchestratorOptions
+	KeyConfigPath() string
 	Hash() string
+}
 
-	SetFederationNodes(federationNodes []*strelets.FederationNode) NodeConfiguration
+type MutableNodeConfiguration interface {
+	NodeConfiguration
+
+	SetFederationNodes(federationNodes []*strelets.FederationNode) MutableNodeConfiguration
+	SetKeyConfigPath(keyConfigPath string) MutableNodeConfiguration
 }
 
 type nodeConfiguration struct {
@@ -23,7 +29,8 @@ type nodeConfiguration struct {
 }
 
 type nodeConfigurationContainer struct {
-	value nodeConfiguration
+	value         nodeConfiguration
+	keyConfigPath string
 }
 
 func (c *nodeConfigurationContainer) Chains() []*strelets.VirtualChain {
@@ -39,11 +46,20 @@ func (c *nodeConfigurationContainer) Hash() string {
 	return crypto.CalculateHash(data)
 }
 
+func (c *nodeConfigurationContainer) KeyConfigPath() string {
+	return c.keyConfigPath
+}
+
 func (c *nodeConfigurationContainer) OrchestratorOptions() adapter.OrchestratorOptions {
 	return c.value.OrchestratorOptions
 }
 
-func (c *nodeConfigurationContainer) SetFederationNodes(federationNodes []*strelets.FederationNode) NodeConfiguration {
+func (c *nodeConfigurationContainer) SetFederationNodes(federationNodes []*strelets.FederationNode) MutableNodeConfiguration {
 	c.value.FederationNodes = federationNodes
+	return c
+}
+
+func (c *nodeConfigurationContainer) SetKeyConfigPath(keyConfigPath string) MutableNodeConfiguration {
+	c.keyConfigPath = keyConfigPath
 	return c
 }

@@ -1,4 +1,4 @@
-package boyar
+package config
 
 import (
 	"github.com/orbs-network/boyarin/strelets"

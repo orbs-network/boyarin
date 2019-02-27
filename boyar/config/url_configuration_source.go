@@ -1,4 +1,4 @@
-package boyar
+package config
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func NewUrlConfigurationSource(url string) (NodeConfiguration, error) {
+func NewUrlConfigurationSource(url string) (MutableNodeConfiguration, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("could not download configuration from source: %s", err)

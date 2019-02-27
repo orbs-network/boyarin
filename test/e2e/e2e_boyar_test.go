@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar"
+	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test/helpers"
@@ -61,11 +62,12 @@ const GOSSIP_PORT = 4400
 func provisionVchains(t *testing.T, h *harness, s strelets.Strelets, httpPort int, gossipPort int, i int, vchainIds ...int) {
 	vchains := getBoyarVchains(httpPort, gossipPort, i, vchainIds...)
 	boyarConfig := getBoyarConfig(gossipPort, vchains)
-	config, err := boyar.NewStringConfigurationSource(string(boyarConfig))
+	cfg, err := config.NewStringConfigurationSource(string(boyarConfig))
+	cfg.SetKeyConfigPath(fmt.Sprintf("%s/node%d/keys.json", h.configPath, i))
 	require.NoError(t, err)
 
-	cache := make(boyar.BoyarConfigCache)
-	b := boyar.NewBoyar(s, config, cache, fmt.Sprintf("%s/node%d/keys.json", h.configPath, i))
+	cache := make(config.BoyarConfigCache)
+	b := boyar.NewBoyar(s, cfg, cache)
 	err = b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
 	//err = s.UpdateReverseProxy(context.Background(), vchains, test.LocalIP())

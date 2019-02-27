@@ -1,4 +1,4 @@
-package boyar
+package config
 
 import (
 	"encoding/json"

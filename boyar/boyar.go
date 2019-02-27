@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/orbs-network/boyarin/boyar/topology/ethereum"
+	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/crypto"
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
@@ -19,18 +19,16 @@ type Boyar interface {
 }
 
 type boyar struct {
-	strelets          strelets.Strelets
-	config            NodeConfiguration
-	configCache       BoyarConfigCache
-	keyPairConfigPath string
+	strelets    strelets.Strelets
+	config      config.NodeConfiguration
+	configCache config.BoyarConfigCache
 }
 
-func NewBoyar(strelets strelets.Strelets, config NodeConfiguration, configCache BoyarConfigCache, keyPairConfigPath string) Boyar {
+func NewBoyar(strelets strelets.Strelets, cfg config.NodeConfiguration, configCache config.BoyarConfigCache) Boyar {
 	return &boyar{
-		strelets:          strelets,
-		config:            config,
-		configCache:       configCache,
-		keyPairConfigPath: keyPairConfigPath,
+		strelets:    strelets,
+		config:      cfg,
+		configCache: configCache,
 	}
 }
 
@@ -59,37 +57,15 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 	return aggregateErrors(errors)
 }
 
-func GetConfiguration(configUrl string, ethereumEndpoint string, topologyContractAddress string) (NodeConfiguration, error) {
-	config, err := NewUrlConfigurationSource(configUrl)
-	if err != nil {
-		return nil, err
-	}
-
-	if ethereumEndpoint != "" && topologyContractAddress != "" {
-		federationNodes, err := ethereum.GetEthereumTopology(context.Background(), ethereumEndpoint, topologyContractAddress)
-		if err != nil {
-			return nil, fmt.Errorf("failed to retrive topology from Ethereum: %s", err)
-		}
-		config.SetFederationNodes(federationNodes)
-	}
-
-	return config, err
-}
-
-func RunOnce(ctx context.Context, keyPairConfigPath string, configUrl string, ethereumEndpoint string, topologyContractAddress string, configCache BoyarConfigCache) error {
-	config, err := GetConfiguration(configUrl, ethereumEndpoint, topologyContractAddress)
-	if err != nil {
-		return err
-	}
-
-	orchestrator, err := adapter.NewDockerSwarm(config.OrchestratorOptions())
+func RunOnce(ctx context.Context, cfg config.NodeConfiguration, configCache config.BoyarConfigCache) error {
+	orchestrator, err := adapter.NewDockerSwarm(cfg.OrchestratorOptions())
 	if err != nil {
 		return err
 	}
 	defer orchestrator.Close()
 
 	s := strelets.NewStrelets(orchestrator)
-	b := NewBoyar(s, config, configCache, keyPairConfigPath)
+	b := NewBoyar(s, cfg, configCache)
 
 	var errors []error
 
@@ -105,10 +81,11 @@ func RunOnce(ctx context.Context, keyPairConfigPath string, configUrl string, et
 }
 
 func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
-	var keys []httpReverseProxyCompositeKey
+	var keys []config.HttpReverseProxyCompositeKey
 
+	// TODO move key manipulation to config package
 	for _, chain := range b.config.Chains() {
-		keys = append(keys, httpReverseProxyCompositeKey{
+		keys = append(keys, config.HttpReverseProxyCompositeKey{
 			Id:         chain.Id,
 			HttpPort:   chain.HttpPort,
 			GossipPort: chain.HttpPort,
@@ -118,7 +95,7 @@ func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
 	data, _ := json.Marshal(keys)
 	hash := crypto.CalculateHash(data)
 
-	if hash == b.configCache[HTTP_REVERSE_PROXY_HASH] {
+	if hash == b.configCache[config.HTTP_REVERSE_PROXY_HASH] {
 		return nil
 	}
 
@@ -127,7 +104,7 @@ func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
 		return err
 	}
 
-	b.configCache[HTTP_REVERSE_PROXY_HASH] = hash
+	b.configCache[config.HTTP_REVERSE_PROXY_HASH] = hash
 	return nil
 }
 
@@ -169,7 +146,7 @@ func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.Virtu
 
 		input := &strelets.ProvisionVirtualChainInput{
 			VirtualChain:      chain,
-			KeyPairConfigPath: b.keyPairConfigPath,
+			KeyPairConfigPath: b.config.KeyConfigPath(),
 			Peers:             peers,
 		}
 
@@ -182,7 +159,6 @@ func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.Virtu
 		}
 
 		if err := b.strelets.ProvisionVirtualChain(ctx, input); err != nil {
-			fmt.Println("there was an error", err)
 			errChannel <- fmt.Errorf("failed to provision virtual chain %d: %s", chain.Id, err)
 		} else {
 			b.configCache[chain.Id.String()] = hash

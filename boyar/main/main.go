@@ -86,7 +86,7 @@ func execute(daemonize bool, keyPairConfigPath string, configUrl string, polling
 			if err != nil {
 				fmt.Println(time.Now(), "ERROR:", fmt.Errorf("could not generate configuration: %s", err))
 			} else {
-				if err := boyar.RunOnce(ctx, cfg, configCache); err != nil {
+				if err := boyar.FullFlow(ctx, cfg, configCache); err != nil {
 					fmt.Println(time.Now(), "ERROR:", err)
 				}
 
@@ -105,7 +105,7 @@ func execute(daemonize bool, keyPairConfigPath string, configUrl string, polling
 		if err != nil {
 			fmt.Println(time.Now(), "ERROR:", fmt.Errorf("could not generate configuration: %s", err))
 			os.Exit(1)
-		} else if err := boyar.RunOnce(ctx, cfg, configCache); err != nil {
+		} else if err := boyar.FullFlow(ctx, cfg, configCache); err != nil {
 			fmt.Println(time.Now(), "ERROR:", err)
 			os.Exit(1)
 		}

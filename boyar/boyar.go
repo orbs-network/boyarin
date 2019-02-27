@@ -57,7 +57,7 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 	return aggregateErrors(errors)
 }
 
-func RunOnce(ctx context.Context, cfg config.NodeConfiguration, configCache config.BoyarConfigCache) error {
+func FullFlow(ctx context.Context, cfg config.NodeConfiguration, configCache config.BoyarConfigCache) error {
 	orchestrator, err := adapter.NewDockerSwarm(cfg.OrchestratorOptions())
 	if err != nil {
 		return err

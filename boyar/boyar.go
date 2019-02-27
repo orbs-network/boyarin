@@ -51,7 +51,7 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 
 			}
 		case <-ctx.Done():
-			errors = append(errors, fmt.Errorf("failed to provision virtual chain %s: timed out", chains[i].Id))
+			errors = append(errors, fmt.Errorf("failed to provision virtual chain %s: %s", chains[i].Id, ctx.Err()))
 		}
 	}
 

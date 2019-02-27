@@ -83,7 +83,7 @@ func Test_BoyarProvisionVirtualChainsWithTimeout(t *testing.T) {
 	defer cancel()
 
 	err = b.ProvisionVirtualChains(ctx)
-	require.EqualError(t, err, "failed to provision virtual chain 1991: timed out")
+	require.EqualError(t, err, "failed to provision virtual chain 1991: context deadline exceeded")
 	streletsMock.VerifyMocks(t)
 }
 

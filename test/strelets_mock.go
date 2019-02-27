@@ -12,8 +12,8 @@ type StreletsMock struct {
 }
 
 func (s *StreletsMock) ProvisionVirtualChain(ctx context.Context, input *strelets.ProvisionVirtualChainInput) error {
-	s.MethodCalled("ProvisionVirtualChain", ctx, input)
-	return nil
+	result := s.MethodCalled("ProvisionVirtualChain", ctx, input)
+	return result.Error(0)
 }
 
 func (s *StreletsMock) RemoveVirtualChain(ctx context.Context, input *strelets.RemoveVirtualChainInput) error {

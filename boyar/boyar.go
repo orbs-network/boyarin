@@ -35,38 +35,21 @@ func NewBoyar(strelets strelets.Strelets, config NodeConfiguration, configCache 
 }
 
 func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
+	chains := b.config.Chains()
+
 	var errors []error
+	errorChannel := make(chan error, len(chains))
 	wg := sync.WaitGroup{}
 
-	for _, chain := range b.config.Chains() {
+	for _, chain := range chains {
 		wg.Add(1)
+		b.provisionVirtualChain(ctx, chain, &wg, errorChannel)
+	}
 
-		go func(chain *strelets.VirtualChain) {
-			defer wg.Done()
-
-			peers := buildPeersMap(b.config.FederationNodes(), chain.GossipPort)
-
-			input := &strelets.ProvisionVirtualChainInput{
-				VirtualChain:      chain,
-				KeyPairConfigPath: b.keyPairConfigPath,
-				Peers:             peers,
-			}
-
-			data, _ := json.Marshal(input)
-			hash := crypto.CalculateHash(data)
-
-			if hash == b.configCache[chain.Id.String()] {
-				return
-			}
-
-			if err := b.strelets.ProvisionVirtualChain(ctx, input); err != nil {
-				errors = append(errors, fmt.Errorf("failed to provision virtual chain %d: %s", chain.Id, err))
-			} else {
-				b.configCache[chain.Id.String()] = hash
-				fmt.Println(time.Now(), fmt.Sprintf("INFO: updated virtual chain %d with configuration %s", chain.Id, hash))
-				fmt.Println(string(data))
-			}
-		}(chain)
+	for i := 0; i < len(chains); i++ {
+		if err := <-errorChannel; err != nil {
+			errors = append(errors, err)
+		}
 	}
 
 	if waitTimeout(&wg, 10*time.Minute) {
@@ -190,4 +173,36 @@ func waitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
 	case <-time.After(timeout):
 		return true
 	}
+}
+
+func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.VirtualChain, wg *sync.WaitGroup, errChannel chan error) {
+	defer wg.Done()
+
+	go func() {
+		peers := buildPeersMap(b.config.FederationNodes(), chain.GossipPort)
+
+		input := &strelets.ProvisionVirtualChainInput{
+			VirtualChain:      chain,
+			KeyPairConfigPath: b.keyPairConfigPath,
+			Peers:             peers,
+		}
+
+		data, _ := json.Marshal(input)
+		hash := crypto.CalculateHash(data)
+
+		if hash == b.configCache[chain.Id.String()] {
+			errChannel <- nil
+			return
+		}
+
+		if err := b.strelets.ProvisionVirtualChain(ctx, input); err != nil {
+			fmt.Println("there was an error", err)
+			errChannel <- fmt.Errorf("failed to provision virtual chain %d: %s", chain.Id, err)
+		} else {
+			b.configCache[chain.Id.String()] = hash
+			fmt.Println(time.Now(), fmt.Sprintf("INFO: updated virtual chain %d with configuration %s", chain.Id, hash))
+			fmt.Println(string(data))
+			errChannel <- nil
+		}
+	}()
 }

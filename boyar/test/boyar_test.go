@@ -2,6 +2,7 @@ package test
 
 import (
 	"context"
+	"fmt"
 	"github.com/orbs-network/boyarin/boyar"
 	"github.com/orbs-network/boyarin/strelets"
 	. "github.com/orbs-network/boyarin/test"
@@ -34,6 +35,29 @@ func Test_BoyarProvisionVirtualChains(t *testing.T) {
 	err = b.ProvisionVirtualChains(context.Background())
 
 	require.NoError(t, err)
+	streletsMock.VerifyMocks(t)
+}
+
+func Test_BoyarProvisionVirtualChainsWithErrors(t *testing.T) {
+	streletsMock := &StreletsMock{}
+
+	source, err := boyar.NewStringConfigurationSource(getJSONConfig())
+	require.NoError(t, err)
+
+	cache := make(boyar.BoyarConfigCache)
+	b := boyar.NewBoyar(streletsMock, source, cache, "/tmp/fake-key-pair.json")
+
+	streletsMock.On("ProvisionVirtualChain", mock.Anything, mock.MatchedBy(func(input *strelets.ProvisionVirtualChainInput) bool {
+		return input.VirtualChain.Id == strelets.VirtualChainId(1991)
+	})).Return(fmt.Errorf("unbearable catastrophe"))
+
+	streletsMock.On("ProvisionVirtualChain", mock.Anything, mock.MatchedBy(func(input *strelets.ProvisionVirtualChainInput) bool {
+		return input.VirtualChain.Id == strelets.VirtualChainId(42)
+	})).Once().Return(nil)
+
+	err = b.ProvisionVirtualChains(context.Background())
+
+	require.EqualError(t, err, "failed to provision virtual chain 1991: unbearable catastrophe")
 	streletsMock.VerifyMocks(t)
 }
 

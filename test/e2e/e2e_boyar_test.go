@@ -11,7 +11,6 @@ import (
 	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/stretchr/testify/require"
 	"testing"
-	"time"
 )
 
 func getBoyarVchains(httpPort int, gossipPort int, nodeIndex int, vchainIds ...int) []*strelets.VirtualChain {
@@ -90,8 +89,8 @@ func TestE2EProvisionMultipleVchainsWithSwarmAndBoyar(t *testing.T) {
 	defer h.stopChains(t, 42, 92)
 	//defer realDocker.RemoveContainer(context.Background(), "http-api-reverse-proxy")
 
-	waitForBlock(t, h.getMetricsForPort(8125), 3, 2*time.Minute)
-	waitForBlock(t, h.getMetricsForPort(8175), 0, 20*time.Second)
+	waitForBlock(t, h.getMetricsForPort(8125), 3, WAIT_FOR_BLOCK_TIMEOUT)
+	waitForBlock(t, h.getMetricsForPort(8175), 0, WAIT_FOR_BLOCK_TIMEOUT)
 }
 
 func TestE2EAddNewVirtualChainWithSwarmAndBoyar(t *testing.T) {
@@ -110,13 +109,13 @@ func TestE2EAddNewVirtualChainWithSwarmAndBoyar(t *testing.T) {
 	defer h.stopChains(t, 42)
 	//defer swarm.RemoveContainer(context.Background(), "http-api-reverse-proxy")
 
-	waitForBlock(t, h.getMetricsForPort(8125), 3, 1*time.Minute)
+	waitForBlock(t, h.getMetricsForPort(8125), 3, WAIT_FOR_BLOCK_TIMEOUT)
 
 	for i := 1; i <= 3; i++ {
 		provisionVchains(t, h, s, HTTP_PORT+1000, GOSSIP_PORT+1000, i, 42, 92)
 	}
 	defer h.stopChains(t, 92)
 
-	waitForBlock(t, h.getMetricsForPort(9125), 3, 2*time.Minute)
-	waitForBlock(t, h.getMetricsForPort(9175), 0, 20*time.Second)
+	waitForBlock(t, h.getMetricsForPort(9125), 3, WAIT_FOR_BLOCK_TIMEOUT)
+	waitForBlock(t, h.getMetricsForPort(9175), 0, WAIT_FOR_BLOCK_TIMEOUT)
 }

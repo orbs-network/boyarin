@@ -1,9 +1,8 @@
-package test
+package boyar
 
 import (
 	"context"
 	"fmt"
-	"github.com/orbs-network/boyarin/boyar"
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/strelets"
 	. "github.com/orbs-network/boyarin/test"
@@ -15,7 +14,7 @@ import (
 )
 
 func getJSONConfig() string {
-	contents, err := ioutil.ReadFile("../config/test/config.json")
+	contents, err := ioutil.ReadFile("./config/test/config.json")
 	if err != nil {
 		panic(err)
 	}
@@ -31,7 +30,7 @@ func Test_BoyarProvisionVirtualChains(t *testing.T) {
 	require.NoError(t, err)
 
 	cache := make(config.BoyarConfigCache)
-	b := boyar.NewBoyar(streletsMock, source, cache)
+	b := NewBoyar(streletsMock, source, cache)
 
 	streletsMock.On("ProvisionVirtualChain", mock.Anything, mock.Anything).Twice().Return(nil)
 
@@ -49,7 +48,7 @@ func Test_BoyarProvisionVirtualChainsWithErrors(t *testing.T) {
 	require.NoError(t, err)
 
 	cache := make(config.BoyarConfigCache)
-	b := boyar.NewBoyar(streletsMock, source, cache)
+	b := NewBoyar(streletsMock, source, cache)
 
 	streletsMock.On("ProvisionVirtualChain", mock.Anything, mock.MatchedBy(func(input *strelets.ProvisionVirtualChainInput) bool {
 		return input.VirtualChain.Id == strelets.VirtualChainId(1991)
@@ -73,7 +72,7 @@ func Test_BoyarProvisionVirtualChainsWithTimeout(t *testing.T) {
 	require.NoError(t, err)
 
 	cache := make(config.BoyarConfigCache)
-	b := boyar.NewBoyar(streletsMock, source, cache)
+	b := NewBoyar(streletsMock, source, cache)
 
 	streletsMock.On("ProvisionVirtualChain", mock.Anything, mock.MatchedBy(func(input *strelets.ProvisionVirtualChainInput) bool {
 		return input.VirtualChain.Id == strelets.VirtualChainId(1991)
@@ -93,19 +92,19 @@ func Test_BoyarProvisionVirtualChainsWithTimeout(t *testing.T) {
 
 func TestBoyar_ProvisionVirtualChainsWithNoConfigChanges(t *testing.T) {
 	cfg, err := config.NewStringConfigurationSource(getJSONConfig())
-	cfg.SetKeyConfigPath("./fake-key-pair.json")
+	cfg.SetKeyConfigPath("./test/fake-key-pair.json")
 
 	orchestrator, virtualChainRunner, _ := NewOrchestratorAndRunnerMocks()
 
 	s := strelets.NewStrelets(orchestrator)
 	cache := make(config.BoyarConfigCache)
-	b := boyar.NewBoyar(s, cfg, cache)
+	b := NewBoyar(s, cfg, cache)
 
 	err = b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
 	orchestrator.AssertNumberOfCalls(t, "Prepare", 2)
 	virtualChainRunner.AssertNumberOfCalls(t, "Run", 2)
-	require.EqualValues(t, "218cfc5740b7065b52de6a0d98d17bb12d8d916920b22bb46f4562886de3fde7", cache["42"])
+	require.EqualValues(t, "b8191707882631d3b6eb21907f1f39216ed6d099cf27f8752fd77d0e7326be9a", cache["42"])
 
 	err = b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
@@ -115,19 +114,19 @@ func TestBoyar_ProvisionVirtualChainsWithNoConfigChanges(t *testing.T) {
 
 func TestBoyar_ProvisionVirtualChainsReprovisionsIfConfigChanges(t *testing.T) {
 	cfg, _ := config.NewStringConfigurationSource(getJSONConfig())
-	cfg.SetKeyConfigPath("./fake-key-pair.json")
+	cfg.SetKeyConfigPath("./test/fake-key-pair.json")
 
 	orchestrator, virtualChainRunner, _ := NewOrchestratorAndRunnerMocks()
 
 	s := strelets.NewStrelets(orchestrator)
 	cache := make(config.BoyarConfigCache)
-	b := boyar.NewBoyar(s, cfg, cache)
+	b := NewBoyar(s, cfg, cache)
 
 	err := b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
 	orchestrator.AssertNumberOfCalls(t, "Prepare", 2)
 	virtualChainRunner.AssertNumberOfCalls(t, "Run", 2)
-	require.EqualValues(t, "218cfc5740b7065b52de6a0d98d17bb12d8d916920b22bb46f4562886de3fde7", cache["42"])
+	require.EqualValues(t, "b8191707882631d3b6eb21907f1f39216ed6d099cf27f8752fd77d0e7326be9a", cache["42"])
 
 	cfg.Chains()[0].Config["active-consensus-algo"] = 999
 
@@ -139,19 +138,19 @@ func TestBoyar_ProvisionVirtualChainsReprovisionsIfConfigChanges(t *testing.T) {
 
 func TestBoyar_ProvisionVirtualChainsReprovisionsIfDockerConfigChanges(t *testing.T) {
 	cfg, _ := config.NewStringConfigurationSource(getJSONConfig())
-	cfg.SetKeyConfigPath("./fake-key-pair.json")
+	cfg.SetKeyConfigPath("./test/fake-key-pair.json")
 
 	orchestrator, virtualChainRunner, _ := NewOrchestratorAndRunnerMocks()
 
 	s := strelets.NewStrelets(orchestrator)
 	cache := make(config.BoyarConfigCache)
-	b := boyar.NewBoyar(s, cfg, cache)
+	b := NewBoyar(s, cfg, cache)
 
 	err := b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
 	orchestrator.AssertNumberOfCalls(t, "Prepare", 2)
 	virtualChainRunner.AssertNumberOfCalls(t, "Run", 2)
-	require.EqualValues(t, "218cfc5740b7065b52de6a0d98d17bb12d8d916920b22bb46f4562886de3fde7", cache["42"])
+	require.EqualValues(t, "b8191707882631d3b6eb21907f1f39216ed6d099cf27f8752fd77d0e7326be9a", cache["42"])
 
 	cfg.Chains()[1].DockerConfig.Tag = "beta"
 
@@ -168,7 +167,7 @@ func TestBoyar_ProvisionHttpAPIEndpointWithNoConfigChanges(t *testing.T) {
 
 	s := strelets.NewStrelets(orchestrator)
 	cache := make(config.BoyarConfigCache)
-	b := boyar.NewBoyar(s, cfg, cache)
+	b := NewBoyar(s, cfg, cache)
 
 	err := b.ProvisionHttpAPIEndpoint(context.Background())
 	require.NoError(t, err)
@@ -189,7 +188,7 @@ func TestBoyar_ProvisionHttpAPIEndpointReprovisionsIfConfigChanges(t *testing.T)
 
 	s := strelets.NewStrelets(orchestrator)
 	cache := make(config.BoyarConfigCache)
-	b := boyar.NewBoyar(s, cfg, cache)
+	b := NewBoyar(s, cfg, cache)
 
 	err := b.ProvisionHttpAPIEndpoint(context.Background())
 	require.NoError(t, err)

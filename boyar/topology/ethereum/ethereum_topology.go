@@ -2,6 +2,7 @@ package ethereum
 
 import (
 	"context"
+	"fmt"
 	"github.com/orbs-network/boyarin/strelets"
 )
 
@@ -12,17 +13,17 @@ func GetEthereumTopology(ctx context.Context, ethereumEndpoint string, topologyC
 
 	address, err := StringToEthereumAddress(topologyContractAddress)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse topology contract address: %s", err)
 	}
 
 	packedOutput, err := CallTopologyContract(ctx, connection, &address)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to call topology contract: %s", err)
 	}
 
 	rawTopology, err := ABIExtractTopology(packedOutput)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to unpack topology contract output: %s", err)
 	}
 
 	return rawTopology.FederationNodes(), nil

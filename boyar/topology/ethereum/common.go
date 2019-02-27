@@ -2,7 +2,6 @@ package ethereum
 
 import (
 	"context"
-	"fmt"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -41,8 +40,6 @@ func (c *connectorCommon) CallContract(ctx context.Context, contractAddress []by
 	msg := ethereum.CallMsg{From: opts.From, To: &address, Data: packedInput}
 	output, err := client.CallContract(ctx, msg, blockNumber)
 	if err == nil && len(output) == 0 {
-		fmt.Println(output)
-
 		// make sure we have a contract to operate on, and bail out otherwise.
 		if code, err := client.CodeAt(ctx, address, blockNumber); err != nil {
 			return nil, err

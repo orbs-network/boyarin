@@ -27,3 +27,20 @@ func TestTopologyIntegrationWithGanache(t *testing.T) {
 		require.EqualValues(t, "0000000000000000000000000000000000000000", topology[0].Address, "should match expected public address")
 	})
 }
+
+func TestTopologyIntegrationWithGanacheUnhappyFlow(t *testing.T) {
+	skipUnlessEthereumIsEnabled(t)
+
+	test.WithContext(func(ctx context.Context) {
+		badContractAddress := "0000000000000000000000000000000000000000"
+
+		topology, err := ethereum.GetEthereumTopology(ctx, "malformed ethereum endpoint", badContractAddress)
+		require.EqualError(t, err, "failed to call topology contract: dial unix malformed ethereum endpoint: connect: no such file or directory")
+		require.Nil(t, topology, "topology should be empty")
+
+		topology, err = ethereum.GetEthereumTopology(ctx, getConfig().EthereumEndpoint(), badContractAddress)
+		require.EqualError(t, err, "failed to call topology contract: no contract code at given address")
+		require.Nil(t, topology, "topology should be empty")
+
+	})
+}

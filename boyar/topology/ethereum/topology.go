@@ -2,6 +2,7 @@ package ethereum
 
 import (
 	"context"
+	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/orbs-network/boyarin/strelets"
@@ -49,8 +50,8 @@ func EthereumToOrbsAddress(eth string) string {
 func (rawTopology *RawTopology) FederationNodes() (federationNodes []*strelets.FederationNode) {
 	for index, address := range rawTopology.NodeAddresses {
 		federationNodes = append(federationNodes, &strelets.FederationNode{
-			Key: EthereumToOrbsAddress(address.Hex()),
-			IP:  IpToString(rawTopology.IpAddresses[index]),
+			Address: EthereumToOrbsAddress(address.Hex()),
+			IP:      IpToString(rawTopology.IpAddresses[index]),
 		})
 	}
 
@@ -60,12 +61,15 @@ func (rawTopology *RawTopology) FederationNodes() (federationNodes []*strelets.F
 func ABIExtractTopology(packedOutput []byte) (*RawTopology, error) {
 	parsedABI, err := abi.JSON(strings.NewReader(TopologyContractABI))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse ABI: %s", err)
 	}
 
 	value := new(RawTopology)
-	err = ABIUnpackFunctionOutputArguments(parsedABI, value, TopologyContractMethodName, packedOutput)
-	return value, err
+	if err := parsedABI.Unpack(value, TopologyContractMethodName, packedOutput); err != nil {
+		return nil, fmt.Errorf("failed to unpack output: %s", err)
+	}
+
+	return value, nil
 }
 
 func CallTopologyContract(ctx context.Context, connection DeployingEthereumConnection, contractAddress *common.Address) ([]byte, error) {
@@ -74,7 +78,7 @@ func CallTopologyContract(ctx context.Context, connection DeployingEthereumConne
 		return nil, err
 	}
 
-	ethCallData, err := ABIPackFunctionInputArguments(parsedABI, TopologyContractMethodName, nil)
+	ethCallData, err := parsedABI.Pack(TopologyContractMethodName)
 	if err != nil {
 		return nil, err
 	}

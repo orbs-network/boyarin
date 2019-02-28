@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar"
+	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/stretchr/testify/require"
 	"testing"
-	"time"
 )
 
 func getBoyarVchains(httpPort int, gossipPort int, nodeIndex int, vchainIds ...int) []*strelets.VirtualChain {
@@ -42,9 +42,9 @@ func getBoyarConfig(gossipPort int, vchains []*strelets.VirtualChain) []byte {
 	var network []*strelets.FederationNode
 	for i, key := range helpers.NodeAddresses() {
 		network = append(network, &strelets.FederationNode{
-			Key:  key,
-			IP:   ip,
-			Port: gossipPort + int(vchains[0].Id) + i + 1,
+			Address: key,
+			IP:      ip,
+			Port:    gossipPort + int(vchains[0].Id) + i + 1,
 		})
 	}
 
@@ -61,11 +61,12 @@ const GOSSIP_PORT = 4400
 func provisionVchains(t *testing.T, h *harness, s strelets.Strelets, httpPort int, gossipPort int, i int, vchainIds ...int) {
 	vchains := getBoyarVchains(httpPort, gossipPort, i, vchainIds...)
 	boyarConfig := getBoyarConfig(gossipPort, vchains)
-	config, err := boyar.NewStringConfigurationSource(string(boyarConfig))
+	cfg, err := config.NewStringConfigurationSource(string(boyarConfig))
+	cfg.SetKeyConfigPath(fmt.Sprintf("%s/node%d/keys.json", h.configPath, i))
 	require.NoError(t, err)
 
-	cache := make(boyar.BoyarConfigCache)
-	b := boyar.NewBoyar(s, config, cache, fmt.Sprintf("%s/node%d/keys.json", h.configPath, i))
+	cache := make(config.BoyarConfigCache)
+	b := boyar.NewBoyar(s, cfg, cache)
 	err = b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
 	//err = s.UpdateReverseProxy(context.Background(), vchains, test.LocalIP())
@@ -88,8 +89,8 @@ func TestE2EProvisionMultipleVchainsWithSwarmAndBoyar(t *testing.T) {
 	defer h.stopChains(t, 42, 92)
 	//defer realDocker.RemoveContainer(context.Background(), "http-api-reverse-proxy")
 
-	waitForBlock(t, h.getMetricsForPort(8125), 3, 2*time.Minute)
-	waitForBlock(t, h.getMetricsForPort(8175), 0, 20*time.Second)
+	waitForBlock(t, h.getMetricsForPort(8125), 3, WAIT_FOR_BLOCK_TIMEOUT)
+	waitForBlock(t, h.getMetricsForPort(8175), 0, WAIT_FOR_BLOCK_TIMEOUT)
 }
 
 func TestE2EAddNewVirtualChainWithSwarmAndBoyar(t *testing.T) {
@@ -108,13 +109,13 @@ func TestE2EAddNewVirtualChainWithSwarmAndBoyar(t *testing.T) {
 	defer h.stopChains(t, 42)
 	//defer swarm.RemoveContainer(context.Background(), "http-api-reverse-proxy")
 
-	waitForBlock(t, h.getMetricsForPort(8125), 3, 1*time.Minute)
+	waitForBlock(t, h.getMetricsForPort(8125), 3, WAIT_FOR_BLOCK_TIMEOUT)
 
 	for i := 1; i <= 3; i++ {
 		provisionVchains(t, h, s, HTTP_PORT+1000, GOSSIP_PORT+1000, i, 42, 92)
 	}
 	defer h.stopChains(t, 92)
 
-	waitForBlock(t, h.getMetricsForPort(9125), 3, 2*time.Minute)
-	waitForBlock(t, h.getMetricsForPort(9175), 0, 20*time.Second)
+	waitForBlock(t, h.getMetricsForPort(9125), 3, WAIT_FOR_BLOCK_TIMEOUT)
+	waitForBlock(t, h.getMetricsForPort(9175), 0, WAIT_FOR_BLOCK_TIMEOUT)
 }

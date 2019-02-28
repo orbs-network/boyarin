@@ -1,4 +1,4 @@
-package boyar
+package config
 
 import (
 	"github.com/orbs-network/boyarin/strelets"
@@ -21,8 +21,8 @@ func getJSONConfig() string {
 func verifySource(t *testing.T, source NodeConfiguration) {
 	require.EqualValues(t, []*strelets.FederationNode{
 		{
-			Key: "dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173",
-			IP:  "192.168.1.14",
+			Address: "dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173",
+			IP:      "192.168.1.14",
 		},
 	}, source.FederationNodes())
 

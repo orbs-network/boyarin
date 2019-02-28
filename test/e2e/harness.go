@@ -19,6 +19,8 @@ import (
 	"time"
 )
 
+const WAIT_FOR_BLOCK_TIMEOUT = 3 * time.Minute
+
 type harness struct {
 	s          strelets.Strelets
 	configPath string

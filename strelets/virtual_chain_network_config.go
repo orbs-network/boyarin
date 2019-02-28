@@ -6,9 +6,9 @@ import (
 )
 
 type FederationNode struct {
-	Key  string `json:"address"`
-	IP   string `json:"ip"`
-	Port int    `json:"port"`
+	Address string `json:"address"`
+	IP      string `json:"ip"`
+	Port    int    `json:"port"`
 }
 
 func getNetworkConfigJSON(peers *PeersMap) []byte {
@@ -21,7 +21,7 @@ func getNetworkConfigJSON(peers *PeersMap) []byte {
 
 	// A workaround for tests because range does not preserve key order over iteration
 	sort.Slice(nodes, func(i, j int) bool {
-		return nodes[i].Key > nodes[j].Key
+		return nodes[i].Address > nodes[j].Address
 	})
 
 	jsonMap["federation-nodes"] = nodes

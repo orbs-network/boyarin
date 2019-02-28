@@ -1,10 +1,10 @@
-package boyar
+package config
 
 import "github.com/orbs-network/boyarin/strelets"
 
 type BoyarConfigCache map[string]string
 
-type httpReverseProxyCompositeKey struct {
+type HttpReverseProxyCompositeKey struct {
 	Id         strelets.VirtualChainId
 	HttpPort   int
 	GossipPort int

@@ -4,7 +4,6 @@ import (
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/stretchr/testify/require"
 	"testing"
-	"time"
 )
 
 func TestE2EWithDockerSwarm(t *testing.T) {
@@ -17,7 +16,7 @@ func TestE2EWithDockerSwarm(t *testing.T) {
 	h.startChain(t)
 	defer h.stopChain(t)
 
-	waitForBlock(t, h.getMetrics, 3, 2*time.Minute)
+	waitForBlock(t, h.getMetrics, 3, WAIT_FOR_BLOCK_TIMEOUT)
 }
 
 func TestE2EKeepVolumesBetweenReloadsWithSwarm(t *testing.T) {
@@ -30,12 +29,12 @@ func TestE2EKeepVolumesBetweenReloadsWithSwarm(t *testing.T) {
 	h.startChain(t)
 	defer h.stopChain(t)
 
-	waitForBlock(t, h.getMetricsForPort(8081), 10, 2*time.Minute)
+	waitForBlock(t, h.getMetricsForPort(8081), 10, WAIT_FOR_BLOCK_TIMEOUT)
 
 	expectedBlockHeight, err := getBlockHeight(h.getMetricsForPort(8081))
 	require.NoError(t, err)
 
 	h.startChainInstance(t, 1)
 
-	waitForBlock(t, h.getMetricsForPort(8081), expectedBlockHeight, 2*time.Minute)
+	waitForBlock(t, h.getMetricsForPort(8081), expectedBlockHeight, WAIT_FOR_BLOCK_TIMEOUT)
 }

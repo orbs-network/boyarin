@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar"
+	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/supervized"
 	"os"
 	"time"
@@ -43,22 +44,22 @@ func main() {
 }
 
 func printConfiguration(configUrl string, ethereumEndpoint string, topologyContractAddress string) {
-	config, err := boyar.GetConfiguration(configUrl, ethereumEndpoint, topologyContractAddress)
+	cfg, err := config.GetConfiguration(configUrl, ethereumEndpoint, topologyContractAddress, "")
 	if err != nil {
 		fmt.Println("ERROR: could not pull valid configuration:", err)
 		return
 	}
 
 	fmt.Println("# Orchestrator options:\n# ============================")
-	orchestratorOptions, _ := json.MarshalIndent(config.OrchestratorOptions(), "", "  ")
+	orchestratorOptions, _ := json.MarshalIndent(cfg.OrchestratorOptions(), "", "  ")
 	fmt.Println(string(orchestratorOptions))
 
 	fmt.Println("# Peers:\n# ============================")
-	peers, _ := json.MarshalIndent(config.FederationNodes(), "", "  ")
+	peers, _ := json.MarshalIndent(cfg.FederationNodes(), "", "  ")
 	fmt.Println(string(peers))
 
 	fmt.Println("# Chains:\n# ============================")
-	chains, _ := json.MarshalIndent(config.Chains(), "", "  ")
+	chains, _ := json.MarshalIndent(cfg.Chains(), "", "  ")
 	fmt.Println(string(chains))
 }
 
@@ -74,19 +75,24 @@ func execute(daemonize bool, keyPairConfigPath string, configUrl string, polling
 	}
 
 	// Even if something crashed, things still were provisioned, meaning the cache should stay
-	configCache := make(boyar.BoyarConfigCache)
+	configCache := make(config.BoyarConfigCache)
 
 	if daemonize {
 		<-supervized.GoForever(func() {
 			ctx, cancel := context.WithTimeout(context.Background(), timeout)
 			defer cancel()
 
-			if err := boyar.RunOnce(ctx, keyPairConfigPath, configUrl, ethereumEndpoint, topologyContractAddress, configCache); err != nil {
-				fmt.Println(time.Now(), "ERROR:", err)
-			}
+			cfg, err := config.GetConfiguration(configUrl, ethereumEndpoint, topologyContractAddress, keyPairConfigPath)
+			if err != nil {
+				fmt.Println(time.Now(), "ERROR:", fmt.Errorf("could not generate configuration: %s", err))
+			} else {
+				if err := boyar.FullFlow(ctx, cfg, configCache); err != nil {
+					fmt.Println(time.Now(), "ERROR:", err)
+				}
 
-			for vcid, hash := range configCache {
-				fmt.Println(time.Now(), fmt.Sprintf("Latest successful configuration for vchain %s: %s", vcid, hash))
+				for vcid, hash := range configCache {
+					fmt.Println(time.Now(), fmt.Sprintf("Latest successful configuration for vchain %s: %s", vcid, hash))
+				}
 			}
 
 			<-time.After(pollingInterval)
@@ -95,7 +101,11 @@ func execute(daemonize bool, keyPairConfigPath string, configUrl string, polling
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
 
-		if err := boyar.RunOnce(ctx, keyPairConfigPath, configUrl, ethereumEndpoint, topologyContractAddress, configCache); err != nil {
+		cfg, err := config.GetConfiguration(configUrl, ethereumEndpoint, topologyContractAddress, keyPairConfigPath)
+		if err != nil {
+			fmt.Println(time.Now(), "ERROR:", fmt.Errorf("could not generate configuration: %s", err))
+			os.Exit(1)
+		} else if err := boyar.FullFlow(ctx, cfg, configCache); err != nil {
 			fmt.Println(time.Now(), "ERROR:", err)
 			os.Exit(1)
 		}

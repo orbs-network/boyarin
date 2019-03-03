@@ -103,14 +103,20 @@ func execute(flags *flags) {
 	configCache := make(config.BoyarConfigCache)
 
 	if flags.daemonize {
+		firstTime := true
+
 		<-supervized.GoForever(func() {
 			cfg, err := config.GetConfiguration(flags.configUrl, flags.ethereumEndpoint, flags.topologyContractAddress, flags.keyPairConfigPath)
 			if err != nil {
 				fmt.Println(time.Now(), "ERROR:", fmt.Errorf("could not generate configuration: %s", err))
 			} else {
-				reloadTimeDelay := cfg.ReloadTimeDelay(flags.maxReloadTimeDelay)
-				fmt.Println(fmt.Sprintf("INFO: waiting for %s to reload the configuration", reloadTimeDelay))
-				<-time.After(reloadTimeDelay)
+				// skip delay when provisioning for the first time when the node goes up
+				if !firstTime {
+					reloadTimeDelay := cfg.ReloadTimeDelay(flags.maxReloadTimeDelay)
+					fmt.Println(fmt.Sprintf("INFO: waiting for %s to reload the configuration", reloadTimeDelay))
+					<-time.After(reloadTimeDelay)
+					firstTime = false
+				}
 
 				ctx, cancel := context.WithTimeout(context.Background(), flags.timeout)
 				defer cancel()

@@ -12,20 +12,31 @@ import (
 	"time"
 )
 
+type flags struct {
+	configUrl         string
+	keyPairConfigPath string
+
+	daemonize bool
+
+	pollingInterval time.Duration
+	timeout         time.Duration
+
+	ethereumEndpoint        string
+	topologyContractAddress string
+}
+
 func main() {
-	configUrlPtr := flag.String("config-url", "", "http://my-config/config.json")
-	keyPairConfigPathPtr := flag.String("keys", "", "path to public/private key pair in json format")
-
-	daemonizePtr := flag.Bool("daemonize", false, "do not exit the program and keep polling for changes")
-	pollingIntervalPtr := flag.Duration("polling-interval", 1*time.Minute, "how often to poll for configuration in daemon mode (duration: 1s, 1m, 1h, etc)")
-
-	timeoutPtr := flag.Duration("timeout", 10*time.Minute, "timeout for provisioning all virtual chains (duration: 1s, 1m, 1h, etc)")
-
-	ethereumEndpointPtr := flag.String("ethereum-endpoint", "", "Ethereum endpoint")
-	topologyContractAddressPtr := flag.String("topology-contract-address", "", "Ethereum address for topology contract")
+	flags := &flags{
+		configUrl:               *flag.String("config-url", "", "http://my-config/config.json"),
+		keyPairConfigPath:       *flag.String("keys", "", "path to public/private key pair in json format"),
+		daemonize:               *flag.Bool("daemonize", false, "do not exit the program and keep polling for changes"),
+		pollingInterval:         *flag.Duration("polling-interval", 1*time.Minute, "how often to poll for configuration in daemon mode (duration: 1s, 1m, 1h, etc)"),
+		timeout:                 *flag.Duration("timeout", 10*time.Minute, "timeout for provisioning all virtual chains (duration: 1s, 1m, 1h, etc)"),
+		ethereumEndpoint:        *flag.String("ethereum-endpoint", "", "Ethereum endpoint"),
+		topologyContractAddress: *flag.String("topology-contract-address", "", "Ethereum address for topology contract"),
+	}
 
 	showConfiguration := flag.Bool("show-configuration", false, "Show configuration and exit")
-
 	help := flag.Bool("help", false, "Show usage")
 
 	flag.Parse()
@@ -36,15 +47,15 @@ func main() {
 	}
 
 	if *showConfiguration {
-		printConfiguration(*configUrlPtr, *ethereumEndpointPtr, *topologyContractAddressPtr)
+		printConfiguration(flags)
 		return
 	}
 
-	execute(*daemonizePtr, *keyPairConfigPathPtr, *configUrlPtr, *pollingIntervalPtr, *timeoutPtr, *ethereumEndpointPtr, *topologyContractAddressPtr)
+	execute(flags)
 }
 
-func printConfiguration(configUrl string, ethereumEndpoint string, topologyContractAddress string) {
-	cfg, err := config.GetConfiguration(configUrl, ethereumEndpoint, topologyContractAddress, "")
+func printConfiguration(flags *flags) {
+	cfg, err := config.GetConfiguration(flags.configUrl, flags.ethereumEndpoint, flags.topologyContractAddress, "")
 	if err != nil {
 		fmt.Println("ERROR: could not pull valid configuration:", err)
 		return
@@ -63,13 +74,13 @@ func printConfiguration(configUrl string, ethereumEndpoint string, topologyContr
 	fmt.Println(string(chains))
 }
 
-func execute(daemonize bool, keyPairConfigPath string, configUrl string, pollingInterval time.Duration, timeout time.Duration, ethereumEndpoint string, topologyContractAddress string) {
-	if configUrl == "" {
+func execute(flags *flags) {
+	if flags.configUrl == "" {
 		fmt.Println("--config-url is a required parameter for provisioning flow")
 		os.Exit(1)
 	}
 
-	if keyPairConfigPath == "" {
+	if flags.keyPairConfigPath == "" {
 		fmt.Println("--keys is a required parameter for provisioning flow")
 		os.Exit(1)
 	}
@@ -77,12 +88,12 @@ func execute(daemonize bool, keyPairConfigPath string, configUrl string, polling
 	// Even if something crashed, things still were provisioned, meaning the cache should stay
 	configCache := make(config.BoyarConfigCache)
 
-	if daemonize {
+	if flags.daemonize {
 		<-supervized.GoForever(func() {
-			ctx, cancel := context.WithTimeout(context.Background(), timeout)
+			ctx, cancel := context.WithTimeout(context.Background(), flags.timeout)
 			defer cancel()
 
-			cfg, err := config.GetConfiguration(configUrl, ethereumEndpoint, topologyContractAddress, keyPairConfigPath)
+			cfg, err := config.GetConfiguration(flags.configUrl, flags.ethereumEndpoint, flags.topologyContractAddress, flags.keyPairConfigPath)
 			if err != nil {
 				fmt.Println(time.Now(), "ERROR:", fmt.Errorf("could not generate configuration: %s", err))
 			} else {
@@ -95,13 +106,13 @@ func execute(daemonize bool, keyPairConfigPath string, configUrl string, polling
 				}
 			}
 
-			<-time.After(pollingInterval)
+			<-time.After(flags.pollingInterval)
 		})
 	} else {
-		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		ctx, cancel := context.WithTimeout(context.Background(), flags.timeout)
 		defer cancel()
 
-		cfg, err := config.GetConfiguration(configUrl, ethereumEndpoint, topologyContractAddress, keyPairConfigPath)
+		cfg, err := config.GetConfiguration(flags.configUrl, flags.ethereumEndpoint, flags.topologyContractAddress, flags.keyPairConfigPath)
 		if err != nil {
 			fmt.Println(time.Now(), "ERROR:", fmt.Errorf("could not generate configuration: %s", err))
 			os.Exit(1)

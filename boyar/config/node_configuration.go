@@ -5,6 +5,7 @@ import (
 	"github.com/orbs-network/boyarin/crypto"
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
+	"time"
 )
 
 type NodeConfiguration interface {
@@ -12,6 +13,8 @@ type NodeConfiguration interface {
 	Chains() []*strelets.VirtualChain
 	OrchestratorOptions() adapter.OrchestratorOptions
 	KeyConfigPath() string
+	ReloadTimeDelay(maxDelay time.Duration) time.Duration
+
 	Hash() string
 }
 

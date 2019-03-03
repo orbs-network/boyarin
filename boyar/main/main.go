@@ -18,28 +18,42 @@ type flags struct {
 
 	daemonize bool
 
-	pollingInterval time.Duration
-	timeout         time.Duration
+	pollingInterval    time.Duration
+	timeout            time.Duration
+	maxReloadTimeDelay time.Duration
 
 	ethereumEndpoint        string
 	topologyContractAddress string
 }
 
 func main() {
-	flags := &flags{
-		configUrl:               *flag.String("config-url", "", "http://my-config/config.json"),
-		keyPairConfigPath:       *flag.String("keys", "", "path to public/private key pair in json format"),
-		daemonize:               *flag.Bool("daemonize", false, "do not exit the program and keep polling for changes"),
-		pollingInterval:         *flag.Duration("polling-interval", 1*time.Minute, "how often to poll for configuration in daemon mode (duration: 1s, 1m, 1h, etc)"),
-		timeout:                 *flag.Duration("timeout", 10*time.Minute, "timeout for provisioning all virtual chains (duration: 1s, 1m, 1h, etc)"),
-		ethereumEndpoint:        *flag.String("ethereum-endpoint", "", "Ethereum endpoint"),
-		topologyContractAddress: *flag.String("topology-contract-address", "", "Ethereum address for topology contract"),
-	}
+	configUrlPtr := flag.String("config-url", "", "http://my-config/config.json")
+	keyPairConfigPathPtr := flag.String("keys", "", "path to public/private key pair in json format")
+
+	daemonizePtr := flag.Bool("daemonize", false, "do not exit the program and keep polling for changes")
+	pollingIntervalPtr := flag.Duration("polling-interval", 1*time.Minute, "how often to poll for configuration in daemon mode (duration: 1s, 1m, 1h, etc)")
+	maxReloadTimePtr := flag.Duration("max-reload-time-delay", 15*time.Minute, "introduces jitter to reloading configuration to make network more stable, only works in daemon mode (duration: 1s, 1m, 1h, etc)")
+
+	timeoutPtr := flag.Duration("timeout", 10*time.Minute, "timeout for provisioning all virtual chains (duration: 1s, 1m, 1h, etc)")
+
+	ethereumEndpointPtr := flag.String("ethereum-endpoint", "", "Ethereum endpoint")
+	topologyContractAddressPtr := flag.String("topology-contract-address", "", "Ethereum address for topology contract")
 
 	showConfiguration := flag.Bool("show-configuration", false, "Show configuration and exit")
 	help := flag.Bool("help", false, "Show usage")
 
 	flag.Parse()
+
+	flags := &flags{
+		configUrl:               *configUrlPtr,
+		keyPairConfigPath:       *keyPairConfigPathPtr,
+		daemonize:               *daemonizePtr,
+		pollingInterval:         *pollingIntervalPtr,
+		timeout:                 *timeoutPtr,
+		maxReloadTimeDelay:      *maxReloadTimePtr,
+		ethereumEndpoint:        *ethereumEndpointPtr,
+		topologyContractAddress: *topologyContractAddressPtr,
+	}
 
 	if *help {
 		flag.Usage()
@@ -90,13 +104,17 @@ func execute(flags *flags) {
 
 	if flags.daemonize {
 		<-supervized.GoForever(func() {
-			ctx, cancel := context.WithTimeout(context.Background(), flags.timeout)
-			defer cancel()
-
 			cfg, err := config.GetConfiguration(flags.configUrl, flags.ethereumEndpoint, flags.topologyContractAddress, flags.keyPairConfigPath)
 			if err != nil {
 				fmt.Println(time.Now(), "ERROR:", fmt.Errorf("could not generate configuration: %s", err))
 			} else {
+				reloadTimeDelay := cfg.ReloadTimeDelay(flags.maxReloadTimeDelay)
+				fmt.Println(fmt.Sprintf("INFO: waiting for %s to reload the configuration", reloadTimeDelay))
+				<-time.After(reloadTimeDelay)
+
+				ctx, cancel := context.WithTimeout(context.Background(), flags.timeout)
+				defer cancel()
+
 				if err := boyar.FullFlow(ctx, cfg, configCache); err != nil {
 					fmt.Println(time.Now(), "ERROR:", err)
 				}
@@ -109,14 +127,16 @@ func execute(flags *flags) {
 			<-time.After(flags.pollingInterval)
 		})
 	} else {
-		ctx, cancel := context.WithTimeout(context.Background(), flags.timeout)
-		defer cancel()
-
 		cfg, err := config.GetConfiguration(flags.configUrl, flags.ethereumEndpoint, flags.topologyContractAddress, flags.keyPairConfigPath)
 		if err != nil {
 			fmt.Println(time.Now(), "ERROR:", fmt.Errorf("could not generate configuration: %s", err))
 			os.Exit(1)
-		} else if err := boyar.FullFlow(ctx, cfg, configCache); err != nil {
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), flags.timeout)
+		defer cancel()
+
+		if err := boyar.FullFlow(ctx, cfg, configCache); err != nil {
 			fmt.Println(time.Now(), "ERROR:", err)
 			os.Exit(1)
 		}

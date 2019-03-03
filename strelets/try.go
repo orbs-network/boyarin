@@ -13,17 +13,22 @@ func Try(parentContext context.Context, tries int, timeoutPerTry time.Duration, 
 	retryAfter := retryInterval
 
 	for i := 0; i < tries; i++ {
-		err = f(ctx)
-		if err == nil {
-			if i > 0 {
-				fmt.Println(fmt.Sprintf("attempt #%d: success", i))
+		select {
+		case <-parentContext.Done():
+			return fmt.Errorf("%s after %d attempts", parentContext.Err(), i)
+		default:
+			err = f(ctx)
+			if err == nil {
+				if i > 0 {
+					fmt.Println(fmt.Sprintf("attempt #%d: success", i))
+				}
+				return
 			}
-			return
-		}
 
-		fmt.Println(fmt.Sprintf("attempt #%d, retry in %s: %s", i, retryAfter, err))
-		time.Sleep(retryAfter)
-		retryAfter = retryAfter * 2
+			fmt.Println(fmt.Sprintf("attempt #%d, retry in %s: %s", i, retryAfter, err))
+			time.Sleep(retryAfter)
+			retryAfter = retryAfter * 2
+		}
 	}
 
 	return

@@ -104,27 +104,32 @@ func execute(flags *flags) {
 
 	if flags.daemonize {
 		<-supervized.GoForever(func() {
-			cfg, err := config.GetConfiguration(flags.configUrl, flags.ethereumEndpoint, flags.topologyContractAddress, flags.keyPairConfigPath)
-			if err != nil {
-				fmt.Println(time.Now(), "ERROR:", fmt.Errorf("could not generate configuration: %s", err))
-			} else {
-				reloadTimeDelay := cfg.ReloadTimeDelay(flags.maxReloadTimeDelay)
-				fmt.Println(fmt.Sprintf("INFO: waiting for %s to reload the configuration", reloadTimeDelay))
-				<-time.After(reloadTimeDelay)
+			for i := 0; true; i++ {
+				cfg, err := config.GetConfiguration(flags.configUrl, flags.ethereumEndpoint, flags.topologyContractAddress, flags.keyPairConfigPath)
+				if err != nil {
+					fmt.Println(time.Now(), "ERROR:", fmt.Errorf("could not generate configuration: %s", err))
+				} else {
+					// skip delay when provisioning for the first time when the node goes up
+					if i > 0 {
+						reloadTimeDelay := cfg.ReloadTimeDelay(flags.maxReloadTimeDelay)
+						fmt.Println(fmt.Sprintf("INFO: waiting for %s to apply new configuration", reloadTimeDelay))
+						<-time.After(reloadTimeDelay)
+					}
 
-				ctx, cancel := context.WithTimeout(context.Background(), flags.timeout)
-				defer cancel()
+					ctx, cancel := context.WithTimeout(context.Background(), flags.timeout)
+					defer cancel()
 
-				if err := boyar.FullFlow(ctx, cfg, configCache); err != nil {
-					fmt.Println(time.Now(), "ERROR:", err)
+					if err := boyar.FullFlow(ctx, cfg, configCache); err != nil {
+						fmt.Println(time.Now(), "ERROR:", err)
+					}
+
+					for vcid, hash := range configCache {
+						fmt.Println(time.Now(), fmt.Sprintf("Latest successful configuration for vchain %s: %s", vcid, hash))
+					}
 				}
 
-				for vcid, hash := range configCache {
-					fmt.Println(time.Now(), fmt.Sprintf("Latest successful configuration for vchain %s: %s", vcid, hash))
-				}
+				<-time.After(flags.pollingInterval)
 			}
-
-			<-time.After(flags.pollingInterval)
 		})
 	} else {
 		cfg, err := config.GetConfiguration(flags.configUrl, flags.ethereumEndpoint, flags.topologyContractAddress, flags.keyPairConfigPath)

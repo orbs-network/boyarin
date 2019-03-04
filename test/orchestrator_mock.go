@@ -15,8 +15,8 @@ func (a *OrchestratorMock) PullImage(ctx context.Context, imageName string) erro
 	return nil
 }
 
-func (a *OrchestratorMock) Prepare(ctx context.Context, imageName string, containerName string, httpPort int, gossipPort int, config *adapter.AppConfig) (adapter.Runner, error) {
-	res := a.MethodCalled("Prepare", ctx, imageName, containerName, httpPort, gossipPort, config)
+func (a *OrchestratorMock) Prepare(ctx context.Context, serviceConfig *adapter.ServiceConfig, appConfig *adapter.AppConfig) (adapter.Runner, error) {
+	res := a.MethodCalled("Prepare", ctx, serviceConfig, appConfig)
 	return res.Get(0).(adapter.Runner), res.Error(1)
 }
 

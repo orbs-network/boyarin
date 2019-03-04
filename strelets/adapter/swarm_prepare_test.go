@@ -24,8 +24,8 @@ func Test_getServiceSpec(t *testing.T) {
 	serviceConfig := &ServiceConfig{
 		ImageName:     "orbs:export",
 		ContainerName: containerName,
-		GossipPort:    16160,
-		HttpPort:      8800,
+		GossipPort:    8800,
+		HttpPort:      16160,
 	}
 
 	spec := getVirtualChainServiceSpec(serviceConfig, secrets, mounts)

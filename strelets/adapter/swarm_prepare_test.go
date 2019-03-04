@@ -21,7 +21,14 @@ func Test_getServiceSpec(t *testing.T) {
 	restartDelay := time.Duration(10 * time.Second)
 	replicas := uint64(1)
 
-	spec := getVirtualChainServiceSpec("orbs:export", containerName, 16160, 8800, secrets, mounts)
+	serviceConfig := &ServiceConfig{
+		ImageName:     "orbs:export",
+		ContainerName: containerName,
+		GossipPort:    16160,
+		HttpPort:      8800,
+	}
+
+	spec := getVirtualChainServiceSpec(serviceConfig, secrets, mounts)
 
 	require.EqualValues(t, spec.Name, "stack-"+containerName)
 
@@ -41,6 +48,16 @@ func Test_getServiceSpec(t *testing.T) {
 		RestartPolicy: &swarm.RestartPolicy{
 			Condition: "",
 			Delay:     &restartDelay,
+		},
+		Resources: &swarm.ResourceRequirements{
+			Limits: &swarm.Resources{
+				NanoCPUs:    1 * CPU_SHARES,
+				MemoryBytes: 3000 * MEGABYTE,
+			},
+			Reservations: &swarm.Resources{
+				NanoCPUs:    0.25 * CPU_SHARES,
+				MemoryBytes: 300 * MEGABYTE,
+			},
 		},
 	})
 
@@ -70,8 +87,8 @@ func Test_getServiceSpec(t *testing.T) {
 
 func Test_getResourceRequirements(t *testing.T) {
 	defaultResourceRequirements := getResourceRequirements(0, 0, 0, 0)
-	require.EqualValues(t, 2000*1024, defaultResourceRequirements.Limits.MemoryBytes)
-	require.EqualValues(t, 200*1024, defaultResourceRequirements.Reservations.MemoryBytes)
+	require.EqualValues(t, 3000*1024, defaultResourceRequirements.Limits.MemoryBytes)
+	require.EqualValues(t, 300*1024, defaultResourceRequirements.Reservations.MemoryBytes)
 
 	require.EqualValues(t, 1*10000000000, defaultResourceRequirements.Limits.NanoCPUs)
 	require.EqualValues(t, int64(0.25*10000000000), defaultResourceRequirements.Reservations.NanoCPUs)

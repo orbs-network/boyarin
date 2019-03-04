@@ -45,11 +45,25 @@ func (s *strelets) ProvisionVirtualChain(ctx context.Context, input *ProvisionVi
 
 	return Try(ctx, PROVISION_VCHAIN_MAX_TRIES, PROVISION_VCHAIN_ATTEMPT_TIMEOUT, PROVISION_VCHAIN_RETRY_INTERVAL,
 		func(ctxWithTimeout context.Context) error {
-			if runner, err := s.orchestrator.Prepare(ctx, imageName, chain.getContainerName(), chain.HttpPort, chain.GossipPort, &adapter.AppConfig{
+			serviceConfig := &adapter.ServiceConfig{
+				ImageName:     imageName,
+				ContainerName: chain.getContainerName(),
+				HttpPort:      chain.HttpPort,
+				GossipPort:    chain.GossipPort,
+
+				LimitedMemory:  chain.DockerConfig.Resources.Limits.Memory,
+				LimitedCPU:     chain.DockerConfig.Resources.Limits.CPUs,
+				ReservedMemory: chain.DockerConfig.Resources.Reservations.Memory,
+				ReservedCPU:    chain.DockerConfig.Resources.Reservations.CPUs,
+			}
+
+			appConfig := &adapter.AppConfig{
 				KeyPair: keyPair,
 				Network: getNetworkConfigJSON(input.Peers),
 				Config:  chain.getSerializedConfig(),
-			}); err != nil {
+			}
+
+			if runner, err := s.orchestrator.Prepare(ctx, serviceConfig, appConfig); err != nil {
 				return err
 			} else {
 				return runner.Run(ctx)

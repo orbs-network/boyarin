@@ -14,13 +14,25 @@ type AppConfig struct {
 	Config  []byte
 }
 
+type ServiceConfig struct {
+	ImageName     string
+	ContainerName string
+	HttpPort      int
+	GossipPort    int
+
+	LimitedMemory  int64
+	LimitedCPU     float64
+	ReservedMemory int64
+	ReservedCPU    float64
+}
+
 type Runner interface {
 	Run(ctx context.Context) error
 }
 
 type Orchestrator interface {
 	PullImage(ctx context.Context, imageName string) error
-	Prepare(ctx context.Context, imageName string, containerName string, httpPort int, gossipPort int, config *AppConfig) (Runner, error)
+	Prepare(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) (Runner, error)
 	RemoveContainer(ctx context.Context, containerName string) error
 
 	PrepareReverseProxy(ctx context.Context, config string) (Runner, error)

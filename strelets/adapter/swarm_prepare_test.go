@@ -87,17 +87,17 @@ func Test_getServiceSpec(t *testing.T) {
 
 func Test_getResourceRequirements(t *testing.T) {
 	defaultResourceRequirements := getResourceRequirements(0, 0, 0, 0)
-	require.EqualValues(t, 3000*1024, defaultResourceRequirements.Limits.MemoryBytes)
-	require.EqualValues(t, 300*1024, defaultResourceRequirements.Reservations.MemoryBytes)
+	require.EqualValues(t, 3000*1024*1024, defaultResourceRequirements.Limits.MemoryBytes)
+	require.EqualValues(t, 300*1024*1024, defaultResourceRequirements.Reservations.MemoryBytes)
 
 	require.EqualValues(t, 1*10000000000, defaultResourceRequirements.Limits.NanoCPUs)
 	require.EqualValues(t, int64(0.25*10000000000), defaultResourceRequirements.Reservations.NanoCPUs)
 
 	limitMemory := getResourceRequirements(100, 0, 0, 0)
-	require.EqualValues(t, 100*1024, limitMemory.Limits.MemoryBytes)
+	require.EqualValues(t, 100*1024*1024, limitMemory.Limits.MemoryBytes)
 
 	reserveMemory := getResourceRequirements(0, 0, 125, 0)
-	require.EqualValues(t, 125*1024, reserveMemory.Reservations.MemoryBytes)
+	require.EqualValues(t, 125*1024*1024, reserveMemory.Reservations.MemoryBytes)
 
 	limitCPU := getResourceRequirements(0, 0.75, 0, 0)
 	require.EqualValues(t, int64(0.75*10000000000), limitCPU.Limits.NanoCPUs)

@@ -94,6 +94,38 @@ func getEndpointsSpec(httpPort int, gossipPort int) *swarm.EndpointSpec {
 	}
 }
 
+const MEGABYTE = 1024
+const CPU_SHARES = 10000000000
+
+func overrideResource(resource *swarm.Resources, memory int64, cpu float64) *swarm.Resources {
+	if memory != 0 {
+		resource.MemoryBytes = memory * MEGABYTE
+	}
+
+	if cpu != 0 {
+		resource.NanoCPUs = int64(cpu * CPU_SHARES)
+	}
+
+	return resource
+}
+
+func getResourceRequirements(limitMemory int64, limitCPU float64, reserveMemory int64, reserveCPU float64) *swarm.ResourceRequirements {
+	limits := overrideResource(&swarm.Resources{
+		MemoryBytes: 2000 * MEGABYTE,
+		NanoCPUs:    1 * CPU_SHARES,
+	}, limitMemory, limitCPU)
+
+	reservations := overrideResource(&swarm.Resources{
+		MemoryBytes: 200 * MEGABYTE,
+		NanoCPUs:    0.25 * CPU_SHARES,
+	}, reserveMemory, reserveCPU)
+
+	return &swarm.ResourceRequirements{
+		Limits:       limits,
+		Reservations: reservations,
+	}
+}
+
 func getVirtualChainServiceSpec(imageName string, containerName string, httpPort int, gossipPort int, secrets []*swarm.SecretReference, mounts []mount.Mount) swarm.ServiceSpec {
 	restartDelay := time.Duration(10 * time.Second)
 	replicas := uint64(1)
@@ -104,6 +136,7 @@ func getVirtualChainServiceSpec(imageName string, containerName string, httpPort
 			RestartPolicy: &swarm.RestartPolicy{
 				Delay: &restartDelay,
 			},
+			//Resources: getResourceRequirements(),
 		},
 		Mode:         getServiceMode(replicas),
 		EndpointSpec: getEndpointsSpec(httpPort, gossipPort),

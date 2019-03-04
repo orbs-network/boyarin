@@ -21,7 +21,7 @@ func getBoyarVchains(httpPort int, gossipPort int, nodeIndex int, vchainIds ...i
 			Id:         strelets.VirtualChainId(vchainId),
 			HttpPort:   httpPort + vchainId + nodeIndex,
 			GossipPort: gossipPort + vchainId + nodeIndex,
-			DockerConfig: strelets.DockerImageConfig{
+			DockerConfig: strelets.DockerConfig{
 				ContainerNamePrefix: fmt.Sprintf("node%d", nodeIndex),
 				Image:               "orbs",
 				Tag:                 "export",

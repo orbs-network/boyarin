@@ -162,8 +162,8 @@ func (h *harness) getMetricsForPort(httpPort int) func() (map[string]interface{}
 	})
 }
 
-func DockerConfig(node string) strelets.DockerImageConfig {
-	return strelets.DockerImageConfig{
+func DockerConfig(node string) strelets.DockerConfig {
+	return strelets.DockerConfig{
 		Image:               "orbs",
 		Tag:                 "export",
 		Pull:                false,

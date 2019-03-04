@@ -17,7 +17,17 @@
         "ContainerNamePrefix": "node1",
         "Image":  "506367651493.dkr.ecr.us-west-2.amazonaws.com/orbs-network-v1",
         "Tag":    "master",
-        "Pull":   false
+        "Pull":   false,
+        "Resources": {
+          "Limits": {
+            "Memory": 1024,
+            "CPUs": 1
+          },
+          "Reservations": {
+            "Memory": 512,
+            "CPUs": 0.5
+          }
+        }
       },
       "Config": {
         "ethereum-endpoint": "http://localhost:8545"

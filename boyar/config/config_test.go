@@ -28,6 +28,14 @@ func Test_StringConfigurationSource(t *testing.T) {
 	require.Equal(t, "ebs", source.OrchestratorOptions().StorageDriver)
 	require.NotNil(t, source.OrchestratorOptions().StorageOptions)
 	require.Equal(t, "100", source.OrchestratorOptions().StorageOptions["maxRetries"])
+
+	require.EqualValues(t, 1024, source.Chains()[0].DockerConfig.Resources.Limits.Memory)
+	require.EqualValues(t, 1, source.Chains()[0].DockerConfig.Resources.Limits.CPUs)
+	require.EqualValues(t, 512, source.Chains()[0].DockerConfig.Resources.Reservations.Memory)
+	require.EqualValues(t, 0.5, source.Chains()[0].DockerConfig.Resources.Reservations.CPUs)
+
+	require.NotNil(t, source, source.Chains()[1].DockerConfig.Resources.Limits)
+	require.NotNil(t, source, source.Chains()[1].DockerConfig.Resources.Reservations)
 }
 
 func Test_StringConfigurationSourceFromEmptyConfig(t *testing.T) {

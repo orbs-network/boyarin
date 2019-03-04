@@ -95,7 +95,7 @@ func getEndpointsSpec(httpPort int, gossipPort int) *swarm.EndpointSpec {
 }
 
 const MEGABYTE = 1024 * 1024
-const CPU_SHARES = 10000000000
+const CPU_SHARES = 1000000000
 
 func overrideResource(resource *swarm.Resources, memory int64, cpu float64) *swarm.Resources {
 	if memory != 0 {

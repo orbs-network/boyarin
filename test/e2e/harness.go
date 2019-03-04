@@ -168,6 +168,16 @@ func DockerConfig(node string) strelets.DockerConfig {
 		Tag:                 "export",
 		Pull:                false,
 		ContainerNamePrefix: node,
+		Resources: strelets.DockerResources{
+			Limits: strelets.Resource{
+				Memory: 256,
+				CPUs:   0.25,
+			},
+			Reservations: strelets.Resource{
+				Memory: 128,
+				CPUs:   0.25,
+			},
+		},
 	}
 }
 

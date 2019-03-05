@@ -21,7 +21,14 @@ func Test_getServiceSpec(t *testing.T) {
 	restartDelay := time.Duration(10 * time.Second)
 	replicas := uint64(1)
 
-	spec := getVirtualChainServiceSpec("orbs:export", containerName, 16160, 8800, secrets, mounts)
+	serviceConfig := &ServiceConfig{
+		ImageName:     "orbs:export",
+		ContainerName: containerName,
+		GossipPort:    8800,
+		HttpPort:      16160,
+	}
+
+	spec := getVirtualChainServiceSpec(serviceConfig, secrets, mounts)
 
 	require.EqualValues(t, spec.Name, "stack-"+containerName)
 
@@ -41,6 +48,16 @@ func Test_getServiceSpec(t *testing.T) {
 		RestartPolicy: &swarm.RestartPolicy{
 			Condition: "",
 			Delay:     &restartDelay,
+		},
+		Resources: &swarm.ResourceRequirements{
+			Limits: &swarm.Resources{
+				NanoCPUs:    1 * CPU_SHARES,
+				MemoryBytes: 3000 * MEGABYTE,
+			},
+			Reservations: &swarm.Resources{
+				NanoCPUs:    0.25 * CPU_SHARES,
+				MemoryBytes: 300 * MEGABYTE,
+			},
 		},
 	})
 
@@ -66,4 +83,25 @@ func Test_getServiceSpec(t *testing.T) {
 			Replicas: &replicas,
 		},
 	})
+}
+
+func Test_getResourceRequirements(t *testing.T) {
+	defaultResourceRequirements := getResourceRequirements(0, 0, 0, 0)
+	require.EqualValues(t, 3000*1024*1024, defaultResourceRequirements.Limits.MemoryBytes)
+	require.EqualValues(t, 300*1024*1024, defaultResourceRequirements.Reservations.MemoryBytes)
+
+	require.EqualValues(t, 1*1000000000, defaultResourceRequirements.Limits.NanoCPUs)
+	require.EqualValues(t, int64(0.25*1000000000), defaultResourceRequirements.Reservations.NanoCPUs)
+
+	limitMemory := getResourceRequirements(100, 0, 0, 0)
+	require.EqualValues(t, 100*1024*1024, limitMemory.Limits.MemoryBytes)
+
+	reserveMemory := getResourceRequirements(0, 0, 125, 0)
+	require.EqualValues(t, 125*1024*1024, reserveMemory.Reservations.MemoryBytes)
+
+	limitCPU := getResourceRequirements(0, 0.75, 0, 0)
+	require.EqualValues(t, int64(0.75*1000000000), limitCPU.Limits.NanoCPUs)
+
+	reserveCPU := getResourceRequirements(0, 0, 0, 2)
+	require.EqualValues(t, 2*1000000000, reserveCPU.Reservations.NanoCPUs)
 }

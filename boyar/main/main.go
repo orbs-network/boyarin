@@ -104,13 +104,13 @@ func execute(flags *flags) {
 
 	if flags.daemonize {
 		<-supervized.GoForever(func() {
-			for i := 0; true; i++ {
+			for first := true; ; first = false {
 				cfg, err := config.GetConfiguration(flags.configUrl, flags.ethereumEndpoint, flags.topologyContractAddress, flags.keyPairConfigPath)
 				if err != nil {
 					fmt.Println(time.Now(), "ERROR:", fmt.Errorf("could not generate configuration: %s", err))
 				} else {
 					// skip delay when provisioning for the first time when the node goes up
-					if i > 0 {
+					if !first {
 						reloadTimeDelay := cfg.ReloadTimeDelay(flags.maxReloadTimeDelay)
 						fmt.Println(fmt.Sprintf("INFO: waiting for %s to apply new configuration", reloadTimeDelay))
 						<-time.After(reloadTimeDelay)

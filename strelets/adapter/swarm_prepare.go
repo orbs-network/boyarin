@@ -8,30 +8,30 @@ import (
 	"time"
 )
 
-func (d *dockerSwarm) Prepare(ctx context.Context, imageName string, containerName string, httpPort int, gossipPort int, appConfig *AppConfig) (Runner, error) {
+func (d *dockerSwarm) Prepare(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) (Runner, error) {
 	return &dockerSwarmRunner{
 		client: d.client,
 		spec: func() (swarm.ServiceSpec, error) {
-			config, err := d.storeVirtualChainConfiguration(ctx, containerName, appConfig)
+			config, err := d.storeVirtualChainConfiguration(ctx, serviceConfig.ContainerName, appConfig)
 			if err != nil {
 				return swarm.ServiceSpec{}, err
 			}
 
 			secrets := []*swarm.SecretReference{
-				getSecretReference(containerName, config.configSecretId, "config", "config.json"),
-				getSecretReference(containerName, config.keysSecretId, "keyPair", "keys.json"),
-				getSecretReference(containerName, config.networkSecretId, "network", "network.json"),
+				getSecretReference(serviceConfig.ContainerName, config.configSecretId, "config", "config.json"),
+				getSecretReference(serviceConfig.ContainerName, config.keysSecretId, "keyPair", "keys.json"),
+				getSecretReference(serviceConfig.ContainerName, config.networkSecretId, "network", "network.json"),
 			}
 
-			mounts, err := d.provisionVolumes(ctx, containerName)
+			mounts, err := d.provisionVolumes(ctx, serviceConfig.ContainerName)
 			if err != nil {
 				return swarm.ServiceSpec{}, fmt.Errorf("failed to provision volumes: %s", err)
 			}
 
-			return getVirtualChainServiceSpec(imageName, containerName, httpPort, gossipPort, secrets, mounts), nil
+			return getVirtualChainServiceSpec(serviceConfig, secrets, mounts), nil
 		},
-		serviceName: getServiceId(containerName),
-		imageName:   imageName,
+		serviceName: getServiceId(serviceConfig.ContainerName),
+		imageName:   serviceConfig.ImageName,
 	}, nil
 }
 
@@ -94,21 +94,55 @@ func getEndpointsSpec(httpPort int, gossipPort int) *swarm.EndpointSpec {
 	}
 }
 
-func getVirtualChainServiceSpec(imageName string, containerName string, httpPort int, gossipPort int, secrets []*swarm.SecretReference, mounts []mount.Mount) swarm.ServiceSpec {
+const MEGABYTE = 1024 * 1024
+const CPU_SHARES = 1000000000
+
+func overrideResource(resource *swarm.Resources, memory int64, cpu float64) *swarm.Resources {
+	if memory != 0 {
+		resource.MemoryBytes = memory * MEGABYTE
+	}
+
+	if cpu != 0 {
+		resource.NanoCPUs = int64(cpu * CPU_SHARES)
+	}
+
+	return resource
+}
+
+func getResourceRequirements(limitMemory int64, limitCPU float64, reserveMemory int64, reserveCPU float64) *swarm.ResourceRequirements {
+	limits := overrideResource(&swarm.Resources{
+		MemoryBytes: 3000 * MEGABYTE,
+		NanoCPUs:    1 * CPU_SHARES,
+	}, limitMemory, limitCPU)
+
+	reservations := overrideResource(&swarm.Resources{
+		MemoryBytes: 300 * MEGABYTE,
+		NanoCPUs:    0.25 * CPU_SHARES,
+	}, reserveMemory, reserveCPU)
+
+	return &swarm.ResourceRequirements{
+		Limits:       limits,
+		Reservations: reservations,
+	}
+}
+
+func getVirtualChainServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.SecretReference, mounts []mount.Mount) swarm.ServiceSpec {
 	restartDelay := time.Duration(10 * time.Second)
 	replicas := uint64(1)
 
 	spec := swarm.ServiceSpec{
 		TaskTemplate: swarm.TaskSpec{
-			ContainerSpec: getContainerSpec(imageName, secrets, mounts),
+			ContainerSpec: getContainerSpec(serviceConfig.ImageName, secrets, mounts),
 			RestartPolicy: &swarm.RestartPolicy{
 				Delay: &restartDelay,
 			},
+			Resources: getResourceRequirements(serviceConfig.LimitedMemory, serviceConfig.LimitedCPU,
+				serviceConfig.ReservedMemory, serviceConfig.ReservedCPU),
 		},
 		Mode:         getServiceMode(replicas),
-		EndpointSpec: getEndpointsSpec(httpPort, gossipPort),
+		EndpointSpec: getEndpointsSpec(serviceConfig.HttpPort, serviceConfig.GossipPort),
 	}
-	spec.Name = getServiceId(containerName)
+	spec.Name = getServiceId(serviceConfig.ContainerName)
 
 	return spec
 }

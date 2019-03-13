@@ -14,7 +14,9 @@ type NodeConfiguration interface {
 	OrchestratorOptions() adapter.OrchestratorOptions
 	KeyConfigPath() string
 	ReloadTimeDelay(maxDelay time.Duration) time.Duration
+	NodeAddress() strelets.NodeAddress
 
+	VerifyConfig() error
 	Hash() string
 }
 
@@ -65,4 +67,14 @@ func (c *nodeConfigurationContainer) SetFederationNodes(federationNodes []*strel
 func (c *nodeConfigurationContainer) SetKeyConfigPath(keyConfigPath string) MutableNodeConfiguration {
 	c.keyConfigPath = keyConfigPath
 	return c
+}
+
+// FIXME should add more checks
+func (n *nodeConfigurationContainer) VerifyConfig() error {
+	_, err := n.readKeysConfig()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

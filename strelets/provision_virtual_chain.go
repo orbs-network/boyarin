@@ -12,6 +12,7 @@ type ProvisionVirtualChainInput struct {
 	VirtualChain      *VirtualChain
 	KeyPairConfigPath string
 	Peers             *PeersMap
+	NodeAddress       NodeAddress
 }
 
 type Peer struct {

@@ -104,7 +104,7 @@ func TestBoyar_ProvisionVirtualChainsWithNoConfigChanges(t *testing.T) {
 	require.NoError(t, err)
 	orchestrator.AssertNumberOfCalls(t, "Prepare", 2)
 	virtualChainRunner.AssertNumberOfCalls(t, "Run", 2)
-	require.EqualValues(t, "1e1fd29f2d9844b7d24d30762f9ceccdb6e939d38606b8e777b8eea70a403175", cache["42"])
+	require.EqualValues(t, "f1fc45fe688c808324c1907ba7047c0dc7763ace14ee576e69ab9a56be7e55fc", cache["42"])
 
 	err = b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
@@ -126,7 +126,7 @@ func TestBoyar_ProvisionVirtualChainsReprovisionsIfConfigChanges(t *testing.T) {
 	require.NoError(t, err)
 	orchestrator.AssertNumberOfCalls(t, "Prepare", 2)
 	virtualChainRunner.AssertNumberOfCalls(t, "Run", 2)
-	require.EqualValues(t, "1e1fd29f2d9844b7d24d30762f9ceccdb6e939d38606b8e777b8eea70a403175", cache["42"])
+	require.EqualValues(t, "f1fc45fe688c808324c1907ba7047c0dc7763ace14ee576e69ab9a56be7e55fc", cache["42"])
 
 	cfg.Chains()[0].Config["active-consensus-algo"] = 999
 
@@ -150,7 +150,7 @@ func TestBoyar_ProvisionVirtualChainsReprovisionsIfDockerConfigChanges(t *testin
 	require.NoError(t, err)
 	orchestrator.AssertNumberOfCalls(t, "Prepare", 2)
 	virtualChainRunner.AssertNumberOfCalls(t, "Run", 2)
-	require.EqualValues(t, "1e1fd29f2d9844b7d24d30762f9ceccdb6e939d38606b8e777b8eea70a403175", cache["42"])
+	require.EqualValues(t, "f1fc45fe688c808324c1907ba7047c0dc7763ace14ee576e69ab9a56be7e55fc", cache["42"])
 
 	cfg.Chains()[1].DockerConfig.Tag = "beta"
 

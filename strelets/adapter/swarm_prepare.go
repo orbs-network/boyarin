@@ -23,7 +23,7 @@ func (d *dockerSwarm) Prepare(ctx context.Context, serviceConfig *ServiceConfig,
 				getSecretReference(serviceConfig.ContainerName, config.networkSecretId, "network", "network.json"),
 			}
 
-			mounts, err := d.provisionVolumes(ctx, serviceConfig.ContainerName)
+			mounts, err := d.provisionVolumes(ctx, serviceConfig.NodeAddress, serviceConfig.Id)
 			if err != nil {
 				return swarm.ServiceSpec{}, fmt.Errorf("failed to provision volumes: %s", err)
 			}

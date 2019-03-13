@@ -12,6 +12,7 @@ type ProvisionVirtualChainInput struct {
 	VirtualChain      *VirtualChain
 	KeyPairConfigPath string
 	Peers             *PeersMap
+	NodeAddress       NodeAddress
 }
 
 type Peer struct {
@@ -30,7 +31,9 @@ const (
 )
 
 func (s *strelets) ProvisionVirtualChain(ctx context.Context, input *ProvisionVirtualChainInput) error {
+	nodeAddress := input.NodeAddress
 	chain := input.VirtualChain
+	id := chain.Id
 	imageName := chain.DockerConfig.FullImageName()
 	if chain.DockerConfig.Pull {
 		if err := s.orchestrator.PullImage(ctx, imageName); err != nil {
@@ -46,6 +49,8 @@ func (s *strelets) ProvisionVirtualChain(ctx context.Context, input *ProvisionVi
 	return Try(ctx, PROVISION_VCHAIN_MAX_TRIES, PROVISION_VCHAIN_ATTEMPT_TIMEOUT, PROVISION_VCHAIN_RETRY_INTERVAL,
 		func(ctxWithTimeout context.Context) error {
 			serviceConfig := &adapter.ServiceConfig{
+				Id:            uint32(id),
+				NodeAddress:   string(nodeAddress),
 				ImageName:     imageName,
 				ContainerName: chain.getContainerName(),
 				HttpPort:      chain.HttpPort,

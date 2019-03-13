@@ -15,6 +15,8 @@ type AppConfig struct {
 }
 
 type ServiceConfig struct {
+	Id            uint32
+	NodeAddress   string
 	ImageName     string
 	ContainerName string
 	HttpPort      int

@@ -148,6 +148,7 @@ func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.Virtu
 			VirtualChain:      chain,
 			KeyPairConfigPath: b.config.KeyConfigPath(),
 			Peers:             peers,
+			NodeAddress:       b.config.NodeAddress(),
 		}
 
 		data, _ := json.Marshal(input)

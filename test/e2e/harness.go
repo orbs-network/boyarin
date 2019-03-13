@@ -84,6 +84,7 @@ func (h *harness) startChainInstance(t *testing.T, i int) {
 	ctx := context.Background()
 
 	err := h.s.ProvisionVirtualChain(ctx, &strelets.ProvisionVirtualChainInput{
+		NodeAddress:       strelets.NodeAddress(helpers.NodeAddresses()[i-1]),
 		VirtualChain:      chain(i),
 		Peers:             Peers(localIP),
 		KeyPairConfigPath: fmt.Sprintf("%s/node%d/keys.json", h.configPath, i),

@@ -21,6 +21,9 @@ func GetConfiguration(configUrl string, ethereumEndpoint string, topologyContrac
 	}
 
 	config.SetKeyConfigPath(keyConfigPath)
+	if err := config.VerifyConfig(); err != nil {
+		return nil, fmt.Errorf("config verification failed: %s", err)
+	}
 
 	return config, err
 }

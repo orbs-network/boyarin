@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
-	"io/ioutil"
 	"math/rand"
 	"time"
 )
@@ -14,12 +13,12 @@ func (n *nodeConfigurationContainer) ReloadTimeDelay(maxDelay time.Duration) tim
 		return 0
 	}
 
-	data, err := ioutil.ReadFile(n.keyConfigPath)
+	cfg, err := n.readKeysConfig()
 	if err != nil {
 		return maxDelay
 	}
 
-	hash := sha256.Sum256(data)
+	hash := sha256.Sum256([]byte(cfg.PrivateKey))
 	buf := bytes.NewBuffer(hash[:])
 	seed, err := binary.ReadVarint(buf)
 	if err != nil {

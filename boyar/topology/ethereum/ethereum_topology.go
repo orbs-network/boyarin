@@ -11,6 +11,12 @@ func GetEthereumTopology(ctx context.Context, ethereumEndpoint string, topologyC
 		endpoint: ethereumEndpoint,
 	})
 
+	if ok, err := connection.InSync(ctx); err != nil {
+		return nil, fmt.Errorf("failed to retrieve topology: %s", err)
+	} else if !ok {
+		return nil, fmt.Errorf("failed to retrieve topology: ethereum node is not synced yet")
+	}
+
 	address, err := StringToEthereumAddress(topologyContractAddress)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse topology contract address: %s", err)

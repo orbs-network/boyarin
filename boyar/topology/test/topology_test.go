@@ -35,7 +35,7 @@ func TestTopologyIntegrationWithGanacheUnhappyFlow(t *testing.T) {
 		badContractAddress := "0000000000000000000000000000000000000000"
 
 		topology, err := ethereum.GetEthereumTopology(ctx, "malformed ethereum endpoint", badContractAddress)
-		require.EqualError(t, err, "failed to call topology contract: dial unix malformed ethereum endpoint: connect: no such file or directory")
+		require.EqualError(t, err, "failed to retrieve topology: dial unix malformed ethereum endpoint: connect: no such file or directory")
 		require.Nil(t, topology, "topology should be empty")
 
 		topology, err = ethereum.GetEthereumTopology(ctx, getConfig().EthereumEndpoint(), badContractAddress)

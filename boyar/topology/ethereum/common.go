@@ -15,6 +15,7 @@ type ethereumAdapterConfig interface {
 
 type EthereumConnection interface {
 	CallContract(ctx context.Context, contractAddress []byte, packedInput []byte, blockNumber *big.Int) (packedOutput []byte, err error)
+	InSync(ctx context.Context) (bool, error)
 }
 
 type connectorCommon struct {
@@ -24,6 +25,7 @@ type connectorCommon struct {
 type EthereumCaller interface {
 	bind.ContractBackend
 	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
+	SyncProgress(ctx context.Context) (*ethereum.SyncProgress, error)
 }
 
 func (c *connectorCommon) CallContract(ctx context.Context, contractAddress []byte, packedInput []byte, blockNumber *big.Int) (packedOutput []byte, err error) {

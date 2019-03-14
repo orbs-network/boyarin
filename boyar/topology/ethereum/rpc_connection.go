@@ -1,6 +1,7 @@
 package ethereum
 
 import (
+	"context"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -49,6 +50,22 @@ func (rpc *EthereumRpcConnection) dialIfNeededAndReturnClient() (*ethclient.Clie
 		}
 	}
 	return rpc.mu.client, nil
+}
+
+func (rpc *EthereumRpcConnection) InSync(ctx context.Context) (bool, error) {
+	client, err := rpc.dialIfNeededAndReturnClient()
+	if err != nil {
+		return false, err
+	}
+
+	progress, err := client.SyncProgress(ctx)
+	if err != nil {
+		return false, err
+	} else if progress == nil {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 func StringToEthereumAddress(input string) (common.Address, error) {

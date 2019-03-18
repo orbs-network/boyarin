@@ -47,6 +47,7 @@ func chain(i int) *strelets.VirtualChain {
 		HttpPort:     8080 + i,
 		GossipPort:   4400 + i,
 		DockerConfig: DockerConfig(fmt.Sprintf("node%d", i)),
+		Config:       helpers.ChainConfigWithGenesisValidatorAddresses(),
 	}
 }
 

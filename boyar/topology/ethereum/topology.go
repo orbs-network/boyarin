@@ -2,6 +2,7 @@ package ethereum
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -11,30 +12,30 @@ import (
 )
 
 type RawTopology struct {
-	NodeAddresses []common.Address
+	NodeAddresses [][20]byte
 	IpAddresses   [][4]byte
 }
 
 const TopologyContractABI = `
 [
-  {
-    "constant": false,
-    "inputs": [],
-    "name": "getNetworkTopology",
-    "outputs": [
-      {
-        "name": "NodeAddresses",
-        "type": "address[]"
-      },
-      {
-        "name": "IpAddresses",
-        "type": "bytes4[]"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function"
-  }
+   {
+     "constant": true,
+     "inputs": [],
+     "name": "getNetworkTopology",
+     "outputs": [
+       {
+         "name": "nodeAddresses",
+         "type": "bytes20[]"
+       },
+       {
+         "name": "ipAddresses",
+         "type": "bytes4[]"
+       }
+     ],
+     "payable": false,
+     "stateMutability": "view",
+     "type": "function"
+   }
 ]`
 
 const TopologyContractMethodName = "getNetworkTopology"
@@ -43,14 +44,10 @@ func IpToString(ip [4]byte) string {
 	return net.IPv4(ip[0], ip[1], ip[2], ip[3]).String()
 }
 
-func EthereumToOrbsAddress(eth string) string {
-	return strings.ToLower(eth[2:])
-}
-
 func (rawTopology *RawTopology) FederationNodes() (federationNodes []*strelets.FederationNode) {
 	for index, address := range rawTopology.NodeAddresses {
 		federationNodes = append(federationNodes, &strelets.FederationNode{
-			Address: EthereumToOrbsAddress(address.Hex()),
+			Address: hex.EncodeToString(address[:]),
 			IP:      IpToString(rawTopology.IpAddresses[index]),
 		})
 	}

@@ -1,5 +1,8 @@
-pragma solidity 0.5.4;
+pragma solidity 0.5.3;
 
 interface IOrbsNetworkTopology {
-    function getNetworkTopology() external returns (address[] memory, bytes4[] memory);
+    function getNetworkTopology()
+        external
+        view
+        returns (bytes20[] memory nodeAddresses, bytes4[] memory ipAddresses);
 }

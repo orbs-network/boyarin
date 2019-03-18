@@ -1,7 +1,7 @@
 package ethereum
 
 import (
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -17,17 +17,23 @@ const NODE_IP_1 = "172.10.93.43"
 const NODE_IP_2 = "172.10.93.92"
 
 func Test_RawTopology_FederationNodes(t *testing.T) {
-	firstAddress, _ := common.NewMixedcaseAddressFromString(NODE_ADDRESS_1)
-	secondAddress, _ := common.NewMixedcaseAddressFromString(NODE_ADDESSS_2)
+	firstAddress, _ := hexutil.Decode("0x" + NODE_ADDRESS_1)
+	secondAddress, _ := hexutil.Decode("0x" + NODE_ADDESSS_2)
+
+	var firstAddressAsByte20 [20]byte
+	copy(firstAddressAsByte20[:], firstAddress)
+
+	var secondAddressAsByte20 [20]byte
+	copy(secondAddressAsByte20[:], secondAddress)
 
 	federationNodes := (&RawTopology{
 		IpAddresses: [][4]byte{
 			{172, 10, 93, 43},
 			{172, 10, 93, 92},
 		},
-		NodeAddresses: []common.Address{
-			firstAddress.Address(),
-			secondAddress.Address(),
+		NodeAddresses: [][20]byte{
+			firstAddressAsByte20,
+			secondAddressAsByte20,
 		},
 	}).FederationNodes()
 
@@ -53,7 +59,7 @@ func Test_ABIExtractTopology(t *testing.T) {
 		IpAddresses: [][4]byte{
 			{255, 255, 255, 255},
 		},
-		NodeAddresses: []common.Address{
+		NodeAddresses: [][20]byte{
 			{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		},
 	}, rawTopology)

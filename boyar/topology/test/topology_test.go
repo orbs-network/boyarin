@@ -23,8 +23,8 @@ func TestTopologyIntegrationWithGanache(t *testing.T) {
 
 		t.Log(topology[0])
 
-		require.EqualValues(t, "255.255.255.255", topology[0].IP, "should match expected IP")
-		require.EqualValues(t, "0000000000000000000000000000000000000000", topology[0].Address, "should match expected public address")
+		require.EqualValues(t, "13.234.143.15", topology[0].IP, "should match expected IP")
+		require.EqualValues(t, "6e2cb55e4cbe97bf5b1e731d51cc2c285d83cbf9", topology[0].Address, "should match expected public address")
 	})
 }
 

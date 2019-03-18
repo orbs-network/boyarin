@@ -69,7 +69,7 @@ func main() {
 }
 
 func printConfiguration(flags *flags) {
-	cfg, err := config.GetConfiguration(flags.configUrl, flags.ethereumEndpoint, flags.topologyContractAddress, "")
+	cfg, err := config.GetConfiguration(flags.configUrl, flags.ethereumEndpoint, flags.topologyContractAddress, flags.keyPairConfigPath)
 	if err != nil {
 		fmt.Println("ERROR: could not pull valid configuration:", err)
 		return

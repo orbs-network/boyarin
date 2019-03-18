@@ -49,6 +49,7 @@ To remove all containers: `docker rm -f $(docker ps -aq)`
 ### Print configuration and exit
 
     boyar --config-url https://s3.amazonaws.com/boyar-bootstrap-test/boyar/config.json \
+        --keys ./e2e-config/node3/keys.json \
         --ethereum-endpoint http://localhost:7545 \
         --topology-contract-address 0x409aa7d40dfcfa3725d722a720ff1ba147df4bec \
         --show-configuration

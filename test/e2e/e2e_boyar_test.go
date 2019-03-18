@@ -27,6 +27,7 @@ func getBoyarVchains(httpPort int, gossipPort int, nodeIndex int, vchainIds ...i
 				Tag:                 "export",
 				Pull:                false,
 			},
+			Config: helpers.ChainConfigWithGenesisValidatorAddresses(),
 		}
 
 		chains = append(chains, chain)

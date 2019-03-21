@@ -22,6 +22,15 @@ func getJSONConfig() string {
 	return string(contents)
 }
 
+func getJSONConfigWithActiveVchains() string {
+	contents, err := ioutil.ReadFile("./config/test/configWithActiveVchains.json")
+	if err != nil {
+		panic(err)
+	}
+
+	return string(contents)
+}
+
 func Test_BoyarProvisionVirtualChains(t *testing.T) {
 	streletsMock := &StreletsMock{}
 
@@ -33,6 +42,7 @@ func Test_BoyarProvisionVirtualChains(t *testing.T) {
 	b := NewBoyar(streletsMock, source, cache)
 
 	streletsMock.On("ProvisionVirtualChain", mock.Anything, mock.Anything).Twice().Return(nil)
+	streletsMock.On("RemoveVirtualChain", mock.Anything, mock.Anything).Return(nil)
 
 	err = b.ProvisionVirtualChains(context.Background())
 
@@ -58,6 +68,8 @@ func Test_BoyarProvisionVirtualChainsWithErrors(t *testing.T) {
 		return input.VirtualChain.Id == strelets.VirtualChainId(42)
 	})).Once().Return(nil)
 
+	streletsMock.On("RemoveVirtualChain", mock.Anything, mock.Anything).Return(nil)
+
 	err = b.ProvisionVirtualChains(context.Background())
 
 	require.EqualError(t, err, "failed to provision virtual chain 1991: unbearable catastrophe")
@@ -67,7 +79,7 @@ func Test_BoyarProvisionVirtualChainsWithErrors(t *testing.T) {
 func Test_BoyarProvisionVirtualChainsWithTimeout(t *testing.T) {
 	streletsMock := &StreletsMock{}
 
-	source, err := config.NewStringConfigurationSource(getJSONConfig())
+	source, err := config.NewStringConfigurationSource(getJSONConfigWithActiveVchains())
 	source.SetKeyConfigPath("/tmp/fake-key-pair.json")
 	require.NoError(t, err)
 
@@ -91,7 +103,7 @@ func Test_BoyarProvisionVirtualChainsWithTimeout(t *testing.T) {
 }
 
 func TestBoyar_ProvisionVirtualChainsWithNoConfigChanges(t *testing.T) {
-	cfg, err := config.NewStringConfigurationSource(getJSONConfig())
+	cfg, err := config.NewStringConfigurationSource(getJSONConfigWithActiveVchains())
 	cfg.SetKeyConfigPath("./test/fake-key-pair.json")
 
 	orchestrator, virtualChainRunner, _ := NewOrchestratorAndRunnerMocks()
@@ -104,7 +116,7 @@ func TestBoyar_ProvisionVirtualChainsWithNoConfigChanges(t *testing.T) {
 	require.NoError(t, err)
 	orchestrator.AssertNumberOfCalls(t, "Prepare", 2)
 	virtualChainRunner.AssertNumberOfCalls(t, "Run", 2)
-	require.EqualValues(t, "f1fc45fe688c808324c1907ba7047c0dc7763ace14ee576e69ab9a56be7e55fc", cache["42"])
+	require.EqualValues(t, "525beda4c5da8fb73233768536fe283b53dfa4173f536ac9ad8fe5f57ad3a5c7", cache["42"])
 
 	err = b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
@@ -113,7 +125,7 @@ func TestBoyar_ProvisionVirtualChainsWithNoConfigChanges(t *testing.T) {
 }
 
 func TestBoyar_ProvisionVirtualChainsReprovisionsIfConfigChanges(t *testing.T) {
-	cfg, _ := config.NewStringConfigurationSource(getJSONConfig())
+	cfg, _ := config.NewStringConfigurationSource(getJSONConfigWithActiveVchains())
 	cfg.SetKeyConfigPath("./test/fake-key-pair.json")
 
 	orchestrator, virtualChainRunner, _ := NewOrchestratorAndRunnerMocks()
@@ -126,7 +138,7 @@ func TestBoyar_ProvisionVirtualChainsReprovisionsIfConfigChanges(t *testing.T) {
 	require.NoError(t, err)
 	orchestrator.AssertNumberOfCalls(t, "Prepare", 2)
 	virtualChainRunner.AssertNumberOfCalls(t, "Run", 2)
-	require.EqualValues(t, "f1fc45fe688c808324c1907ba7047c0dc7763ace14ee576e69ab9a56be7e55fc", cache["42"])
+	require.EqualValues(t, "525beda4c5da8fb73233768536fe283b53dfa4173f536ac9ad8fe5f57ad3a5c7", cache["42"])
 
 	cfg.Chains()[0].Config["active-consensus-algo"] = 999
 
@@ -137,7 +149,7 @@ func TestBoyar_ProvisionVirtualChainsReprovisionsIfConfigChanges(t *testing.T) {
 }
 
 func TestBoyar_ProvisionVirtualChainsReprovisionsIfDockerConfigChanges(t *testing.T) {
-	cfg, _ := config.NewStringConfigurationSource(getJSONConfig())
+	cfg, _ := config.NewStringConfigurationSource(getJSONConfigWithActiveVchains())
 	cfg.SetKeyConfigPath("./test/fake-key-pair.json")
 
 	orchestrator, virtualChainRunner, _ := NewOrchestratorAndRunnerMocks()
@@ -150,7 +162,7 @@ func TestBoyar_ProvisionVirtualChainsReprovisionsIfDockerConfigChanges(t *testin
 	require.NoError(t, err)
 	orchestrator.AssertNumberOfCalls(t, "Prepare", 2)
 	virtualChainRunner.AssertNumberOfCalls(t, "Run", 2)
-	require.EqualValues(t, "f1fc45fe688c808324c1907ba7047c0dc7763ace14ee576e69ab9a56be7e55fc", cache["42"])
+	require.EqualValues(t, "525beda4c5da8fb73233768536fe283b53dfa4173f536ac9ad8fe5f57ad3a5c7", cache["42"])
 
 	cfg.Chains()[1].DockerConfig.Tag = "beta"
 
@@ -161,7 +173,7 @@ func TestBoyar_ProvisionVirtualChainsReprovisionsIfDockerConfigChanges(t *testin
 }
 
 func TestBoyar_ProvisionHttpAPIEndpointWithNoConfigChanges(t *testing.T) {
-	cfg, _ := config.NewStringConfigurationSource(getJSONConfig())
+	cfg, _ := config.NewStringConfigurationSource(getJSONConfigWithActiveVchains())
 
 	orchestrator, _, httpProxyRunner := NewOrchestratorAndRunnerMocks()
 
@@ -173,7 +185,7 @@ func TestBoyar_ProvisionHttpAPIEndpointWithNoConfigChanges(t *testing.T) {
 	require.NoError(t, err)
 	orchestrator.AssertNumberOfCalls(t, "PrepareReverseProxy", 1)
 	httpProxyRunner.AssertNumberOfCalls(t, "Run", 1)
-	require.EqualValues(t, "c8a7873c3324a608d8290a24e3a5168950a9588ef6b288043596e09f1977d058", cache[config.HTTP_REVERSE_PROXY_HASH])
+	require.EqualValues(t, "67565611bd34568f0b3ca12a8b257015701b3740d5e61300f19c3caa945db04a", cache[config.HTTP_REVERSE_PROXY_HASH])
 
 	err = b.ProvisionHttpAPIEndpoint(context.Background())
 	require.NoError(t, err)
@@ -182,7 +194,7 @@ func TestBoyar_ProvisionHttpAPIEndpointWithNoConfigChanges(t *testing.T) {
 }
 
 func TestBoyar_ProvisionHttpAPIEndpointReprovisionsIfConfigChanges(t *testing.T) {
-	cfg, _ := config.NewStringConfigurationSource(getJSONConfig())
+	cfg, _ := config.NewStringConfigurationSource(getJSONConfigWithActiveVchains())
 
 	orchestrator, _, httpProxyRunner := NewOrchestratorAndRunnerMocks()
 
@@ -194,7 +206,7 @@ func TestBoyar_ProvisionHttpAPIEndpointReprovisionsIfConfigChanges(t *testing.T)
 	require.NoError(t, err)
 	orchestrator.AssertNumberOfCalls(t, "PrepareReverseProxy", 1)
 	httpProxyRunner.AssertNumberOfCalls(t, "Run", 1)
-	require.EqualValues(t, "c8a7873c3324a608d8290a24e3a5168950a9588ef6b288043596e09f1977d058", cache[config.HTTP_REVERSE_PROXY_HASH])
+	require.EqualValues(t, "67565611bd34568f0b3ca12a8b257015701b3740d5e61300f19c3caa945db04a", cache[config.HTTP_REVERSE_PROXY_HASH])
 
 	cfg.Chains()[0].HttpPort = 9125
 

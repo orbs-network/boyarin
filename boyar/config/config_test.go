@@ -24,6 +24,10 @@ func Test_StringConfigurationSource(t *testing.T) {
 
 	require.Equal(t, "http://localhost:8545", source.Chains()[0].Config["ethereum-endpoint"])
 
+	require.False(t, source.Chains()[0].Disabled)
+	require.False(t, source.Chains()[1].Disabled)
+	require.True(t, source.Chains()[2].Disabled)
+
 	require.NotNil(t, source.OrchestratorOptions())
 	require.Equal(t, "ebs", source.OrchestratorOptions().StorageDriver)
 	require.NotNil(t, source.OrchestratorOptions().StorageOptions)

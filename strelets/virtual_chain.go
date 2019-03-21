@@ -14,6 +14,7 @@ type VirtualChain struct {
 	GossipPort   int
 	DockerConfig DockerConfig
 	Config       map[string]interface{}
+	Disabled     bool
 }
 
 func (v *VirtualChain) getContainerName() string {

@@ -23,7 +23,7 @@ func (d *dockerSwarm) provisionVolumes(ctx context.Context, nodeAddress string, 
 		mounts = append(mounts, logsMount)
 	}
 
-	if blocksMount, err := d.provisionVolume(ctx, getVolumeName(nodeAddress, id, "blocks"), ORBS_BLOCKS_TARGET, 8); err != nil {
+	if blocksMount, err := d.provisionVolume(ctx, getVolumeName(nodeAddress, id, "blocks"), ORBS_BLOCKS_TARGET, 100); err != nil {
 		return mounts, err
 	} else {
 		mounts = append(mounts, blocksMount)

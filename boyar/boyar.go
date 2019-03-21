@@ -39,7 +39,11 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 	errorChannel := make(chan error, len(chains))
 
 	for _, chain := range chains {
-		b.provisionVirtualChain(ctx, chain, errorChannel)
+		if chain.Disabled {
+			b.removeVirtualChain(ctx, chain, errorChannel)
+		} else {
+			b.provisionVirtualChain(ctx, chain, errorChannel)
+		}
 	}
 
 	for i := 0; i < len(chains); i++ {
@@ -89,6 +93,7 @@ func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
 			Id:         chain.Id,
 			HttpPort:   chain.HttpPort,
 			GossipPort: chain.HttpPort,
+			Disabled:   chain.Disabled,
 		})
 	}
 
@@ -138,6 +143,31 @@ func aggregateErrors(errors []error) error {
 	}
 
 	return fmt.Errorf(strings.Join(lines, "\n"))
+}
+
+func (b *boyar) removeVirtualChain(ctx context.Context, chain *strelets.VirtualChain, errChannel chan error) {
+	go func() {
+		input := &strelets.RemoveVirtualChainInput{
+			VirtualChain: chain,
+		}
+
+		data, _ := json.Marshal(input)
+		hash := crypto.CalculateHash(data)
+
+		if hash == b.configCache[chain.Id.String()] {
+			errChannel <- nil
+			return
+		}
+
+		if err := b.strelets.RemoveVirtualChain(ctx, input); err != nil {
+			errChannel <- fmt.Errorf("failed to remove virtual chain %d: %s", chain.Id, err)
+		} else {
+			b.configCache[chain.Id.String()] = hash
+			fmt.Println(time.Now(), fmt.Sprintf("INFO: removed virtual chain %d with configuration %s", chain.Id, hash))
+			fmt.Println(string(data))
+			errChannel <- nil
+		}
+	}()
 }
 
 func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.VirtualChain, errChannel chan error) {

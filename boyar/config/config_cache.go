@@ -8,6 +8,7 @@ type HttpReverseProxyCompositeKey struct {
 	Id         strelets.VirtualChainId
 	HttpPort   int
 	GossipPort int
+	Disabled   bool
 }
 
 const HTTP_REVERSE_PROXY_HASH = "HTTP_REVERSE_PROXY_HASH"

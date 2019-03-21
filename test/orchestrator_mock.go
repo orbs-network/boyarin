@@ -21,8 +21,8 @@ func (a *OrchestratorMock) Prepare(ctx context.Context, serviceConfig *adapter.S
 }
 
 func (a *OrchestratorMock) RemoveContainer(ctx context.Context, containerName string) error {
-	panic("not implemented")
-	return nil
+	res := a.MethodCalled("RemoveContainer", ctx, containerName)
+	return res.Error(1)
 }
 
 func (a *OrchestratorMock) PrepareReverseProxy(ctx context.Context, config string) (adapter.Runner, error) {

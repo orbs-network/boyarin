@@ -34,7 +34,7 @@ func getJSONConfigWithActiveVchains() string {
 func Test_BoyarProvisionVirtualChains(t *testing.T) {
 	streletsMock := &StreletsMock{}
 
-	source, err := config.NewStringConfigurationSource(getJSONConfig())
+	source, err := config.NewStringConfigurationSource(getJSONConfig(), "")
 	source.SetKeyConfigPath("/tmp/fake-key-pair.json")
 	require.NoError(t, err)
 
@@ -53,7 +53,7 @@ func Test_BoyarProvisionVirtualChains(t *testing.T) {
 func Test_BoyarProvisionVirtualChainsWithErrors(t *testing.T) {
 	streletsMock := &StreletsMock{}
 
-	source, err := config.NewStringConfigurationSource(getJSONConfig())
+	source, err := config.NewStringConfigurationSource(getJSONConfig(), "")
 	source.SetKeyConfigPath("/tmp/fake-key-pair.json")
 	require.NoError(t, err)
 
@@ -79,7 +79,7 @@ func Test_BoyarProvisionVirtualChainsWithErrors(t *testing.T) {
 func Test_BoyarProvisionVirtualChainsWithTimeout(t *testing.T) {
 	streletsMock := &StreletsMock{}
 
-	source, err := config.NewStringConfigurationSource(getJSONConfigWithActiveVchains())
+	source, err := config.NewStringConfigurationSource(getJSONConfigWithActiveVchains(), "")
 	source.SetKeyConfigPath("/tmp/fake-key-pair.json")
 	require.NoError(t, err)
 
@@ -103,7 +103,7 @@ func Test_BoyarProvisionVirtualChainsWithTimeout(t *testing.T) {
 }
 
 func TestBoyar_ProvisionVirtualChainsWithNoConfigChanges(t *testing.T) {
-	cfg, err := config.NewStringConfigurationSource(getJSONConfigWithActiveVchains())
+	cfg, err := config.NewStringConfigurationSource(getJSONConfigWithActiveVchains(), "")
 	cfg.SetKeyConfigPath("./test/fake-key-pair.json")
 
 	orchestrator, virtualChainRunner, _ := NewOrchestratorAndRunnerMocks()
@@ -125,7 +125,7 @@ func TestBoyar_ProvisionVirtualChainsWithNoConfigChanges(t *testing.T) {
 }
 
 func TestBoyar_ProvisionVirtualChainsReprovisionsIfConfigChanges(t *testing.T) {
-	cfg, _ := config.NewStringConfigurationSource(getJSONConfigWithActiveVchains())
+	cfg, _ := config.NewStringConfigurationSource(getJSONConfigWithActiveVchains(), "")
 	cfg.SetKeyConfigPath("./test/fake-key-pair.json")
 
 	orchestrator, virtualChainRunner, _ := NewOrchestratorAndRunnerMocks()
@@ -149,7 +149,7 @@ func TestBoyar_ProvisionVirtualChainsReprovisionsIfConfigChanges(t *testing.T) {
 }
 
 func TestBoyar_ProvisionVirtualChainsReprovisionsIfDockerConfigChanges(t *testing.T) {
-	cfg, _ := config.NewStringConfigurationSource(getJSONConfigWithActiveVchains())
+	cfg, _ := config.NewStringConfigurationSource(getJSONConfigWithActiveVchains(), "")
 	cfg.SetKeyConfigPath("./test/fake-key-pair.json")
 
 	orchestrator, virtualChainRunner, _ := NewOrchestratorAndRunnerMocks()
@@ -173,7 +173,7 @@ func TestBoyar_ProvisionVirtualChainsReprovisionsIfDockerConfigChanges(t *testin
 }
 
 func TestBoyar_ProvisionHttpAPIEndpointWithNoConfigChanges(t *testing.T) {
-	cfg, _ := config.NewStringConfigurationSource(getJSONConfigWithActiveVchains())
+	cfg, _ := config.NewStringConfigurationSource(getJSONConfigWithActiveVchains(), "")
 
 	orchestrator, _, httpProxyRunner := NewOrchestratorAndRunnerMocks()
 
@@ -194,7 +194,7 @@ func TestBoyar_ProvisionHttpAPIEndpointWithNoConfigChanges(t *testing.T) {
 }
 
 func TestBoyar_ProvisionHttpAPIEndpointReprovisionsIfConfigChanges(t *testing.T) {
-	cfg, _ := config.NewStringConfigurationSource(getJSONConfigWithActiveVchains())
+	cfg, _ := config.NewStringConfigurationSource(getJSONConfigWithActiveVchains(), "")
 
 	orchestrator, _, httpProxyRunner := NewOrchestratorAndRunnerMocks()
 

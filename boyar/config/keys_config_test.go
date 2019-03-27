@@ -6,7 +6,7 @@ import (
 )
 
 func TestNodeConfigurationContainer_readKeysConfig(t *testing.T) {
-	source, err := parseStringConfig("{}")
+	source, err := parseStringConfig("{}", "")
 	require.NoError(t, err)
 
 	source.SetKeyConfigPath("./test/fake-key-pair.json")

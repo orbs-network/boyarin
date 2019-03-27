@@ -62,7 +62,7 @@ const GOSSIP_PORT = 4400
 func provisionVchains(t *testing.T, h *harness, s strelets.Strelets, httpPort int, gossipPort int, i int, vchainIds ...int) {
 	vchains := getBoyarVchains(httpPort, gossipPort, i, vchainIds...)
 	boyarConfig := getBoyarConfig(gossipPort, vchains)
-	cfg, err := config.NewStringConfigurationSource(string(boyarConfig))
+	cfg, err := config.NewStringConfigurationSource(string(boyarConfig), "")
 	cfg.SetKeyConfigPath(fmt.Sprintf("%s/node%d/keys.json", h.configPath, i))
 	require.NoError(t, err)
 

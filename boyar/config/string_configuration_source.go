@@ -1,5 +1,5 @@
 package config
 
-func NewStringConfigurationSource(input string) (MutableNodeConfiguration, error) {
-	return parseStringConfig(input)
+func NewStringConfigurationSource(input string, ethereumEndpoint string) (MutableNodeConfiguration, error) {
+	return parseStringConfig(input, ethereumEndpoint)
 }

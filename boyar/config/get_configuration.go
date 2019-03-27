@@ -7,13 +7,15 @@ import (
 )
 
 func GetConfiguration(configUrl string, ethereumEndpoint string, topologyContractAddress string, keyConfigPath string) (NodeConfiguration, error) {
-	config, err := NewUrlConfigurationSource(configUrl)
+	config, err := NewUrlConfigurationSource(configUrl, ethereumEndpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	if ethereumEndpoint != "" && topologyContractAddress != "" {
-		federationNodes, err := ethereum.GetEthereumTopology(context.Background(), ethereumEndpoint, topologyContractAddress)
+	endpoint := config.EthereumEndpoint()
+	fmt.Println("INFO: Ethereum endpoint set to", endpoint)
+	if endpoint != "" && topologyContractAddress != "" {
+		federationNodes, err := ethereum.GetEthereumTopology(context.Background(), endpoint, topologyContractAddress)
 		if err != nil {
 			return nil, fmt.Errorf("failed to retrive topology from Ethereum: %s", err)
 		}

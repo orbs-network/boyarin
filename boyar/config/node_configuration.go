@@ -14,6 +14,7 @@ type NodeConfiguration interface {
 	OrchestratorOptions() adapter.OrchestratorOptions
 	KeyConfigPath() string
 	ReloadTimeDelay(maxDelay time.Duration) time.Duration
+	EthereumEndpoint() string
 	NodeAddress() strelets.NodeAddress
 
 	VerifyConfig() error
@@ -25,6 +26,7 @@ type MutableNodeConfiguration interface {
 
 	SetFederationNodes(federationNodes []*strelets.FederationNode) MutableNodeConfiguration
 	SetKeyConfigPath(keyConfigPath string) MutableNodeConfiguration
+	SetEthereumEndpoint(ethereumEndpoint string) MutableNodeConfiguration
 }
 
 type nodeConfiguration struct {
@@ -34,8 +36,9 @@ type nodeConfiguration struct {
 }
 
 type nodeConfigurationContainer struct {
-	value         nodeConfiguration
-	keyConfigPath string
+	value            nodeConfiguration
+	keyConfigPath    string
+	ethereumEndpoint string
 }
 
 func (c *nodeConfigurationContainer) Chains() []*strelets.VirtualChain {
@@ -77,4 +80,23 @@ func (n *nodeConfigurationContainer) VerifyConfig() error {
 	}
 
 	return nil
+}
+
+func (n *nodeConfiguration) overrideValues(ethereumEndpoint string) {
+	if ethereumEndpoint != "" {
+		for _, chain := range n.Chains {
+			chain.Config["ethereum-endpoint"] = ethereumEndpoint
+		}
+	}
+}
+
+func (c *nodeConfigurationContainer) EthereumEndpoint() string {
+	return c.ethereumEndpoint
+}
+
+func (c *nodeConfigurationContainer) SetEthereumEndpoint(ethereumEndpoint string) MutableNodeConfiguration {
+	c.ethereumEndpoint = ethereumEndpoint
+	c.value.overrideValues(ethereumEndpoint)
+
+	return c
 }

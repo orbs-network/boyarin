@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func NewUrlConfigurationSource(url string) (MutableNodeConfiguration, error) {
+func NewUrlConfigurationSource(url string, ethereumEndpoint string) (MutableNodeConfiguration, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("could not download configuration from source: %s", err)
@@ -19,5 +19,5 @@ func NewUrlConfigurationSource(url string) (MutableNodeConfiguration, error) {
 		return nil, fmt.Errorf("could not read configuration from source: %s", err)
 	}
 
-	return parseStringConfig(string(input))
+	return parseStringConfig(string(input), ethereumEndpoint)
 }

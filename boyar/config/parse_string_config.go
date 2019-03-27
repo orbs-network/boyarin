@@ -4,13 +4,16 @@ import (
 	"encoding/json"
 )
 
-func parseStringConfig(input string) (*nodeConfigurationContainer, error) {
+func parseStringConfig(jsonInput string, ethereumEndpoint string) (*nodeConfigurationContainer, error) {
 	var value nodeConfiguration
-	if err := json.Unmarshal([]byte(input), &value); err != nil {
+	if err := json.Unmarshal([]byte(jsonInput), &value); err != nil {
 		return nil, err
 	}
 
-	return &nodeConfigurationContainer{
+	cfg := &nodeConfigurationContainer{
 		value: value,
-	}, nil
+	}
+	cfg.SetEthereumEndpoint(ethereumEndpoint)
+
+	return cfg, nil
 }

@@ -7,7 +7,7 @@ import (
 )
 
 func TestNodeConfigurationContainer_ReloadTimeDelay(t *testing.T) {
-	source, err := parseStringConfig("{}")
+	source, err := NewStringConfigurationSource("{}", "")
 	require.NoError(t, err)
 
 	source.SetKeyConfigPath("./test/fake-key-pair.json")
@@ -21,7 +21,7 @@ func TestNodeConfigurationContainer_ReloadTimeDelay(t *testing.T) {
 }
 
 func TestNodeConfigurationContainer_ReloadTimeDelayWithNoDelay(t *testing.T) {
-	source, err := parseStringConfig("{}")
+	source, err := NewStringConfigurationSource("{}", "")
 	require.NoError(t, err)
 
 	source.SetKeyConfigPath("./test/fake-key-pair.json")
@@ -30,4 +30,16 @@ func TestNodeConfigurationContainer_ReloadTimeDelayWithNoDelay(t *testing.T) {
 	t.Log(reloadTimeDelay)
 
 	require.EqualValues(t, 0, reloadTimeDelay)
+}
+
+func TestNodeConfigurationContainer_ReloadTimeDelayWithOverride(t *testing.T) {
+	source, err := NewStringConfigurationSource(`{"orchestrator": {"max-reload-time-delay": "1m"}}`, "")
+	require.NoError(t, err)
+
+	source.SetKeyConfigPath("./test/fake-key-pair.json")
+
+	reloadTimeDelay := source.ReloadTimeDelay(0)
+	t.Log(reloadTimeDelay)
+
+	require.EqualValues(t, 1*time.Minute, reloadTimeDelay)
 }

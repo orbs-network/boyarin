@@ -2,6 +2,7 @@ package adapter
 
 import (
 	"context"
+	"time"
 )
 
 const DOCKER_API_VERSION = "1.38"
@@ -43,6 +44,12 @@ type Orchestrator interface {
 }
 
 type OrchestratorOptions struct {
-	StorageDriver  string            `json:"storage-driver"`
-	StorageOptions map[string]string `json:"storage-options"`
+	StorageDriver          string            `json:"storage-driver"`
+	StorageOptions         map[string]string `json:"storage-options"`
+	MaxReloadTimedDelayStr string            `json:"max-reload-time-delay"`
+}
+
+func (s OrchestratorOptions) MaxReloadTimedDelay() time.Duration {
+	d, _ := time.ParseDuration(s.MaxReloadTimedDelayStr)
+	return d
 }

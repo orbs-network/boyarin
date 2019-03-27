@@ -9,6 +9,11 @@ import (
 )
 
 func (n *nodeConfigurationContainer) ReloadTimeDelay(maxDelay time.Duration) time.Duration {
+	overrideDelay := n.value.OrchestratorOptions.MaxReloadTimedDelay()
+	if n.value.OrchestratorOptions.MaxReloadTimedDelay() != 0 {
+		return overrideDelay
+	}
+
 	if maxDelay == 0 {
 		return 0
 	}

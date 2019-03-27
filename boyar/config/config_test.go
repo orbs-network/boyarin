@@ -4,6 +4,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"testing"
+	"time"
 )
 
 func getTestJSONConfig() string {
@@ -15,8 +16,17 @@ func getTestJSONConfig() string {
 	return string(contents)
 }
 
+func getTestJSONConfigWithOverrides() string {
+	contents, err := ioutil.ReadFile("./test/configWithOverrides.json")
+	if err != nil {
+		panic(err)
+	}
+
+	return string(contents)
+}
+
 func Test_StringConfigurationSource(t *testing.T) {
-	source, err := NewStringConfigurationSource(getTestJSONConfig())
+	source, err := NewStringConfigurationSource(getTestJSONConfig(), "")
 	source.SetKeyConfigPath("/tmp/fake-key-pair.json")
 	require.NoError(t, err)
 
@@ -43,11 +53,21 @@ func Test_StringConfigurationSource(t *testing.T) {
 }
 
 func Test_StringConfigurationSourceFromEmptyConfig(t *testing.T) {
-	cfg, err := NewStringConfigurationSource("{}")
+	cfg, err := NewStringConfigurationSource("{}", "")
 	require.NoError(t, err)
 
 	require.NotEmpty(t, cfg.Hash())
 	require.Empty(t, cfg.Chains())
 	require.Empty(t, cfg.FederationNodes())
 	require.NotNil(t, cfg.OrchestratorOptions())
+}
+
+func Test_StringConfigurationSourceWithOverrides(t *testing.T) {
+	source, err := NewStringConfigurationSource(getTestJSONConfigWithOverrides(), "http://some.ethereum.node")
+	require.NoError(t, err)
+	source.SetKeyConfigPath("/tmp/fake-key-pair.json")
+
+	require.Equal(t, "http://some.ethereum.node", source.EthereumEndpoint())
+	require.Equal(t, 1*time.Minute, source.OrchestratorOptions().MaxReloadTimedDelay())
+	require.Equal(t, "http://some.ethereum.node", source.Chains()[0].Config["ethereum-endpoint"])
 }

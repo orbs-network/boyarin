@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"testing"
 	"time"
 )
 
@@ -110,5 +111,10 @@ func CreateHttpServer(path string, port int, f func(writer http.ResponseWriter, 
 		path:     path,
 		listener: listener,
 		server:   server,
+	}
+}
+func SkipUnlessSwarmIsEnabled(t *testing.T) {
+	if os.Getenv("ENABLE_SWARM") != "true" {
+		t.Skip("skipping test, docker swarm is disabled")
 	}
 }

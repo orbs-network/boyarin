@@ -75,7 +75,7 @@ func provisionVchains(t *testing.T, h *harness, s strelets.Strelets, httpPort in
 }
 
 func TestE2EProvisionMultipleVchainsWithSwarmAndBoyar(t *testing.T) {
-	skipUnlessSwarmIsEnabled(t)
+	helpers.SkipUnlessSwarmIsEnabled(t)
 
 	swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
 	require.NoError(t, err)
@@ -95,7 +95,7 @@ func TestE2EProvisionMultipleVchainsWithSwarmAndBoyar(t *testing.T) {
 }
 
 func TestE2EAddNewVirtualChainWithSwarmAndBoyar(t *testing.T) {
-	skipUnlessSwarmIsEnabled(t)
+	helpers.SkipUnlessSwarmIsEnabled(t)
 
 	swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
 	require.NoError(t, err)

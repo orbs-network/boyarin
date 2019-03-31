@@ -2,6 +2,7 @@ package adapter
 
 import (
 	"context"
+	"io"
 	"time"
 )
 
@@ -33,6 +34,17 @@ type Runner interface {
 	Run(ctx context.Context) error
 }
 
+type ContainerStatus struct {
+	Name   string
+	NodeID string
+	State  string
+	Error  string
+
+	Logs string
+
+	CreatedAt time.Time
+}
+
 type Orchestrator interface {
 	PullImage(ctx context.Context, imageName string) error
 	Prepare(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) (Runner, error)
@@ -40,7 +52,9 @@ type Orchestrator interface {
 
 	PrepareReverseProxy(ctx context.Context, config string) (Runner, error)
 
-	Close() error
+	GetStatus(ctx context.Context) ([]*ContainerStatus, error)
+
+	io.Closer
 }
 
 type OrchestratorOptions struct {

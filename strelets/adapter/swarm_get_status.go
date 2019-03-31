@@ -49,6 +49,7 @@ func (d *dockerSwarm) getLogs(ctx context.Context, serviceID string) (string, er
 	io, err := d.client.ServiceLogs(ctx, serviceID, types.ContainerLogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
+		Timestamps: true,
 	})
 
 	if err != nil {

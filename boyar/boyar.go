@@ -84,6 +84,34 @@ func FullFlow(ctx context.Context, cfg config.NodeConfiguration, configCache con
 	return aggregateErrors(errors)
 }
 
+func ReportStatus(ctx context.Context) error {
+	// We really don't need any options here since we're just observing
+	orchestrator, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
+	if err != nil {
+		return err
+	}
+	defer orchestrator.Close()
+
+	status, err := orchestrator.GetStatus(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to report status: %s", err)
+	}
+
+	for _, s := range status {
+		if s.Error != "" {
+			fmt.Println(time.Now(), fmt.Sprintf("ERROR: service %s failed with error: %s\n%s", s.Name, s.Error, s.Logs))
+		} else {
+			fmt.Println(time.Now(), fmt.Sprintf("INFO: service %s %s on node %s since %s", s.Name, s.State, s.NodeID, s.CreatedAt))
+		}
+	}
+
+	if len(status) == 0 {
+		fmt.Println(time.Now(), "WARN: no services found")
+	}
+
+	return nil
+}
+
 func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
 	var keys []config.HttpReverseProxyCompositeKey
 

@@ -59,7 +59,7 @@ func getBoyarConfig(gossipPort int, vchains []*strelets.VirtualChain) []byte {
 const HTTP_PORT = 8080
 const GOSSIP_PORT = 4400
 
-func provisionVchains(t *testing.T, h *harness, s strelets.Strelets, httpPort int, gossipPort int, i int, vchainIds ...int) {
+func provisionVchains(t *testing.T, h *harness, s strelets.Strelets, httpPort int, gossipPort int, i int, vchainIds ...int) (boyar.Boyar, []*strelets.VirtualChain) {
 	vchains := getBoyarVchains(httpPort, gossipPort, i, vchainIds...)
 	boyarConfig := getBoyarConfig(gossipPort, vchains)
 	cfg, err := config.NewStringConfigurationSource(string(boyarConfig), "")
@@ -70,8 +70,16 @@ func provisionVchains(t *testing.T, h *harness, s strelets.Strelets, httpPort in
 	b := boyar.NewBoyar(s, cfg, cache)
 	err = b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
-	//err = s.UpdateReverseProxy(context.Background(), vchains, test.LocalIP())
-	//require.NoError(t, err)
+
+	return b, cfg.Chains()
+}
+
+func disableChains(t *testing.T, b boyar.Boyar, chains []*strelets.VirtualChain) {
+	for _, chain := range chains {
+		chain.Disabled = true
+	}
+	err := b.ProvisionVirtualChains(context.Background())
+	require.NoError(t, err)
 }
 
 func TestE2EProvisionMultipleVchainsWithSwarmAndBoyar(t *testing.T) {
@@ -84,11 +92,9 @@ func TestE2EProvisionMultipleVchainsWithSwarmAndBoyar(t *testing.T) {
 	s := strelets.NewStrelets(swarm)
 
 	for i := 1; i <= 3; i++ {
-		provisionVchains(t, h, s, HTTP_PORT, GOSSIP_PORT, i, 42, 92)
+		b, chains := provisionVchains(t, h, s, HTTP_PORT, GOSSIP_PORT, i, 42, 92)
+		defer disableChains(t, b, chains)
 	}
-	// FIXME boyar should take care of it, not the harness
-	defer h.stopChains(t, 42, 92)
-	//defer realDocker.RemoveContainer(context.Background(), "http-api-reverse-proxy")
 
 	waitForBlock(t, h.getMetricsForPort(8125), 3, WAIT_FOR_BLOCK_TIMEOUT)
 	waitForBlock(t, h.getMetricsForPort(8175), 0, WAIT_FOR_BLOCK_TIMEOUT)
@@ -106,16 +112,13 @@ func TestE2EAddNewVirtualChainWithSwarmAndBoyar(t *testing.T) {
 	for i := 1; i <= 3; i++ {
 		provisionVchains(t, h, s, HTTP_PORT, GOSSIP_PORT, i, 42)
 	}
-	// FIXME boyar should take care of it, not the harness
-	defer h.stopChains(t, 42)
-	//defer swarm.RemoveContainer(context.Background(), "http-api-reverse-proxy")
 
 	waitForBlock(t, h.getMetricsForPort(8125), 3, WAIT_FOR_BLOCK_TIMEOUT)
 
 	for i := 1; i <= 3; i++ {
-		provisionVchains(t, h, s, HTTP_PORT+1000, GOSSIP_PORT+1000, i, 42, 92)
+		b, chains := provisionVchains(t, h, s, HTTP_PORT+1000, GOSSIP_PORT+1000, i, 42, 92)
+		defer disableChains(t, b, chains)
 	}
-	defer h.stopChains(t, 92)
 
 	waitForBlock(t, h.getMetricsForPort(9125), 3, WAIT_FOR_BLOCK_TIMEOUT)
 	waitForBlock(t, h.getMetricsForPort(9175), 0, WAIT_FOR_BLOCK_TIMEOUT)

@@ -13,14 +13,14 @@ import (
 	"testing"
 )
 
-func getBoyarVchains(httpPort int, gossipPort int, nodeIndex int, vchainIds ...int) []*strelets.VirtualChain {
+func getBoyarVchains(nodeIndex int, vchainIds ...int) []*strelets.VirtualChain {
 	var chains []*strelets.VirtualChain
 
 	for _, vchainId := range vchainIds {
 		chain := &strelets.VirtualChain{
 			Id:         strelets.VirtualChainId(vchainId),
-			HttpPort:   httpPort + vchainId + nodeIndex,
-			GossipPort: gossipPort + vchainId + nodeIndex,
+			HttpPort:   HTTP_PORT + vchainId + nodeIndex,
+			GossipPort: GOSSIP_PORT + vchainId + nodeIndex,
 			DockerConfig: strelets.DockerConfig{
 				ContainerNamePrefix: fmt.Sprintf("node%d", nodeIndex),
 				Image:               "orbs",
@@ -36,7 +36,7 @@ func getBoyarVchains(httpPort int, gossipPort int, nodeIndex int, vchainIds ...i
 	return chains
 }
 
-func getBoyarConfig(gossipPort int, vchains []*strelets.VirtualChain) []byte {
+func getBoyarConfig(vchains []*strelets.VirtualChain) []byte {
 	ip := helpers.LocalIP()
 
 	configMap := make(map[string]interface{})
@@ -45,7 +45,7 @@ func getBoyarConfig(gossipPort int, vchains []*strelets.VirtualChain) []byte {
 		network = append(network, &strelets.FederationNode{
 			Address: key,
 			IP:      ip,
-			Port:    gossipPort + int(vchains[0].Id) + i + 1,
+			Port:    GOSSIP_PORT + int(vchains[0].Id) + i + 1,
 		})
 	}
 
@@ -56,14 +56,11 @@ func getBoyarConfig(gossipPort int, vchains []*strelets.VirtualChain) []byte {
 	return jsonConfig
 }
 
-const HTTP_PORT = 8080
-const GOSSIP_PORT = 4400
-
-func provisionVchains(t *testing.T, h *harness, s strelets.Strelets, httpPort int, gossipPort int, i int, vchainIds ...int) (boyar.Boyar, []*strelets.VirtualChain) {
-	vchains := getBoyarVchains(httpPort, gossipPort, i, vchainIds...)
-	boyarConfig := getBoyarConfig(gossipPort, vchains)
+func provisionVchains(t *testing.T, s strelets.Strelets, i int, vchainIds ...int) (boyar.Boyar, []*strelets.VirtualChain) {
+	vchains := getBoyarVchains(i, vchainIds...)
+	boyarConfig := getBoyarConfig(vchains)
 	cfg, err := config.NewStringConfigurationSource(string(boyarConfig), "")
-	cfg.SetKeyConfigPath(fmt.Sprintf("%s/node%d/keys.json", h.configPath, i))
+	cfg.SetKeyConfigPath(fmt.Sprintf("%s/node%d/keys.json", getConfigPath(), i))
 	require.NoError(t, err)
 
 	cache := make(config.BoyarConfigCache)
@@ -84,42 +81,42 @@ func disableChains(t *testing.T, b boyar.Boyar, chains []*strelets.VirtualChain)
 
 func TestE2EProvisionMultipleVchainsWithSwarmAndBoyar(t *testing.T) {
 	helpers.SkipUnlessSwarmIsEnabled(t)
+	removeAllDockerVolumes(t)
 
 	swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
 	require.NoError(t, err)
-	h := newHarness(t, swarm)
 
 	s := strelets.NewStrelets(swarm)
 
 	for i := 1; i <= 3; i++ {
-		b, chains := provisionVchains(t, h, s, HTTP_PORT, GOSSIP_PORT, i, 42, 92)
+		b, chains := provisionVchains(t, s, i, 42, 92)
 		defer disableChains(t, b, chains)
 	}
 
-	waitForBlock(t, h.getMetricsForPort(8125), 3, WAIT_FOR_BLOCK_TIMEOUT)
-	waitForBlock(t, h.getMetricsForPort(8175), 0, WAIT_FOR_BLOCK_TIMEOUT)
+	helpers.WaitForBlock(t, helpers.GetMetricsForPort(8125), 3, WAIT_FOR_BLOCK_TIMEOUT)
+	helpers.WaitForBlock(t, helpers.GetMetricsForPort(8175), 0, WAIT_FOR_BLOCK_TIMEOUT)
 }
 
 func TestE2EAddNewVirtualChainWithSwarmAndBoyar(t *testing.T) {
 	helpers.SkipUnlessSwarmIsEnabled(t)
+	removeAllDockerVolumes(t)
 
 	swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
 	require.NoError(t, err)
-	h := newHarness(t, swarm)
 
 	s := strelets.NewStrelets(swarm)
 
 	for i := 1; i <= 3; i++ {
-		provisionVchains(t, h, s, HTTP_PORT, GOSSIP_PORT, i, 42)
+		provisionVchains(t, s, i, 42)
 	}
 
-	waitForBlock(t, h.getMetricsForPort(8125), 3, WAIT_FOR_BLOCK_TIMEOUT)
+	helpers.WaitForBlock(t, helpers.GetMetricsForPort(8125), 3, WAIT_FOR_BLOCK_TIMEOUT)
 
 	for i := 1; i <= 3; i++ {
-		b, chains := provisionVchains(t, h, s, HTTP_PORT+1000, GOSSIP_PORT+1000, i, 42, 92)
+		b, chains := provisionVchains(t, s, i, 42, 92)
 		defer disableChains(t, b, chains)
 	}
 
-	waitForBlock(t, h.getMetricsForPort(9125), 3, WAIT_FOR_BLOCK_TIMEOUT)
-	waitForBlock(t, h.getMetricsForPort(9175), 0, WAIT_FOR_BLOCK_TIMEOUT)
+	helpers.WaitForBlock(t, helpers.GetMetricsForPort(8125), 3, WAIT_FOR_BLOCK_TIMEOUT)
+	helpers.WaitForBlock(t, helpers.GetMetricsForPort(8175), 0, WAIT_FOR_BLOCK_TIMEOUT)
 }

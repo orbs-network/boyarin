@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"github.com/orbs-network/orbs-network-go/instrumentation/log"
 	"github.com/stretchr/testify/require"
 	"net"
 	"os"
@@ -68,6 +69,7 @@ func SkipUnlessSwarmIsEnabled(t *testing.T) {
 		t.Skip("skipping test, docker swarm is disabled")
 	}
 }
+
 func WaitForBlock(t *testing.T, getMetrics func() (map[string]interface{}, error), targetBlockHeight int, timeout time.Duration) {
 	require.Truef(t, Eventually(timeout, func() bool {
 		blockHeight, err := GetBlockHeight(getMetrics)
@@ -77,4 +79,8 @@ func WaitForBlock(t *testing.T, getMetrics func() (map[string]interface{}, error
 
 		return blockHeight >= targetBlockHeight
 	}), "expected block height to reach %d", targetBlockHeight)
+}
+
+func DefaultTestLogger() log.BasicLogger {
+	return log.GetLogger().WithOutput(log.NewFormattingOutput(os.Stdout, log.NewHumanReadableFormatter()))
 }

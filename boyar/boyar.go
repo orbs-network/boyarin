@@ -203,7 +203,6 @@ func (b *boyar) removeVirtualChain(ctx context.Context, chain *strelets.VirtualC
 		} else {
 			b.configCache[chain.Id.String()] = hash
 			b.logger.Info("removed virtual chain", log.String("chain", chain.Id.String()))
-			fmt.Println(string(data))
 			errChannel <- nil
 		}
 	}()

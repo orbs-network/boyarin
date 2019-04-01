@@ -6,6 +6,7 @@ import (
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/strelets"
 	. "github.com/orbs-network/boyarin/test"
+	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
@@ -39,7 +40,7 @@ func Test_BoyarProvisionVirtualChains(t *testing.T) {
 	require.NoError(t, err)
 
 	cache := make(config.BoyarConfigCache)
-	b := NewBoyar(streletsMock, source, cache)
+	b := NewBoyar(streletsMock, source, cache, helpers.DefaultTestLogger())
 
 	streletsMock.On("ProvisionVirtualChain", mock.Anything, mock.Anything).Twice().Return(nil)
 	streletsMock.On("RemoveVirtualChain", mock.Anything, mock.Anything).Return(nil)
@@ -58,7 +59,7 @@ func Test_BoyarProvisionVirtualChainsWithErrors(t *testing.T) {
 	require.NoError(t, err)
 
 	cache := make(config.BoyarConfigCache)
-	b := NewBoyar(streletsMock, source, cache)
+	b := NewBoyar(streletsMock, source, cache, helpers.DefaultTestLogger())
 
 	streletsMock.On("ProvisionVirtualChain", mock.Anything, mock.MatchedBy(func(input *strelets.ProvisionVirtualChainInput) bool {
 		return input.VirtualChain.Id == strelets.VirtualChainId(1991)
@@ -84,7 +85,7 @@ func Test_BoyarProvisionVirtualChainsWithTimeout(t *testing.T) {
 	require.NoError(t, err)
 
 	cache := make(config.BoyarConfigCache)
-	b := NewBoyar(streletsMock, source, cache)
+	b := NewBoyar(streletsMock, source, cache, helpers.DefaultTestLogger())
 
 	streletsMock.On("ProvisionVirtualChain", mock.Anything, mock.MatchedBy(func(input *strelets.ProvisionVirtualChainInput) bool {
 		return input.VirtualChain.Id == strelets.VirtualChainId(1991)
@@ -110,7 +111,7 @@ func TestBoyar_ProvisionVirtualChainsWithNoConfigChanges(t *testing.T) {
 
 	s := strelets.NewStrelets(orchestrator)
 	cache := make(config.BoyarConfigCache)
-	b := NewBoyar(s, cfg, cache)
+	b := NewBoyar(s, cfg, cache, helpers.DefaultTestLogger())
 
 	err = b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
@@ -132,7 +133,7 @@ func TestBoyar_ProvisionVirtualChainsReprovisionsIfConfigChanges(t *testing.T) {
 
 	s := strelets.NewStrelets(orchestrator)
 	cache := make(config.BoyarConfigCache)
-	b := NewBoyar(s, cfg, cache)
+	b := NewBoyar(s, cfg, cache, helpers.DefaultTestLogger())
 
 	err := b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
@@ -156,7 +157,7 @@ func TestBoyar_ProvisionVirtualChainsReprovisionsIfDockerConfigChanges(t *testin
 
 	s := strelets.NewStrelets(orchestrator)
 	cache := make(config.BoyarConfigCache)
-	b := NewBoyar(s, cfg, cache)
+	b := NewBoyar(s, cfg, cache, helpers.DefaultTestLogger())
 
 	err := b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
@@ -179,7 +180,7 @@ func TestBoyar_ProvisionHttpAPIEndpointWithNoConfigChanges(t *testing.T) {
 
 	s := strelets.NewStrelets(orchestrator)
 	cache := make(config.BoyarConfigCache)
-	b := NewBoyar(s, cfg, cache)
+	b := NewBoyar(s, cfg, cache, helpers.DefaultTestLogger())
 
 	err := b.ProvisionHttpAPIEndpoint(context.Background())
 	require.NoError(t, err)
@@ -200,7 +201,7 @@ func TestBoyar_ProvisionHttpAPIEndpointReprovisionsIfConfigChanges(t *testing.T)
 
 	s := strelets.NewStrelets(orchestrator)
 	cache := make(config.BoyarConfigCache)
-	b := NewBoyar(s, cfg, cache)
+	b := NewBoyar(s, cfg, cache, helpers.DefaultTestLogger())
 
 	err := b.ProvisionHttpAPIEndpoint(context.Background())
 	require.NoError(t, err)

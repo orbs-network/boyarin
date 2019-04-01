@@ -64,7 +64,7 @@ func provisionVchains(t *testing.T, s strelets.Strelets, i int, vchainIds ...int
 	require.NoError(t, err)
 
 	cache := make(config.BoyarConfigCache)
-	b := boyar.NewBoyar(s, cfg, cache)
+	b := boyar.NewBoyar(s, cfg, cache, helpers.DefaultTestLogger())
 	err = b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
 

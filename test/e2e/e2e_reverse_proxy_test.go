@@ -19,7 +19,7 @@ func Test_UpdateReverseProxyWithSwarm(t *testing.T) {
 		t.Skip("skipped on CI because of flakiness")
 	}
 
-	skipUnlessSwarmIsEnabled(t)
+	helpers.SkipUnlessSwarmIsEnabled(t)
 
 	port := 10080
 	server := helpers.CreateHttpServer("/test", port, func(writer http.ResponseWriter, request *http.Request) {

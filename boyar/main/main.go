@@ -103,6 +103,15 @@ func execute(flags *flags) {
 	configCache := make(config.BoyarConfigCache)
 
 	if flags.daemonize {
+		supervized.GoForever(func() {
+			for {
+				if err := boyar.ReportStatus(context.Background()); err != nil {
+					fmt.Println(time.Now(), "ERROR:", err)
+				}
+				<-time.After(1 * time.Minute)
+			}
+		})
+
 		<-supervized.GoForever(func() {
 			for first := true; ; first = false {
 				cfg, err := config.GetConfiguration(flags.configUrl, flags.ethereumEndpoint, flags.topologyContractAddress, flags.keyPairConfigPath)

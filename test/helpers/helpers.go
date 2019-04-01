@@ -1,11 +1,10 @@
 package helpers
 
 import (
-	"context"
-	"fmt"
+	"github.com/stretchr/testify/require"
 	"net"
-	"net/http"
 	"os"
+	"testing"
 	"time"
 )
 
@@ -64,51 +63,18 @@ func Eventually(timeout time.Duration, f func() bool) bool {
 	return false
 }
 
-type HttpServer interface {
-	Start()
-	Shutdown()
-	Url() string
-	Port() int
-}
-
-type httpServer struct {
-	path     string
-	listener net.Listener
-	server   *http.Server
-}
-
-func (h *httpServer) Start() {
-	go h.server.Serve(h.listener)
-}
-
-func (h *httpServer) Shutdown() {
-	h.server.Shutdown(context.TODO())
-}
-
-func (h *httpServer) Url() string {
-	return fmt.Sprintf("http://127.0.0.1:%d%s", h.listener.Addr().(*net.TCPAddr).Port, h.path)
-}
-
-func (h *httpServer) Port() int {
-	return h.listener.Addr().(*net.TCPAddr).Port
-}
-
-func CreateHttpServer(path string, port int, f func(writer http.ResponseWriter, request *http.Request)) HttpServer {
-	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", port))
-	if err != nil {
-		panic(err)
+func SkipUnlessSwarmIsEnabled(t *testing.T) {
+	if os.Getenv("ENABLE_SWARM") != "true" {
+		t.Skip("skipping test, docker swarm is disabled")
 	}
+}
+func WaitForBlock(t *testing.T, getMetrics func() (map[string]interface{}, error), targetBlockHeight int, timeout time.Duration) {
+	require.Truef(t, Eventually(timeout, func() bool {
+		blockHeight, err := GetBlockHeight(getMetrics)
+		if err != nil {
+			return false
+		}
 
-	router := http.NewServeMux()
-	router.HandleFunc(path, f)
-
-	server := &http.Server{
-		Handler: router,
-	}
-
-	return &httpServer{
-		path:     path,
-		listener: listener,
-		server:   server,
-	}
+		return blockHeight >= targetBlockHeight
+	}), "expected block height to reach %d", targetBlockHeight)
 }

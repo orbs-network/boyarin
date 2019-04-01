@@ -35,6 +35,11 @@ func (a *OrchestratorMock) Close() error {
 	return nil
 }
 
+func (a *OrchestratorMock) GetStatus(ctx context.Context) (results []*adapter.ContainerStatus, err error) {
+	panic("not implemented")
+	return nil, nil
+}
+
 func NewOrchestratorAndRunnerMocks() (orchestrator *OrchestratorMock, virtualChainRunner *RunnerMock, reverseProxyRunner *RunnerMock) {
 	orchestrator = &OrchestratorMock{}
 

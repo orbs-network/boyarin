@@ -11,4 +11,4 @@ type HttpReverseProxyCompositeKey struct {
 	Disabled   bool
 }
 
-const HTTP_REVERSE_PROXY_HASH = "HTTP_REVERSE_PROXY_HASH"
+const HTTP_REVERSE_PROXY_HASH = "proxy"

@@ -27,7 +27,6 @@ func pullImage(ctx context.Context, client *client.Client, imageName string) err
 
 func getPullOptions(imageName string) types.ImagePullOptions {
 	if username, password, err := getAuthForRepository(os.Getenv("HOME"), imageName); err != nil {
-		fmt.Println(err)
 		return types.ImagePullOptions{}
 	} else {
 		return types.ImagePullOptions{

@@ -9,6 +9,7 @@ import (
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test/helpers"
+	"github.com/orbs-network/orbs-network-go/instrumentation/log"
 	"strings"
 	"time"
 )
@@ -22,13 +23,15 @@ type boyar struct {
 	strelets    strelets.Strelets
 	config      config.NodeConfiguration
 	configCache config.BoyarConfigCache
+	logger      log.BasicLogger
 }
 
-func NewBoyar(strelets strelets.Strelets, cfg config.NodeConfiguration, configCache config.BoyarConfigCache) Boyar {
+func NewBoyar(strelets strelets.Strelets, cfg config.NodeConfiguration, configCache config.BoyarConfigCache, logger log.BasicLogger) Boyar {
 	return &boyar{
 		strelets:    strelets,
 		config:      cfg,
 		configCache: configCache,
+		logger:      logger,
 	}
 }
 
@@ -61,7 +64,7 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 	return aggregateErrors(errors)
 }
 
-func FullFlow(ctx context.Context, cfg config.NodeConfiguration, configCache config.BoyarConfigCache) error {
+func FullFlow(ctx context.Context, cfg config.NodeConfiguration, configCache config.BoyarConfigCache, logger log.BasicLogger) error {
 	orchestrator, err := adapter.NewDockerSwarm(cfg.OrchestratorOptions())
 	if err != nil {
 		return err
@@ -69,7 +72,7 @@ func FullFlow(ctx context.Context, cfg config.NodeConfiguration, configCache con
 	defer orchestrator.Close()
 
 	s := strelets.NewStrelets(orchestrator)
-	b := NewBoyar(s, cfg, configCache)
+	b := NewBoyar(s, cfg, configCache, logger)
 
 	var errors []error
 
@@ -84,7 +87,7 @@ func FullFlow(ctx context.Context, cfg config.NodeConfiguration, configCache con
 	return aggregateErrors(errors)
 }
 
-func ReportStatus(ctx context.Context) error {
+func ReportStatus(ctx context.Context, logger log.BasicLogger) error {
 	// We really don't need any options here since we're just observing
 	orchestrator, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
 	if err != nil {
@@ -99,9 +102,17 @@ func ReportStatus(ctx context.Context) error {
 
 	for _, s := range status {
 		if s.Error != "" {
-			fmt.Println(time.Now(), fmt.Sprintf("ERROR: service %s failed with error: %s\n%s", s.Name, s.Error, s.Logs))
+			logger.Error("service failure",
+				log.String("vchain", getVcidFromServiceName(s.Name)),
+				log.String("state", s.State),
+				log.Error(fmt.Errorf(s.Error)),
+				log.String("logs", s.Logs))
 		} else {
-			fmt.Println(time.Now(), fmt.Sprintf("INFO: service %s %s on node %s since %s", s.Name, s.State, s.NodeID, s.CreatedAt))
+			logger.Info("service status",
+				log.String("vchain", getVcidFromServiceName(s.Name)),
+				log.String("state", s.State),
+				log.String("workerId", s.NodeID),
+				log.String("createdAt", formatAsISO6801(s.CreatedAt)))
 		}
 	}
 
@@ -191,7 +202,7 @@ func (b *boyar) removeVirtualChain(ctx context.Context, chain *strelets.VirtualC
 			errChannel <- fmt.Errorf("failed to remove virtual chain %d: %s", chain.Id, err)
 		} else {
 			b.configCache[chain.Id.String()] = hash
-			fmt.Println(time.Now(), fmt.Sprintf("INFO: removed virtual chain %d with configuration %s", chain.Id, hash))
+			b.logger.Info("removed virtual chain", log.String("chain", chain.Id.String()))
 			fmt.Println(string(data))
 			errChannel <- nil
 		}
@@ -221,9 +232,20 @@ func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.Virtu
 			errChannel <- fmt.Errorf("failed to provision virtual chain %d: %s", chain.Id, err)
 		} else {
 			b.configCache[chain.Id.String()] = hash
-			fmt.Println(time.Now(), fmt.Sprintf("INFO: updated virtual chain %d with configuration %s", chain.Id, hash))
-			fmt.Println(string(data))
+			b.logger.Info("updated virtual chain",
+				log.String("chain",
+					chain.Id.String()),
+				log.String("configuration", string(data)))
 			errChannel <- nil
 		}
 	}()
+}
+
+func getVcidFromServiceName(serviceName string) string {
+	tokens := strings.Split(serviceName, "-")
+	return tokens[len(tokens)-1]
+}
+
+func formatAsISO6801(t time.Time) string {
+	return t.Format(time.RFC3339)
 }

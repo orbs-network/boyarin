@@ -7,3 +7,6 @@
 [submodule "vendor/github.com/ethereum/go-ethereum"]
 	path = vendor/github.com/ethereum/go-ethereum
 	url = https://github.com/ethereum/go-ethereum
+[submodule "vendor/github.com/orbs-network/orbs-network-go"]
+	path = vendor/github.com/orbs-network/orbs-network-go
+	url = https://github.com/orbs-network/orbs-network-go

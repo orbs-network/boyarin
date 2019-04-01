@@ -8,6 +8,7 @@ import (
 	"github.com/orbs-network/boyarin/boyar"
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/supervized"
+	"github.com/orbs-network/orbs-network-go/instrumentation/log"
 	"os"
 	"time"
 )
@@ -55,23 +56,44 @@ func main() {
 		topologyContractAddress: *topologyContractAddressPtr,
 	}
 
+	logger, err := getLogger(flags.keyPairConfigPath)
+	if err != nil {
+		os.Exit(1)
+	}
+
 	if *help {
 		flag.Usage()
 		return
 	}
 
 	if *showConfiguration {
-		printConfiguration(flags)
+		printConfiguration(flags, logger)
 		return
 	}
 
-	execute(flags)
+	if err := execute(flags, logger); err != nil {
+		logger.Error("Startup failure", log.Error(err))
+		os.Exit(1)
+	}
 }
 
-func printConfiguration(flags *flags) {
+func getLogger(keyConfigPath string) (log.BasicLogger, error) {
+	logger := log.GetLogger().WithOutput(log.NewFormattingOutput(os.Stdout, log.NewHumanReadableFormatter()))
+
+	cfg, _ := config.NewStringConfigurationSource("{}", "")
+	cfg.SetKeyConfigPath(keyConfigPath)
+	if err := cfg.VerifyConfig(); err != nil {
+		logger.Error("Invalid configuration", log.Error(err))
+		return nil, err
+	}
+
+	return logger.WithTags(log.String("node", string(cfg.NodeAddress()))), nil
+}
+
+func printConfiguration(flags *flags, logger log.BasicLogger) {
 	cfg, err := config.GetConfiguration(flags.configUrl, flags.ethereumEndpoint, flags.topologyContractAddress, flags.keyPairConfigPath)
 	if err != nil {
-		fmt.Println("ERROR: could not pull valid configuration:", err)
+		logger.Error("could not pull valid configuration", log.Error(err))
 		return
 	}
 
@@ -88,15 +110,13 @@ func printConfiguration(flags *flags) {
 	fmt.Println(string(chains))
 }
 
-func execute(flags *flags) {
+func execute(flags *flags, logger log.BasicLogger) error {
 	if flags.configUrl == "" {
-		fmt.Println("--config-url is a required parameter for provisioning flow")
-		os.Exit(1)
+		return fmt.Errorf("--config-url is a required parameter for provisioning flow")
 	}
 
 	if flags.keyPairConfigPath == "" {
-		fmt.Println("--keys is a required parameter for provisioning flow")
-		os.Exit(1)
+		return fmt.Errorf("--keys is a required parameter for provisioning flow")
 	}
 
 	// Even if something crashed, things still were provisioned, meaning the cache should stay
@@ -105,8 +125,8 @@ func execute(flags *flags) {
 	if flags.daemonize {
 		supervized.GoForever(func() {
 			for {
-				if err := boyar.ReportStatus(context.Background()); err != nil {
-					fmt.Println(time.Now(), "ERROR:", err)
+				if err := boyar.ReportStatus(context.Background(), logger); err != nil {
+					logger.Error("status check failed", log.Error(err))
 				}
 				<-time.After(1 * time.Minute)
 			}
@@ -116,24 +136,25 @@ func execute(flags *flags) {
 			for first := true; ; first = false {
 				cfg, err := config.GetConfiguration(flags.configUrl, flags.ethereumEndpoint, flags.topologyContractAddress, flags.keyPairConfigPath)
 				if err != nil {
-					fmt.Println(time.Now(), "ERROR:", fmt.Errorf("could not generate configuration: %s", err))
+					logger.Error("invalid configuration", log.Error(err))
 				} else {
 					// skip delay when provisioning for the first time when the node goes up
 					if !first {
 						reloadTimeDelay := cfg.ReloadTimeDelay(flags.maxReloadTimeDelay)
-						fmt.Println(fmt.Sprintf("INFO: waiting for %s to apply new configuration", reloadTimeDelay))
+						logger.Info("waiting to apply new configuration", log.String("delay", flags.maxReloadTimeDelay.String()))
 						<-time.After(reloadTimeDelay)
 					}
 
 					ctx, cancel := context.WithTimeout(context.Background(), flags.timeout)
 					defer cancel()
 
-					if err := boyar.FullFlow(ctx, cfg, configCache); err != nil {
-						fmt.Println(time.Now(), "ERROR:", err)
-					}
-
-					for vcid, hash := range configCache {
-						fmt.Println(time.Now(), fmt.Sprintf("Latest successful configuration for vchain %s: %s", vcid, hash))
+					if err := boyar.FullFlow(ctx, cfg, configCache, logger); err != nil {
+						logger.Error("could not apply new configuration", log.Error(err))
+					} else {
+						for vcid, _ := range configCache {
+							// FIXME report vchain id as int
+							logger.Info("confuguration applied succesfully", log.String("vchain", vcid))
+						}
 					}
 				}
 
@@ -143,16 +164,16 @@ func execute(flags *flags) {
 	} else {
 		cfg, err := config.GetConfiguration(flags.configUrl, flags.ethereumEndpoint, flags.topologyContractAddress, flags.keyPairConfigPath)
 		if err != nil {
-			fmt.Println(time.Now(), "ERROR:", fmt.Errorf("could not generate configuration: %s", err))
-			os.Exit(1)
+			return fmt.Errorf("invalid configuration: %s", err)
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), flags.timeout)
 		defer cancel()
 
-		if err := boyar.FullFlow(ctx, cfg, configCache); err != nil {
-			fmt.Println(time.Now(), "ERROR:", err)
-			os.Exit(1)
+		if err := boyar.FullFlow(ctx, cfg, configCache, logger); err != nil {
+			return fmt.Errorf("could not apply new configuration: %s", err)
 		}
 	}
+
+	return nil
 }

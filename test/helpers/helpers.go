@@ -1,7 +1,7 @@
 package helpers
 
 import (
-	"github.com/orbs-network/orbs-network-go/instrumentation/log"
+	"github.com/orbs-network/scribe/log"
 	"github.com/stretchr/testify/require"
 	"net"
 	"os"
@@ -81,6 +81,6 @@ func WaitForBlock(t *testing.T, getMetrics func() (map[string]interface{}, error
 	}), "expected block height to reach %d", targetBlockHeight)
 }
 
-func DefaultTestLogger() log.BasicLogger {
+func DefaultTestLogger() log.Logger {
 	return log.GetLogger().WithOutput(log.NewFormattingOutput(os.Stdout, log.NewHumanReadableFormatter()))
 }

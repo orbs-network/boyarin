@@ -8,7 +8,7 @@ import (
 	"github.com/orbs-network/boyarin/boyar"
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/supervized"
-	"github.com/orbs-network/orbs-network-go/instrumentation/log"
+	"github.com/orbs-network/scribe/log"
 	"os"
 	"time"
 )
@@ -77,7 +77,7 @@ func main() {
 	}
 }
 
-func getLogger(keyConfigPath string) (log.BasicLogger, error) {
+func getLogger(keyConfigPath string) (log.Logger, error) {
 	logger := log.GetLogger().WithOutput(log.NewFormattingOutput(os.Stdout, log.NewHumanReadableFormatter()))
 
 	cfg, _ := config.NewStringConfigurationSource("{}", "")
@@ -90,7 +90,7 @@ func getLogger(keyConfigPath string) (log.BasicLogger, error) {
 	return logger.WithTags(log.String("node", string(cfg.NodeAddress()))), nil
 }
 
-func printConfiguration(flags *flags, logger log.BasicLogger) {
+func printConfiguration(flags *flags, logger log.Logger) {
 	cfg, err := config.GetConfiguration(flags.configUrl, flags.ethereumEndpoint, flags.topologyContractAddress, flags.keyPairConfigPath)
 	if err != nil {
 		logger.Error("could not pull valid configuration", log.Error(err))
@@ -110,7 +110,7 @@ func printConfiguration(flags *flags, logger log.BasicLogger) {
 	fmt.Println(string(chains))
 }
 
-func execute(flags *flags, logger log.BasicLogger) error {
+func execute(flags *flags, logger log.Logger) error {
 	if flags.configUrl == "" {
 		return fmt.Errorf("--config-url is a required parameter for provisioning flow")
 	}

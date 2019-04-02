@@ -9,7 +9,7 @@ import (
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test/helpers"
-	"github.com/orbs-network/orbs-network-go/instrumentation/log"
+	"github.com/orbs-network/scribe/log"
 	"strings"
 	"time"
 )
@@ -23,10 +23,10 @@ type boyar struct {
 	strelets    strelets.Strelets
 	config      config.NodeConfiguration
 	configCache config.BoyarConfigCache
-	logger      log.BasicLogger
+	logger      log.Logger
 }
 
-func NewBoyar(strelets strelets.Strelets, cfg config.NodeConfiguration, configCache config.BoyarConfigCache, logger log.BasicLogger) Boyar {
+func NewBoyar(strelets strelets.Strelets, cfg config.NodeConfiguration, configCache config.BoyarConfigCache, logger log.Logger) Boyar {
 	return &boyar{
 		strelets:    strelets,
 		config:      cfg,
@@ -64,7 +64,7 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 	return aggregateErrors(errors)
 }
 
-func FullFlow(ctx context.Context, cfg config.NodeConfiguration, configCache config.BoyarConfigCache, logger log.BasicLogger) error {
+func FullFlow(ctx context.Context, cfg config.NodeConfiguration, configCache config.BoyarConfigCache, logger log.Logger) error {
 	orchestrator, err := adapter.NewDockerSwarm(cfg.OrchestratorOptions())
 	if err != nil {
 		return err
@@ -87,7 +87,7 @@ func FullFlow(ctx context.Context, cfg config.NodeConfiguration, configCache con
 	return aggregateErrors(errors)
 }
 
-func ReportStatus(ctx context.Context, logger log.BasicLogger) error {
+func ReportStatus(ctx context.Context, logger log.Logger) error {
 	// We really don't need any options here since we're just observing
 	orchestrator, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
 	if err != nil {

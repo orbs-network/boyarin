@@ -57,11 +57,15 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 
 			}
 		case <-ctx.Done():
-			errors = append(errors, fmt.Errorf("failed to provision virtual chain %s: %s", chains[i].Id, ctx.Err()))
+			errors = append(errors, ctx.Err())
 		}
 	}
 
-	return aggregateErrors(errors)
+	if len(errors) > 0 {
+		return fmt.Errorf("failed to provision virtual chain")
+	}
+
+	return nil
 }
 
 func FullFlow(ctx context.Context, cfg config.NodeConfiguration, configCache config.BoyarConfigCache, logger log.Logger) error {
@@ -84,7 +88,11 @@ func FullFlow(ctx context.Context, cfg config.NodeConfiguration, configCache con
 		errors = append(errors, err)
 	}
 
-	return aggregateErrors(errors)
+	if len(errors) > 0 {
+		return fmt.Errorf("boyar flow failed")
+	}
+
+	return nil
 }
 
 func ReportStatus(ctx context.Context, logger log.Logger) error {
@@ -103,13 +111,13 @@ func ReportStatus(ctx context.Context, logger log.Logger) error {
 	for _, s := range status {
 		if s.Error != "" {
 			logger.Error("service failure",
-				log.String("vchain", getVcidFromServiceName(s.Name)),
+				log.String("vcid", getVcidFromServiceName(s.Name)),
 				log.String("state", s.State),
 				log.Error(fmt.Errorf(s.Error)),
 				log.String("logs", s.Logs))
 		} else {
 			logger.Info("service status",
-				log.String("vchain", getVcidFromServiceName(s.Name)),
+				log.String("vcid", getVcidFromServiceName(s.Name)),
 				log.String("state", s.State),
 				log.String("workerId", s.NodeID),
 				log.String("createdAt", formatAsISO6801(s.CreatedAt)))
@@ -145,8 +153,11 @@ func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
 
 	// TODO is there a better way to get a loopback interface?
 	if err := b.strelets.UpdateReverseProxy(ctx, b.config.Chains(), helpers.LocalIP()); err != nil {
+		b.logger.Error("failed to apply http proxy configuration", log.Error(err))
 		return err
 	}
+
+	b.logger.Info("updated http proxy configuration")
 
 	b.configCache[config.HTTP_REVERSE_PROXY_HASH] = hash
 	return nil
@@ -170,20 +181,6 @@ func buildPeersMap(nodes []*strelets.FederationNode, gossipPort int) *strelets.P
 	return &peersMap
 }
 
-func aggregateErrors(errors []error) error {
-	if errors == nil {
-		return nil
-	}
-
-	var lines []string
-
-	for _, err := range errors {
-		lines = append(lines, err.Error())
-	}
-
-	return fmt.Errorf(strings.Join(lines, "\n"))
-}
-
 func (b *boyar) removeVirtualChain(ctx context.Context, chain *strelets.VirtualChain, errChannel chan error) {
 	go func() {
 		input := &strelets.RemoveVirtualChainInput{
@@ -199,10 +196,13 @@ func (b *boyar) removeVirtualChain(ctx context.Context, chain *strelets.VirtualC
 		}
 
 		if err := b.strelets.RemoveVirtualChain(ctx, input); err != nil {
-			errChannel <- fmt.Errorf("failed to remove virtual chain %d: %s", chain.Id, err)
+			b.logger.Error("failed to remove virtual chain",
+				log.String("vcid", chain.Id.String()),
+				log.Error(err))
+			errChannel <- err
 		} else {
 			b.configCache[chain.Id.String()] = hash
-			b.logger.Info("removed virtual chain", log.String("chain", chain.Id.String()))
+			b.logger.Info("removed virtual chain", log.String("vcid", chain.Id.String()))
 			errChannel <- nil
 		}
 	}()
@@ -228,12 +228,14 @@ func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.Virtu
 		}
 
 		if err := b.strelets.ProvisionVirtualChain(ctx, input); err != nil {
-			errChannel <- fmt.Errorf("failed to provision virtual chain %d: %s", chain.Id, err)
+			b.logger.Error("failed to apply virtual chain configuration",
+				log.String("vcid", chain.Id.String()),
+				log.Error(err))
+			errChannel <- err
 		} else {
 			b.configCache[chain.Id.String()] = hash
-			b.logger.Info("updated virtual chain",
-				log.String("chain",
-					chain.Id.String()),
+			b.logger.Info("updated virtual chain configuration",
+				log.String("vcid", chain.Id.String()),
 				log.String("configuration", string(data)))
 			errChannel <- nil
 		}

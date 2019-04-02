@@ -148,14 +148,7 @@ func execute(flags *flags, logger log.Logger) error {
 					ctx, cancel := context.WithTimeout(context.Background(), flags.timeout)
 					defer cancel()
 
-					if err := boyar.FullFlow(ctx, cfg, configCache, logger); err != nil {
-						logger.Error("could not apply new configuration", log.Error(err))
-					} else {
-						for vcid, _ := range configCache {
-							// FIXME report vchain id as int
-							logger.Info("confuguration applied succesfully", log.String("vchain", vcid))
-						}
-					}
+					boyar.FullFlow(ctx, cfg, configCache, logger)
 				}
 
 				<-time.After(flags.pollingInterval)
@@ -170,9 +163,7 @@ func execute(flags *flags, logger log.Logger) error {
 		ctx, cancel := context.WithTimeout(context.Background(), flags.timeout)
 		defer cancel()
 
-		if err := boyar.FullFlow(ctx, cfg, configCache, logger); err != nil {
-			return fmt.Errorf("could not apply new configuration: %s", err)
-		}
+		return boyar.FullFlow(ctx, cfg, configCache, logger)
 	}
 
 	return nil

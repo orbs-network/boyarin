@@ -78,7 +78,9 @@ func main() {
 }
 
 func getLogger(keyConfigPath string) (log.Logger, error) {
-	logger := log.GetLogger().WithOutput(log.NewFormattingOutput(os.Stdout, log.NewHumanReadableFormatter()))
+	logger := log.GetLogger().
+		WithOutput(log.NewFormattingOutput(os.Stdout, log.NewHumanReadableFormatter())).
+		WithSourcePrefix("boyarin/")
 
 	cfg, _ := config.NewStringConfigurationSource("{}", "")
 	cfg.SetKeyConfigPath(keyConfigPath)

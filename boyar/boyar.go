@@ -8,12 +8,9 @@ import (
 	"github.com/orbs-network/boyarin/crypto"
 	"github.com/orbs-network/boyarin/log_types"
 	"github.com/orbs-network/boyarin/strelets"
-	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/orbs-network/scribe/log"
-	"strconv"
 	"strings"
-	"time"
 )
 
 type Boyar interface {
@@ -26,6 +23,11 @@ type boyar struct {
 	config      config.NodeConfiguration
 	configCache config.BoyarConfigCache
 	logger      log.Logger
+}
+
+type errorContainer struct {
+	error error
+	id    strelets.VirtualChainId
 }
 
 func NewBoyar(strelets strelets.Strelets, cfg config.NodeConfiguration, configCache config.BoyarConfigCache, logger log.Logger) Boyar {
@@ -41,7 +43,7 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 	chains := b.config.Chains()
 
 	var errors []error
-	errorChannel := make(chan error, len(chains))
+	errorChannel := make(chan *errorContainer, len(chains))
 
 	for _, chain := range chains {
 		if chain.Disabled {
@@ -51,85 +53,23 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 		}
 	}
 
+	var messages []string
+
 	for i := 0; i < len(chains); i++ {
 		select {
 		case err := <-errorChannel:
 			if err != nil {
-				errors = append(errors, err)
-
+				errors = append(errors, err.error)
+				messages = append(messages, err.id.String())
 			}
 		case <-ctx.Done():
 			errors = append(errors, ctx.Err())
+			messages = append(messages, ctx.Err().Error())
 		}
 	}
 
 	if len(errors) > 0 {
-		return fmt.Errorf("failed to provision virtual chain")
-	}
-
-	return nil
-}
-
-func FullFlow(ctx context.Context, cfg config.NodeConfiguration, configCache config.BoyarConfigCache, logger log.Logger) error {
-	orchestrator, err := adapter.NewDockerSwarm(cfg.OrchestratorOptions())
-	if err != nil {
-		return err
-	}
-	defer orchestrator.Close()
-
-	s := strelets.NewStrelets(orchestrator)
-	b := NewBoyar(s, cfg, configCache, logger)
-
-	var errors []error
-
-	if err := b.ProvisionVirtualChains(ctx); err != nil {
-		errors = append(errors, err)
-	}
-
-	if err := b.ProvisionHttpAPIEndpoint(ctx); err != nil {
-		errors = append(errors, err)
-	}
-
-	if len(errors) > 0 {
-		return fmt.Errorf("boyar flow failed")
-	}
-
-	return nil
-}
-
-func ReportStatus(ctx context.Context, logger log.Logger) error {
-	// We really don't need any options here since we're just observing
-	orchestrator, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
-	if err != nil {
-		return err
-	}
-	defer orchestrator.Close()
-
-	status, err := orchestrator.GetStatus(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to report status: %s", err)
-	}
-
-	for _, s := range status {
-		if s.Error != "" {
-			logger.Error("service failure",
-				log_types.VirtualChainId(getVcidFromServiceName(s.Name)),
-				log.String("name", s.Name),
-				log.String("state", s.State),
-				log.Error(fmt.Errorf(s.Error)),
-				log.String("logs", s.Logs))
-		} else {
-			logger.Info("service status",
-				log_types.VirtualChainId(getVcidFromServiceName(s.Name)),
-				log.String("name", s.Name),
-				log.String("state", s.State),
-				log.String("workerId", s.NodeID),
-				log.String("createdAt", formatAsISO6801(s.CreatedAt)))
-		}
-	}
-
-	if len(status) == 0 {
-		fmt.Println(time.Now(), "WARN: no services found")
+		return fmt.Errorf("failed to provision virtual chain %v", strings.Join(messages, ", "))
 	}
 
 	return nil
@@ -167,25 +107,7 @@ func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
 	return nil
 }
 
-func buildPeersMap(nodes []*strelets.FederationNode, gossipPort int) *strelets.PeersMap {
-	peersMap := make(strelets.PeersMap)
-
-	for _, node := range nodes {
-		// Need this override for more flexibility in network config and also for local testing
-		port := node.Port
-		if port == 0 {
-			port = gossipPort
-		}
-
-		peersMap[strelets.NodeAddress(node.Address)] = &strelets.Peer{
-			node.IP, port,
-		}
-	}
-
-	return &peersMap
-}
-
-func (b *boyar) removeVirtualChain(ctx context.Context, chain *strelets.VirtualChain, errChannel chan error) {
+func (b *boyar) removeVirtualChain(ctx context.Context, chain *strelets.VirtualChain, errChannel chan *errorContainer) {
 	go func() {
 		input := &strelets.RemoveVirtualChainInput{
 			VirtualChain: chain,
@@ -203,7 +125,7 @@ func (b *boyar) removeVirtualChain(ctx context.Context, chain *strelets.VirtualC
 			b.logger.Error("failed to remove virtual chain",
 				log_types.VirtualChainId(int64(chain.Id)),
 				log.Error(err))
-			errChannel <- err
+			errChannel <- &errorContainer{err, chain.Id}
 		} else {
 			b.configCache[chain.Id.String()] = hash
 			b.logger.Info("removed virtual chain", log_types.VirtualChainId(int64(chain.Id)))
@@ -212,7 +134,7 @@ func (b *boyar) removeVirtualChain(ctx context.Context, chain *strelets.VirtualC
 	}()
 }
 
-func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.VirtualChain, errChannel chan error) {
+func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.VirtualChain, errChannel chan *errorContainer) {
 	go func() {
 		peers := buildPeersMap(b.config.FederationNodes(), chain.GossipPort)
 
@@ -235,7 +157,7 @@ func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.Virtu
 			b.logger.Error("failed to apply virtual chain configuration",
 				log_types.VirtualChainId(int64(chain.Id)),
 				log.Error(err))
-			errChannel <- err
+			errChannel <- &errorContainer{err, chain.Id}
 		} else {
 			b.configCache[chain.Id.String()] = hash
 			b.logger.Info("updated virtual chain configuration",
@@ -244,18 +166,4 @@ func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.Virtu
 			errChannel <- nil
 		}
 	}()
-}
-
-func getVcidFromServiceName(serviceName string) int64 {
-	tokens := strings.Split(serviceName, "-")
-	result, err := strconv.ParseInt(tokens[len(tokens)-1], 10, 0)
-	if err != nil {
-		return -1
-	}
-
-	return result
-}
-
-func formatAsISO6801(t time.Time) string {
-	return t.Format(time.RFC3339)
 }

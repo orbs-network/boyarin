@@ -164,7 +164,7 @@ func execute(flags *flags, logger log.Logger) error {
 					ctx, cancel := context.WithTimeout(context.Background(), flags.timeout)
 					defer cancel()
 
-					boyar.FullFlow(ctx, cfg, configCache, logger)
+					boyar.Flow(ctx, cfg, configCache, logger)
 				}
 
 				<-time.After(flags.pollingInterval)
@@ -179,7 +179,7 @@ func execute(flags *flags, logger log.Logger) error {
 		ctx, cancel := context.WithTimeout(context.Background(), flags.timeout)
 		defer cancel()
 
-		return boyar.FullFlow(ctx, cfg, configCache, logger)
+		return boyar.Flow(ctx, cfg, configCache, logger)
 	}
 
 	return nil

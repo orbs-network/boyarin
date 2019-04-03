@@ -73,7 +73,7 @@ func Test_BoyarProvisionVirtualChainsWithErrors(t *testing.T) {
 
 	err = b.ProvisionVirtualChains(context.Background())
 
-	require.EqualError(t, err, "failed to provision virtual chain 1991: unbearable catastrophe")
+	require.EqualError(t, err, "failed to provision virtual chain 1991")
 	streletsMock.VerifyMocks(t)
 }
 
@@ -99,7 +99,7 @@ func Test_BoyarProvisionVirtualChainsWithTimeout(t *testing.T) {
 	defer cancel()
 
 	err = b.ProvisionVirtualChains(ctx)
-	require.EqualError(t, err, "failed to provision virtual chain 1991: context deadline exceeded")
+	require.EqualError(t, err, "failed to provision virtual chain context deadline exceeded")
 	streletsMock.VerifyMocks(t)
 }
 

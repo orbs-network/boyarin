@@ -30,6 +30,8 @@ To remove all containers: `docker rm -f $(docker ps -aq)`
 
 `--polling-interval` how often to poll for configuration in daemon mode (in seconds) (default 60)
 
+`--orchestrator-options` allows to override `orchestrator-options` section of boyar JSON config. Takes JSON object as a parameter.
+
 `--show-configuration` Show configuration for evaluation and exit
 
 ### Running as a daemon

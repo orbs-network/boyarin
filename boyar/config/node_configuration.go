@@ -27,6 +27,7 @@ type MutableNodeConfiguration interface {
 	SetFederationNodes(federationNodes []*strelets.FederationNode) MutableNodeConfiguration
 	SetKeyConfigPath(keyConfigPath string) MutableNodeConfiguration
 	SetEthereumEndpoint(ethereumEndpoint string) MutableNodeConfiguration
+	SetOrchestratorOptions(options adapter.OrchestratorOptions) MutableNodeConfiguration
 }
 
 type nodeConfiguration struct {
@@ -97,6 +98,10 @@ func (c *nodeConfigurationContainer) EthereumEndpoint() string {
 func (c *nodeConfigurationContainer) SetEthereumEndpoint(ethereumEndpoint string) MutableNodeConfiguration {
 	c.ethereumEndpoint = ethereumEndpoint
 	c.value.overrideValues(ethereumEndpoint)
+	return c
+}
 
+func (c *nodeConfigurationContainer) SetOrchestratorOptions(options adapter.OrchestratorOptions) MutableNodeConfiguration {
+	c.value.OrchestratorOptions = options
 	return c
 }

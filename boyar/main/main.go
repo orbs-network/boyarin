@@ -25,6 +25,8 @@ type flags struct {
 
 	ethereumEndpoint        string
 	topologyContractAddress string
+
+	loggerHttpEndpoint string
 }
 
 func main() {
@@ -40,6 +42,8 @@ func main() {
 	ethereumEndpointPtr := flag.String("ethereum-endpoint", "", "Ethereum endpoint")
 	topologyContractAddressPtr := flag.String("topology-contract-address", "", "Ethereum address for topology contract")
 
+	loggerHttpEndpointPtr := flag.String("logger-http-endpoint", "", "")
+
 	showConfiguration := flag.Bool("show-configuration", false, "Show configuration and exit")
 	help := flag.Bool("help", false, "Show usage")
 
@@ -54,9 +58,10 @@ func main() {
 		maxReloadTimeDelay:      *maxReloadTimePtr,
 		ethereumEndpoint:        *ethereumEndpointPtr,
 		topologyContractAddress: *topologyContractAddressPtr,
+		loggerHttpEndpoint:      *loggerHttpEndpointPtr,
 	}
 
-	logger, err := getLogger(flags.keyPairConfigPath)
+	logger, err := getLogger(flags)
 	if err != nil {
 		os.Exit(1)
 	}
@@ -77,19 +82,28 @@ func main() {
 	}
 }
 
-func getLogger(keyConfigPath string) (log.Logger, error) {
+func getLogger(flags *flags) (log.Logger, error) {
+	outputs := []log.Output{log.NewFormattingOutput(os.Stdout, log.NewHumanReadableFormatter())}
+
+	if flags.loggerHttpEndpoint != "" {
+		outputs = append(outputs, log.NewBulkOutput(
+			log.NewHttpWriter(flags.loggerHttpEndpoint),
+			log.NewJsonFormatter().WithTimestampColumn("@timestamp"), 1))
+	}
+
 	logger := log.GetLogger().
-		WithOutput(log.NewFormattingOutput(os.Stdout, log.NewHumanReadableFormatter())).
+		WithTags(log.String("app", "boyar")).
+		WithOutput(outputs...).
 		WithSourcePrefix("boyarin/")
 
 	cfg, _ := config.NewStringConfigurationSource("{}", "")
-	cfg.SetKeyConfigPath(keyConfigPath)
+	cfg.SetKeyConfigPath(flags.keyPairConfigPath)
 	if err := cfg.VerifyConfig(); err != nil {
 		logger.Error("Invalid configuration", log.Error(err))
 		return nil, err
 	}
 
-	return logger.WithTags(log.String("node", string(cfg.NodeAddress()))), nil
+	return logger.WithTags(log.Node(string(cfg.NodeAddress()))), nil
 }
 
 func printConfiguration(flags *flags, logger log.Logger) {

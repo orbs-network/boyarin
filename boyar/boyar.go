@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/crypto"
+	"github.com/orbs-network/boyarin/log_types"
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/orbs-network/scribe/log"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -111,13 +113,15 @@ func ReportStatus(ctx context.Context, logger log.Logger) error {
 	for _, s := range status {
 		if s.Error != "" {
 			logger.Error("service failure",
-				log.String("vcid", getVcidFromServiceName(s.Name)),
+				log_types.VirtualChainId(getVcidFromServiceName(s.Name)),
+				log.String("name", s.Name),
 				log.String("state", s.State),
 				log.Error(fmt.Errorf(s.Error)),
 				log.String("logs", s.Logs))
 		} else {
 			logger.Info("service status",
-				log.String("vcid", getVcidFromServiceName(s.Name)),
+				log_types.VirtualChainId(getVcidFromServiceName(s.Name)),
+				log.String("name", s.Name),
 				log.String("state", s.State),
 				log.String("workerId", s.NodeID),
 				log.String("createdAt", formatAsISO6801(s.CreatedAt)))
@@ -197,12 +201,12 @@ func (b *boyar) removeVirtualChain(ctx context.Context, chain *strelets.VirtualC
 
 		if err := b.strelets.RemoveVirtualChain(ctx, input); err != nil {
 			b.logger.Error("failed to remove virtual chain",
-				log.String("vcid", chain.Id.String()),
+				log_types.VirtualChainId(int64(chain.Id)),
 				log.Error(err))
 			errChannel <- err
 		} else {
 			b.configCache[chain.Id.String()] = hash
-			b.logger.Info("removed virtual chain", log.String("vcid", chain.Id.String()))
+			b.logger.Info("removed virtual chain", log_types.VirtualChainId(int64(chain.Id)))
 			errChannel <- nil
 		}
 	}()
@@ -229,22 +233,27 @@ func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.Virtu
 
 		if err := b.strelets.ProvisionVirtualChain(ctx, input); err != nil {
 			b.logger.Error("failed to apply virtual chain configuration",
-				log.String("vcid", chain.Id.String()),
+				log_types.VirtualChainId(int64(chain.Id)),
 				log.Error(err))
 			errChannel <- err
 		} else {
 			b.configCache[chain.Id.String()] = hash
 			b.logger.Info("updated virtual chain configuration",
-				log.String("vcid", chain.Id.String()),
+				log_types.VirtualChainId(int64(chain.Id)),
 				log.String("configuration", string(data)))
 			errChannel <- nil
 		}
 	}()
 }
 
-func getVcidFromServiceName(serviceName string) string {
+func getVcidFromServiceName(serviceName string) int64 {
 	tokens := strings.Split(serviceName, "-")
-	return tokens[len(tokens)-1]
+	result, err := strconv.ParseInt(tokens[len(tokens)-1], 10, 0)
+	if err != nil {
+		return -1
+	}
+
+	return result
 }
 
 func formatAsISO6801(t time.Time) string {

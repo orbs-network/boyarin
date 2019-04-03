@@ -13,7 +13,6 @@ func GetConfiguration(configUrl string, ethereumEndpoint string, topologyContrac
 	}
 
 	endpoint := config.EthereumEndpoint()
-	fmt.Println("INFO: Ethereum endpoint set to", endpoint)
 	if endpoint != "" && topologyContractAddress != "" {
 		federationNodes, err := ethereum.GetEthereumTopology(context.Background(), endpoint, topologyContractAddress)
 		if err != nil {

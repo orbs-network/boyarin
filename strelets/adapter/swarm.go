@@ -52,7 +52,7 @@ func (r *dockerSwarmRunner) Run(ctx context.Context) error {
 
 	var registryAuth string
 	if username, password, err := getAuthForRepository(os.Getenv("HOME"), imageName); err != nil {
-		fmt.Println(err)
+		// Ignore
 	} else {
 		registryAuth = encodeAuthConfig(&types.AuthConfig{
 			Username:      username,
@@ -72,8 +72,6 @@ func (r *dockerSwarmRunner) Run(ctx context.Context) error {
 		for _, service := range services {
 			if err := r.client.ServiceRemove(ctx, service.ID); err != nil {
 				return fmt.Errorf("failed to remove service %s: %s", service.Spec.Name, err)
-			} else {
-				fmt.Println("successfully removed service:", service.Spec.Name)
 			}
 		}
 	}
@@ -83,19 +81,15 @@ func (r *dockerSwarmRunner) Run(ctx context.Context) error {
 		return err
 	}
 
-	if _, err := r.client.ServiceCreate(ctx, spec, types.ServiceCreateOptions{
+	_, err = r.client.ServiceCreate(ctx, spec, types.ServiceCreateOptions{
 		QueryRegistry:       true,
 		EncodedRegistryAuth: registryAuth,
-	}); err != nil {
-		return err
-	} else {
-		fmt.Println("starting Docker Swarm service:", spec.Name)
-		return nil
-	}
+	})
+
+	return err
 }
 
 func (d *dockerSwarm) RemoveContainer(ctx context.Context, containerName string) error {
-	fmt.Println("removing Docker Swarm service:", getServiceId(containerName))
 	return d.client.ServiceRemove(ctx, getServiceId(containerName))
 }
 

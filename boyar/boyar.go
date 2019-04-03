@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/crypto"
+	"github.com/orbs-network/boyarin/log_types"
 	"github.com/orbs-network/boyarin/strelets"
-	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test/helpers"
+	"github.com/orbs-network/scribe/log"
 	"strings"
-	"time"
 )
 
 type Boyar interface {
@@ -22,13 +22,20 @@ type boyar struct {
 	strelets    strelets.Strelets
 	config      config.NodeConfiguration
 	configCache config.BoyarConfigCache
+	logger      log.Logger
 }
 
-func NewBoyar(strelets strelets.Strelets, cfg config.NodeConfiguration, configCache config.BoyarConfigCache) Boyar {
+type errorContainer struct {
+	error error
+	id    strelets.VirtualChainId
+}
+
+func NewBoyar(strelets strelets.Strelets, cfg config.NodeConfiguration, configCache config.BoyarConfigCache, logger log.Logger) Boyar {
 	return &boyar{
 		strelets:    strelets,
 		config:      cfg,
 		configCache: configCache,
+		logger:      logger,
 	}
 }
 
@@ -36,7 +43,7 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 	chains := b.config.Chains()
 
 	var errors []error
-	errorChannel := make(chan error, len(chains))
+	errorChannel := make(chan *errorContainer, len(chains))
 
 	for _, chain := range chains {
 		if chain.Disabled {
@@ -46,67 +53,23 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 		}
 	}
 
+	var messages []string
+
 	for i := 0; i < len(chains); i++ {
 		select {
 		case err := <-errorChannel:
 			if err != nil {
-				errors = append(errors, err)
-
+				errors = append(errors, err.error)
+				messages = append(messages, err.id.String())
 			}
 		case <-ctx.Done():
-			errors = append(errors, fmt.Errorf("failed to provision virtual chain %s: %s", chains[i].Id, ctx.Err()))
+			errors = append(errors, ctx.Err())
+			messages = append(messages, ctx.Err().Error())
 		}
 	}
 
-	return aggregateErrors(errors)
-}
-
-func FullFlow(ctx context.Context, cfg config.NodeConfiguration, configCache config.BoyarConfigCache) error {
-	orchestrator, err := adapter.NewDockerSwarm(cfg.OrchestratorOptions())
-	if err != nil {
-		return err
-	}
-	defer orchestrator.Close()
-
-	s := strelets.NewStrelets(orchestrator)
-	b := NewBoyar(s, cfg, configCache)
-
-	var errors []error
-
-	if err := b.ProvisionVirtualChains(ctx); err != nil {
-		errors = append(errors, err)
-	}
-
-	if err := b.ProvisionHttpAPIEndpoint(ctx); err != nil {
-		errors = append(errors, err)
-	}
-
-	return aggregateErrors(errors)
-}
-
-func ReportStatus(ctx context.Context) error {
-	// We really don't need any options here since we're just observing
-	orchestrator, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
-	if err != nil {
-		return err
-	}
-	defer orchestrator.Close()
-
-	status, err := orchestrator.GetStatus(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to report status: %s", err)
-	}
-
-	for _, s := range status {
-		if s.Error != "" {
-			fmt.Println(time.Now(), fmt.Sprintf("ERROR: service %s failed with error: %s\n%s", s.Name, s.Error, s.Logs))
-		} else {
-			fmt.Println(time.Now(), fmt.Sprintf("INFO: service %s %s on node %s since %s", s.Name, s.State, s.NodeID, s.CreatedAt))
-		}
-	}
-
-	if len(status) == 0 {
-		fmt.Println(time.Now(), "WARN: no services found")
+	if len(errors) > 0 {
+		return fmt.Errorf("failed to provision virtual chain %v", strings.Join(messages, ", "))
 	}
 
 	return nil
@@ -134,46 +97,17 @@ func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
 
 	// TODO is there a better way to get a loopback interface?
 	if err := b.strelets.UpdateReverseProxy(ctx, b.config.Chains(), helpers.LocalIP()); err != nil {
+		b.logger.Error("failed to apply http proxy configuration", log.Error(err))
 		return err
 	}
+
+	b.logger.Info("updated http proxy configuration")
 
 	b.configCache[config.HTTP_REVERSE_PROXY_HASH] = hash
 	return nil
 }
 
-func buildPeersMap(nodes []*strelets.FederationNode, gossipPort int) *strelets.PeersMap {
-	peersMap := make(strelets.PeersMap)
-
-	for _, node := range nodes {
-		// Need this override for more flexibility in network config and also for local testing
-		port := node.Port
-		if port == 0 {
-			port = gossipPort
-		}
-
-		peersMap[strelets.NodeAddress(node.Address)] = &strelets.Peer{
-			node.IP, port,
-		}
-	}
-
-	return &peersMap
-}
-
-func aggregateErrors(errors []error) error {
-	if errors == nil {
-		return nil
-	}
-
-	var lines []string
-
-	for _, err := range errors {
-		lines = append(lines, err.Error())
-	}
-
-	return fmt.Errorf(strings.Join(lines, "\n"))
-}
-
-func (b *boyar) removeVirtualChain(ctx context.Context, chain *strelets.VirtualChain, errChannel chan error) {
+func (b *boyar) removeVirtualChain(ctx context.Context, chain *strelets.VirtualChain, errChannel chan *errorContainer) {
 	go func() {
 		input := &strelets.RemoveVirtualChainInput{
 			VirtualChain: chain,
@@ -188,17 +122,19 @@ func (b *boyar) removeVirtualChain(ctx context.Context, chain *strelets.VirtualC
 		}
 
 		if err := b.strelets.RemoveVirtualChain(ctx, input); err != nil {
-			errChannel <- fmt.Errorf("failed to remove virtual chain %d: %s", chain.Id, err)
+			b.logger.Error("failed to remove virtual chain",
+				log_types.VirtualChainId(int64(chain.Id)),
+				log.Error(err))
+			errChannel <- &errorContainer{err, chain.Id}
 		} else {
 			b.configCache[chain.Id.String()] = hash
-			fmt.Println(time.Now(), fmt.Sprintf("INFO: removed virtual chain %d with configuration %s", chain.Id, hash))
-			fmt.Println(string(data))
+			b.logger.Info("removed virtual chain", log_types.VirtualChainId(int64(chain.Id)))
 			errChannel <- nil
 		}
 	}()
 }
 
-func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.VirtualChain, errChannel chan error) {
+func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.VirtualChain, errChannel chan *errorContainer) {
 	go func() {
 		peers := buildPeersMap(b.config.FederationNodes(), chain.GossipPort)
 
@@ -218,11 +154,15 @@ func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.Virtu
 		}
 
 		if err := b.strelets.ProvisionVirtualChain(ctx, input); err != nil {
-			errChannel <- fmt.Errorf("failed to provision virtual chain %d: %s", chain.Id, err)
+			b.logger.Error("failed to apply virtual chain configuration",
+				log_types.VirtualChainId(int64(chain.Id)),
+				log.Error(err))
+			errChannel <- &errorContainer{err, chain.Id}
 		} else {
 			b.configCache[chain.Id.String()] = hash
-			fmt.Println(time.Now(), fmt.Sprintf("INFO: updated virtual chain %d with configuration %s", chain.Id, hash))
-			fmt.Println(string(data))
+			b.logger.Info("updated virtual chain configuration",
+				log_types.VirtualChainId(int64(chain.Id)),
+				log.String("configuration", string(data)))
 			errChannel <- nil
 		}
 	}()

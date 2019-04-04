@@ -86,7 +86,7 @@ func getVolumeDriverOptions(volumeName string, orchestratorOptions OrchestratorO
 			dir := driverOptions["device"] + "/" + volumeName
 			driverOptions["device"] = dir
 			// Warning: we assume that the volume directory exists on this machine, or its parent is mounted
-			if strings.HasPrefix(dir, "/") {
+			if strings.HasPrefix(dir, ":") {
 				dir = dir[1:]
 			}
 			os.MkdirAll(dir, 0755)

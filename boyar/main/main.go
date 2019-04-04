@@ -32,8 +32,14 @@ func main() {
 
 	showConfiguration := flag.Bool("show-configuration", false, "Show configuration and exit")
 	help := flag.Bool("help", false, "Show usage")
+	showVersion := flag.Bool("version", false, "Show version")
 
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Println(config.GetVersion().String())
+		return
+	}
 
 	flags := &config.Flags{
 		ConfigUrl:               *configUrlPtr,

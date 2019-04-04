@@ -1,6 +1,6 @@
 FROM golang:1.10-alpine
 
-RUN apk add --no-cache gcc linux-headers libc-dev
+RUN apk add --no-cache gcc linux-headers libc-dev git
 
 WORKDIR /go/src/github.com/orbs-network/boyarin/
 

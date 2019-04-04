@@ -13,22 +13,6 @@ import (
 	"time"
 )
 
-type flags struct {
-	configUrl         string
-	keyPairConfigPath string
-
-	daemonize bool
-
-	pollingInterval    time.Duration
-	timeout            time.Duration
-	maxReloadTimeDelay time.Duration
-
-	ethereumEndpoint        string
-	topologyContractAddress string
-
-	loggerHttpEndpoint string
-}
-
 func main() {
 	configUrlPtr := flag.String("config-url", "", "http://my-config/config.json")
 	keyPairConfigPathPtr := flag.String("keys", "", "path to public/private key pair in json format")
@@ -44,21 +28,24 @@ func main() {
 
 	loggerHttpEndpointPtr := flag.String("logger-http-endpoint", "", "")
 
+	orchestratorOptionsPtr := flag.String("orchestrator-options", "{}", "allows to override `orchestrator-options` section of boyar config, takes JSON object as a parameter")
+
 	showConfiguration := flag.Bool("show-configuration", false, "Show configuration and exit")
 	help := flag.Bool("help", false, "Show usage")
 
 	flag.Parse()
 
-	flags := &flags{
-		configUrl:               *configUrlPtr,
-		keyPairConfigPath:       *keyPairConfigPathPtr,
-		daemonize:               *daemonizePtr,
-		pollingInterval:         *pollingIntervalPtr,
-		timeout:                 *timeoutPtr,
-		maxReloadTimeDelay:      *maxReloadTimePtr,
-		ethereumEndpoint:        *ethereumEndpointPtr,
-		topologyContractAddress: *topologyContractAddressPtr,
-		loggerHttpEndpoint:      *loggerHttpEndpointPtr,
+	flags := &config.Flags{
+		ConfigUrl:               *configUrlPtr,
+		KeyPairConfigPath:       *keyPairConfigPathPtr,
+		Daemonize:               *daemonizePtr,
+		PollingInterval:         *pollingIntervalPtr,
+		Timeout:                 *timeoutPtr,
+		MaxReloadTimeDelay:      *maxReloadTimePtr,
+		EthereumEndpoint:        *ethereumEndpointPtr,
+		TopologyContractAddress: *topologyContractAddressPtr,
+		LoggerHttpEndpoint:      *loggerHttpEndpointPtr,
+		OrchestratorOptions:     *orchestratorOptionsPtr,
 	}
 
 	logger, err := getLogger(flags)
@@ -82,12 +69,12 @@ func main() {
 	}
 }
 
-func getLogger(flags *flags) (log.Logger, error) {
+func getLogger(flags *config.Flags) (log.Logger, error) {
 	outputs := []log.Output{log.NewFormattingOutput(os.Stdout, log.NewHumanReadableFormatter())}
 
-	if flags.loggerHttpEndpoint != "" {
+	if flags.LoggerHttpEndpoint != "" {
 		outputs = append(outputs, log.NewBulkOutput(
-			log.NewHttpWriter(flags.loggerHttpEndpoint),
+			log.NewHttpWriter(flags.LoggerHttpEndpoint),
 			log.NewJsonFormatter().WithTimestampColumn("@timestamp"), 1))
 	}
 
@@ -97,7 +84,7 @@ func getLogger(flags *flags) (log.Logger, error) {
 		WithSourcePrefix("boyarin/")
 
 	cfg, _ := config.NewStringConfigurationSource("{}", "")
-	cfg.SetKeyConfigPath(flags.keyPairConfigPath)
+	cfg.SetKeyConfigPath(flags.KeyPairConfigPath)
 	if err := cfg.VerifyConfig(); err != nil {
 		logger.Error("Invalid configuration", log.Error(err))
 		return nil, err
@@ -106,8 +93,8 @@ func getLogger(flags *flags) (log.Logger, error) {
 	return logger.WithTags(log.Node(string(cfg.NodeAddress()))), nil
 }
 
-func printConfiguration(flags *flags, logger log.Logger) {
-	cfg, err := config.GetConfiguration(flags.configUrl, flags.ethereumEndpoint, flags.topologyContractAddress, flags.keyPairConfigPath)
+func printConfiguration(flags *config.Flags, logger log.Logger) {
+	cfg, err := config.GetConfiguration(flags)
 	if err != nil {
 		logger.Error("could not pull valid configuration", log.Error(err))
 		return
@@ -126,19 +113,19 @@ func printConfiguration(flags *flags, logger log.Logger) {
 	fmt.Println(string(chains))
 }
 
-func execute(flags *flags, logger log.Logger) error {
-	if flags.configUrl == "" {
+func execute(flags *config.Flags, logger log.Logger) error {
+	if flags.ConfigUrl == "" {
 		return fmt.Errorf("--config-url is a required parameter for provisioning flow")
 	}
 
-	if flags.keyPairConfigPath == "" {
+	if flags.KeyPairConfigPath == "" {
 		return fmt.Errorf("--keys is a required parameter for provisioning flow")
 	}
 
 	// Even if something crashed, things still were provisioned, meaning the cache should stay
 	configCache := make(config.BoyarConfigCache)
 
-	if flags.daemonize {
+	if flags.Daemonize {
 		supervized.GoForever(func() {
 			for {
 				if err := boyar.ReportStatus(context.Background(), logger); err != nil {
@@ -150,33 +137,33 @@ func execute(flags *flags, logger log.Logger) error {
 
 		<-supervized.GoForever(func() {
 			for first := true; ; first = false {
-				cfg, err := config.GetConfiguration(flags.configUrl, flags.ethereumEndpoint, flags.topologyContractAddress, flags.keyPairConfigPath)
+				cfg, err := config.GetConfiguration(flags)
 				if err != nil {
 					logger.Error("invalid configuration", log.Error(err))
 				} else {
 					// skip delay when provisioning for the first time when the node goes up
 					if !first {
-						reloadTimeDelay := cfg.ReloadTimeDelay(flags.maxReloadTimeDelay)
-						logger.Info("waiting to apply new configuration", log.String("delay", flags.maxReloadTimeDelay.String()))
+						reloadTimeDelay := cfg.ReloadTimeDelay(flags.MaxReloadTimeDelay)
+						logger.Info("waiting to apply new configuration", log.String("delay", flags.MaxReloadTimeDelay.String()))
 						<-time.After(reloadTimeDelay)
 					}
 
-					ctx, cancel := context.WithTimeout(context.Background(), flags.timeout)
+					ctx, cancel := context.WithTimeout(context.Background(), flags.Timeout)
 					defer cancel()
 
 					boyar.Flow(ctx, cfg, configCache, logger)
 				}
 
-				<-time.After(flags.pollingInterval)
+				<-time.After(flags.PollingInterval)
 			}
 		})
 	} else {
-		cfg, err := config.GetConfiguration(flags.configUrl, flags.ethereumEndpoint, flags.topologyContractAddress, flags.keyPairConfigPath)
+		cfg, err := config.GetConfiguration(flags)
 		if err != nil {
 			return fmt.Errorf("invalid configuration: %s", err)
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), flags.timeout)
+		ctx, cancel := context.WithTimeout(context.Background(), flags.Timeout)
 		defer cancel()
 
 		return boyar.Flow(ctx, cfg, configCache, logger)

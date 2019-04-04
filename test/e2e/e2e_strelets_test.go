@@ -8,6 +8,7 @@ import (
 	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/stretchr/testify/require"
 	"testing"
+	"time"
 )
 
 func chain(i int) *strelets.VirtualChain {
@@ -26,6 +27,7 @@ func stopChainWithStrelets(t *testing.T, s strelets.Strelets, i int) {
 	})
 
 	require.NoError(t, err)
+	fmt.Println(fmt.Sprintf("stopped node%d", i))
 }
 
 func startChainWithStrelets(t *testing.T, s strelets.Strelets, i int) {
@@ -40,6 +42,7 @@ func startChainWithStrelets(t *testing.T, s strelets.Strelets, i int) {
 	})
 
 	require.NoError(t, err)
+	fmt.Println(fmt.Sprintf("started node%d", i))
 }
 
 func dockerConfig(node string) strelets.DockerConfig {
@@ -108,6 +111,8 @@ func TestE2EKeepVolumesBetweenReloadsWithSwarm(t *testing.T) {
 	expectedBlockHeight, err := helpers.GetBlockHeight(helpers.GetMetricsForPort(8081))
 	require.NoError(t, err)
 
+	stopChainWithStrelets(t, s, 1)
+	time.Sleep(3 * time.Second)
 	startChainWithStrelets(t, s, 1)
 
 	helpers.WaitForBlock(t, helpers.GetMetricsForPort(8081), expectedBlockHeight, WAIT_FOR_BLOCK_TIMEOUT)

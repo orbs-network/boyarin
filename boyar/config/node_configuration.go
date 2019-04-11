@@ -16,6 +16,7 @@ type NodeConfiguration interface {
 	ReloadTimeDelay(maxDelay time.Duration) time.Duration
 	EthereumEndpoint() string
 	NodeAddress() strelets.NodeAddress
+	SSLOptions() adapter.SSLOptions
 
 	VerifyConfig() error
 	Hash() string
@@ -28,6 +29,7 @@ type MutableNodeConfiguration interface {
 	SetKeyConfigPath(keyConfigPath string) MutableNodeConfiguration
 	SetEthereumEndpoint(ethereumEndpoint string) MutableNodeConfiguration
 	SetOrchestratorOptions(options adapter.OrchestratorOptions) MutableNodeConfiguration
+	SetSSLOptions(options adapter.SSLOptions) MutableNodeConfiguration
 }
 
 type nodeConfiguration struct {
@@ -40,6 +42,7 @@ type nodeConfigurationContainer struct {
 	value            nodeConfiguration
 	keyConfigPath    string
 	ethereumEndpoint string
+	sslOptions       adapter.SSLOptions
 }
 
 func (c *nodeConfigurationContainer) Chains() []*strelets.VirtualChain {
@@ -61,6 +64,10 @@ func (c *nodeConfigurationContainer) KeyConfigPath() string {
 
 func (c *nodeConfigurationContainer) OrchestratorOptions() adapter.OrchestratorOptions {
 	return c.value.OrchestratorOptions
+}
+
+func (c *nodeConfigurationContainer) SSLOptions() adapter.SSLOptions {
+	return c.sslOptions
 }
 
 func (c *nodeConfigurationContainer) SetFederationNodes(federationNodes []*strelets.FederationNode) MutableNodeConfiguration {
@@ -103,5 +110,10 @@ func (c *nodeConfigurationContainer) SetEthereumEndpoint(ethereumEndpoint string
 
 func (c *nodeConfigurationContainer) SetOrchestratorOptions(options adapter.OrchestratorOptions) MutableNodeConfiguration {
 	c.value.OrchestratorOptions = options
+	return c
+}
+
+func (c *nodeConfigurationContainer) SetSSLOptions(options adapter.SSLOptions) MutableNodeConfiguration {
+	c.sslOptions = options
 	return c
 }

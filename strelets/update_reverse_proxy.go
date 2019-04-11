@@ -8,8 +8,10 @@ import (
 )
 
 type UpdateReverseProxyInput struct {
-	Chains             []*VirtualChain
-	IP                 string
+	Chains []*VirtualChain
+	IP     string
+
+	// FIXME replace with adapter.SSLOptions
 	SSLCertificatePath string
 	SSLPrivateKeyPath  string
 }

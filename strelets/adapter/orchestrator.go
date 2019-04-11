@@ -67,3 +67,8 @@ func (s OrchestratorOptions) MaxReloadTimedDelay() time.Duration {
 	d, _ := time.ParseDuration(s.MaxReloadTimedDelayStr)
 	return d
 }
+
+type SSLOptions struct {
+	SSLCertificatePath string
+	SSLPrivateKeyPath  string
+}

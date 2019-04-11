@@ -50,7 +50,7 @@ type Orchestrator interface {
 	Prepare(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) (Runner, error)
 	RemoveContainer(ctx context.Context, containerName string) error
 
-	PrepareReverseProxy(ctx context.Context, config string) (Runner, error)
+	PrepareReverseProxy(ctx context.Context, config *ReverseProxyConfig) (Runner, error)
 
 	GetStatus(ctx context.Context) ([]*ContainerStatus, error)
 

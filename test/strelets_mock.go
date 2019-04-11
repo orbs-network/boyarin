@@ -25,7 +25,7 @@ func (s *StreletsMock) VerifyMocks(t *testing.T) {
 	s.AssertExpectations(t)
 }
 
-func (s *StreletsMock) UpdateReverseProxy(ctx context.Context, chains []*strelets.VirtualChain, ip string) error {
-	result := s.MethodCalled("UpdateReverseProxy", chains, ip)
+func (s *StreletsMock) UpdateReverseProxy(ctx context.Context, input *strelets.UpdateReverseProxyInput) error {
+	result := s.MethodCalled("UpdateReverseProxy", input)
 	return result.Error(0)
 }

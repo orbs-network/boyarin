@@ -9,6 +9,11 @@ import (
 	"strings"
 )
 
+const NGINX_CONF = "nginx.conf"
+const VCHAINS_CONF = "vchains.conf"
+const SSL_CERT = "ssl-cert"
+const SSL_KEY = "ssl-key"
+
 func (d *dockerSwarm) storeVirtualChainConfiguration(ctx context.Context, containerName string, config *AppConfig) (*dockerSwarmSecretsConfig, error) {
 	secrets := &dockerSwarmSecretsConfig{}
 
@@ -64,19 +69,36 @@ func getSwarmSecretName(containerName string, secretName string) string {
 	return strings.Join([]string{containerName, secretName}, "-")
 }
 
-func (d *dockerSwarm) storeNginxConfiguration(ctx context.Context, config string) (*dockerSwarmNginxSecretsConfig, error) {
+func (d *dockerSwarm) storeNginxConfiguration(ctx context.Context, config *ReverseProxyConfig) (*dockerSwarmNginxSecretsConfig, error) {
 	secrets := &dockerSwarmNginxSecretsConfig{}
 
-	if nginxConfId, err := d.saveSwarmSecret(ctx, PROXY_CONTAINER_NAME, "nginx.conf", []byte(DEFAULT_NGINX_CONFIG)); err != nil {
+	if nginxConfId, err := d.saveSwarmSecret(ctx, PROXY_CONTAINER_NAME, NGINX_CONF, []byte(DEFAULT_NGINX_CONFIG)); err != nil {
 		return nil, fmt.Errorf("could not store nginx default config secret: %s", err)
 	} else {
 		secrets.nginxConfId = nginxConfId
 	}
 
-	if vchainConfId, err := d.saveSwarmSecret(ctx, PROXY_CONTAINER_NAME, "vchains.conf", []byte(config)); err != nil {
+	if vchainConfId, err := d.saveSwarmSecret(ctx, PROXY_CONTAINER_NAME, VCHAINS_CONF, []byte(config.NginxConfig)); err != nil {
 		return nil, fmt.Errorf("could not store nginx vchains config secret: %s", err)
 	} else {
 		secrets.vchainConfId = vchainConfId
+	}
+
+	if config.SSLCertificate != nil {
+		if sslCertificateId, err := d.saveSwarmSecret(ctx, PROXY_CONTAINER_NAME, SSL_CERT, config.SSLCertificate); err != nil {
+			return nil, fmt.Errorf("could not store nginx ssl certificate secret: %s", err)
+		} else {
+			secrets.sslCertificateId = sslCertificateId
+		}
+
+	}
+
+	if config.SSLPrivateKey != nil {
+		if sslPrivateKeyId, err := d.saveSwarmSecret(ctx, PROXY_CONTAINER_NAME, SSL_KEY, config.SSLPrivateKey); err != nil {
+			return nil, fmt.Errorf("could not store nginx ssl private key secret: %s", err)
+		} else {
+			secrets.sslPrivateKeyId = sslPrivateKeyId
+		}
 	}
 
 	return secrets, nil

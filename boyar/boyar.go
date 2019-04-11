@@ -97,10 +97,9 @@ func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
 
 	// TODO is there a better way to get a loopback interface?
 	if err := b.strelets.UpdateReverseProxy(ctx, &strelets.UpdateReverseProxyInput{
-		Chains:             b.config.Chains(),
-		IP:                 helpers.LocalIP(),
-		SSLCertificatePath: b.config.SSLOptions().SSLCertificatePath,
-		SSLPrivateKeyPath:  b.config.SSLOptions().SSLPrivateKeyPath,
+		Chains:     b.config.Chains(),
+		IP:         helpers.LocalIP(),
+		SSLOptions: b.config.SSLOptions(),
 	}); err != nil {
 		b.logger.Error("failed to apply http proxy configuration", log.Error(err))
 		return err

@@ -30,8 +30,8 @@ func main() {
 
 	orchestratorOptionsPtr := flag.String("orchestrator-options", "{}", "allows to override `orchestrator-options` section of boyar config, takes JSON object as a parameter")
 
-	sslCertificatePathPtr := flag.String("--ssl-certificate", "", "SSL certificate")
-	sslPrivateKeyPtr := flag.String("--ssl-private-key", "", "SSL private key")
+	sslCertificatePathPtr := flag.String("ssl-certificate", "", "SSL certificate")
+	sslPrivateKeyPtr := flag.String("ssl-private-key", "", "SSL private key")
 
 	showConfiguration := flag.Bool("show-configuration", false, "Show configuration and exit")
 	help := flag.Bool("help", false, "Show usage")

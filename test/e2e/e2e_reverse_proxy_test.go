@@ -39,7 +39,7 @@ func Test_UpdateReverseProxyWithSwarm(t *testing.T) {
 	ip := helpers.LocalIP()
 
 	err = s.UpdateReverseProxy(context.Background(), &strelets.UpdateReverseProxyInput{
-		chains, ip, "", "",
+		chains, ip, adapter.SSLOptions{},
 	})
 	require.NoError(t, err)
 	defer api.RemoveContainer(context.Background(), "http-api-reverse-proxy")
@@ -93,7 +93,7 @@ func Test_CreateReverseProxyWithSSL(t *testing.T) {
 	ip := helpers.LocalIP()
 
 	err = s.UpdateReverseProxy(context.Background(), &strelets.UpdateReverseProxyInput{
-		chains, ip, "./fixtures/cert.pem", "./fixtures/key.pem",
+		chains, ip, adapter.SSLOptions{"./fixtures/cert.pem", "./fixtures/key.pem"},
 	})
 	require.NoError(t, err)
 	defer api.RemoveContainer(context.Background(), "http-api-reverse-proxy")

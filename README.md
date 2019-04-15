@@ -34,6 +34,14 @@ To remove all containers: `docker rm -f $(docker ps -aq)`
 
 `--show-configuration` Show configuration for evaluation and exit
 
+### SSL options
+
+`--ssl-certificate` path to SSL certificate
+
+`--ssl-private-key` path to SSL private key
+
+If both these parameters are present, the node will also start service SSL traffic.
+
 ### Running as a daemon
 
     boyar --config-url https://s3.amazonaws.com/boyar-bootstrap-test/boyar/config.json \

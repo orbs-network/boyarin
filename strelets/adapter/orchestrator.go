@@ -50,7 +50,7 @@ type Orchestrator interface {
 	Prepare(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) (Runner, error)
 	RemoveContainer(ctx context.Context, containerName string) error
 
-	PrepareReverseProxy(ctx context.Context, config string) (Runner, error)
+	PrepareReverseProxy(ctx context.Context, config *ReverseProxyConfig) (Runner, error)
 
 	GetStatus(ctx context.Context) ([]*ContainerStatus, error)
 
@@ -66,4 +66,9 @@ type OrchestratorOptions struct {
 func (s OrchestratorOptions) MaxReloadTimedDelay() time.Duration {
 	d, _ := time.ParseDuration(s.MaxReloadTimedDelayStr)
 	return d
+}
+
+type SSLOptions struct {
+	SSLCertificatePath string
+	SSLPrivateKeyPath  string
 }

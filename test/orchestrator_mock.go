@@ -25,7 +25,7 @@ func (a *OrchestratorMock) RemoveContainer(ctx context.Context, containerName st
 	return res.Error(1)
 }
 
-func (a *OrchestratorMock) PrepareReverseProxy(ctx context.Context, config string) (adapter.Runner, error) {
+func (a *OrchestratorMock) PrepareReverseProxy(ctx context.Context, config *adapter.ReverseProxyConfig) (adapter.Runner, error) {
 	res := a.MethodCalled("PrepareReverseProxy", ctx, config)
 	return res.Get(0).(adapter.Runner), res.Error(1)
 }

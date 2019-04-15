@@ -14,6 +14,8 @@ func GetConfiguration(flags *Flags) (NodeConfiguration, error) {
 		return nil, err
 	}
 
+	config.SetSSLOptions(getSSLOptions(flags))
+
 	orchestratorOptions, err := getOrchestratorOptions(flags.OrchestratorOptions)
 	if err != nil {
 		return nil, err
@@ -47,4 +49,11 @@ func getOrchestratorOptions(options string) (adapter.OrchestratorOptions, error)
 	}
 
 	return orchestratorOptions, err
+}
+
+func getSSLOptions(flags *Flags) adapter.SSLOptions {
+	return adapter.SSLOptions{
+		SSLCertificatePath: flags.SSLCertificatePath,
+		SSLPrivateKeyPath:  flags.SSLPrivateKeyPath,
+	}
 }

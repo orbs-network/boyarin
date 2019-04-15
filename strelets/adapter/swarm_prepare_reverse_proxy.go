@@ -6,7 +6,13 @@ import (
 	"time"
 )
 
-func (d *dockerSwarm) PrepareReverseProxy(ctx context.Context, config string) (Runner, error) {
+type ReverseProxyConfig struct {
+	NginxConfig    string
+	SSLCertificate []byte
+	SSLPrivateKey  []byte
+}
+
+func (d *dockerSwarm) PrepareReverseProxy(ctx context.Context, config *ReverseProxyConfig) (Runner, error) {
 	return &dockerSwarmRunner{
 		client: d.client,
 		spec: func() (swarm.ServiceSpec, error) {
@@ -25,8 +31,34 @@ func getNginxServiceSpec(storedSecrets *dockerSwarmNginxSecretsConfig) swarm.Ser
 	replicas := uint64(1)
 
 	secrets := []*swarm.SecretReference{
-		getSecretReference(PROXY_CONTAINER_NAME, storedSecrets.nginxConfId, "nginx.conf", "nginx.conf"),
-		getSecretReference(PROXY_CONTAINER_NAME, storedSecrets.vchainConfId, "vchains.conf", "vchains.conf"),
+		getSecretReference(PROXY_CONTAINER_NAME, storedSecrets.nginxConfId, NGINX_CONF, "nginx.conf"),
+		getSecretReference(PROXY_CONTAINER_NAME, storedSecrets.vchainConfId, VCHAINS_CONF, "vchains.conf"),
+	}
+
+	if storedSecrets.sslCertificateId != "" {
+		secrets = append(secrets, getSecretReference(PROXY_CONTAINER_NAME, storedSecrets.sslCertificateId, SSL_CERT, "ssl-cert"))
+	}
+
+	if storedSecrets.sslPrivateKeyId != "" {
+		secrets = append(secrets, getSecretReference(PROXY_CONTAINER_NAME, storedSecrets.sslPrivateKeyId, SSL_KEY, "ssl-key"))
+	}
+
+	ports := []swarm.PortConfig{
+		{
+			Protocol:      "tcp",
+			PublishMode:   swarm.PortConfigPublishModeIngress,
+			PublishedPort: uint32(80),
+			TargetPort:    80,
+		},
+	}
+
+	if storedSecrets.sslCertificateId != "" && storedSecrets.sslPrivateKeyId != "" {
+		ports = append(ports, swarm.PortConfig{
+			Protocol:      "tcp",
+			PublishMode:   swarm.PortConfigPublishModeIngress,
+			PublishedPort: uint32(443),
+			TargetPort:    443,
+		})
 	}
 
 	spec := swarm.ServiceSpec{
@@ -45,14 +77,7 @@ func getNginxServiceSpec(storedSecrets *dockerSwarmNginxSecretsConfig) swarm.Ser
 		},
 		Mode: getServiceMode(replicas),
 		EndpointSpec: &swarm.EndpointSpec{
-			Ports: []swarm.PortConfig{
-				{
-					Protocol:      "tcp",
-					PublishMode:   swarm.PortConfigPublishModeIngress,
-					PublishedPort: uint32(80),
-					TargetPort:    80,
-				},
-			},
+			Ports: ports,
 		},
 	}
 	spec.Name = getServiceId(PROXY_CONTAINER_NAME)

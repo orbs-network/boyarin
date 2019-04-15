@@ -29,8 +29,10 @@ type dockerSwarmRunner struct {
 }
 
 type dockerSwarmNginxSecretsConfig struct {
-	nginxConfId  string
-	vchainConfId string
+	nginxConfId      string
+	vchainConfId     string
+	sslCertificateId string
+	sslPrivateKeyId  string
 }
 
 func NewDockerSwarm(options OrchestratorOptions) (Orchestrator, error) {

@@ -6,6 +6,9 @@ type Flags struct {
 	ConfigUrl         string
 	KeyPairConfigPath string
 
+	SSLCertificatePath string
+	SSLPrivateKeyPath  string
+
 	Daemonize bool
 
 	PollingInterval    time.Duration

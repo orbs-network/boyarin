@@ -134,7 +134,7 @@ func execute(flags *config.Flags, logger log.Logger) error {
 	}
 
 	// Even if something crashed, things still were provisioned, meaning the cache should stay
-	configCache := make(config.BoyarConfigCache)
+	configCache := config.NewCache()
 
 	if flags.Daemonize {
 		supervized.GoForever(func() {

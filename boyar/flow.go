@@ -8,7 +8,7 @@ import (
 	"github.com/orbs-network/scribe/log"
 )
 
-func Flow(ctx context.Context, cfg config.NodeConfiguration, configCache config.BoyarConfigCache, logger log.Logger) error {
+func Flow(ctx context.Context, cfg config.NodeConfiguration, configCache config.Cache, logger log.Logger) error {
 	orchestrator, err := adapter.NewDockerSwarm(cfg.OrchestratorOptions())
 	if err != nil {
 		return err

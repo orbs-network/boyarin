@@ -63,7 +63,7 @@ func provisionVchains(t *testing.T, s strelets.Strelets, i int, vchainIds ...int
 	cfg.SetKeyConfigPath(fmt.Sprintf("%s/node%d/keys.json", getConfigPath(), i))
 	require.NoError(t, err)
 
-	cache := make(config.BoyarConfigCache)
+	cache := config.NewCache()
 	b := boyar.NewBoyar(s, cfg, cache, helpers.DefaultTestLogger())
 	err = b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)

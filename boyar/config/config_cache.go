@@ -17,6 +17,7 @@ const HTTP_REVERSE_PROXY_HASH = "proxy"
 type Cache interface {
 	Get(key string) string
 	Put(key string, value string)
+	Remove(key string)
 }
 
 func NewCache() Cache {
@@ -37,4 +38,8 @@ func (c *cache) Get(key string) string {
 
 func (c *cache) Put(key string, value string) {
 	c.Store(key, value)
+}
+
+func (c *cache) Remove(key string) {
+	c.Delete(key)
 }

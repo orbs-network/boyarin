@@ -280,3 +280,30 @@ func Test_BoyarProvisionVirtualChainsClearsCacheAfterFailedAttempts(t *testing.T
 	streletsWithError.VerifyMocks(t)
 	require.Empty(t, cache.Get("42"), "should clear cache after failed attempt")
 }
+
+func Test_BoyarProvisionVirtualChainsClearsCacheAfterRemovingChain(t *testing.T) {
+	streletsMock := &StreletsMock{}
+
+	source, err := config.NewStringConfigurationSource(getJSONConfigWithSingleChain(), "")
+	source.SetKeyConfigPath("/tmp/fake-key-pair.json")
+	require.NoError(t, err)
+
+	cache := config.NewCache()
+	b := NewBoyar(streletsMock, source, cache, helpers.DefaultTestLogger())
+
+	streletsMock.On("ProvisionVirtualChain", mock.Anything, mock.Anything).Return(nil)
+
+	err = b.ProvisionVirtualChains(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, "9f1ec56888af85f24bb844d75d99e1771a1dfd0103b11eb120f0c8bd6ced2a88", cache.Get("42"))
+	streletsMock.VerifyMocks(t)
+
+	streletsMock.On("RemoveVirtualChain", mock.Anything, mock.Anything).Return(nil)
+
+	source.Chains()[0].Disabled = true
+	err = b.ProvisionVirtualChains(context.Background())
+	require.NoError(t, err)
+	require.Empty(t, cache.Get("42"), "should clear cache")
+
+	streletsMock.VerifyMocks(t)
+}

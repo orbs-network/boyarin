@@ -63,21 +63,6 @@ func (r *dockerSwarmRunner) Run(ctx context.Context) error {
 		})
 	}
 
-	if services, err := r.client.ServiceList(ctx, types.ServiceListOptions{
-		Filters: filters.NewArgs(filters.KeyValuePair{
-			"name",
-			r.serviceName,
-		}),
-	}); err != nil {
-		return fmt.Errorf("could not list swarm services: %s", err)
-	} else {
-		for _, service := range services {
-			if err := r.client.ServiceRemove(ctx, service.ID); err != nil {
-				return fmt.Errorf("failed to remove service %s: %s", service.Spec.Name, err)
-			}
-		}
-	}
-
 	spec, err := r.spec()
 	if err != nil {
 		return err
@@ -92,11 +77,23 @@ func (r *dockerSwarmRunner) Run(ctx context.Context) error {
 }
 
 func (d *dockerSwarm) RemoveContainer(ctx context.Context, containerName string) error {
-	return d.client.ServiceRemove(ctx, getServiceId(containerName))
+	if services, err := d.client.ServiceList(ctx, types.ServiceListOptions{
+		Filters: filters.NewArgs(filters.KeyValuePair{"name", containerName}),
+	}); err != nil {
+		return fmt.Errorf("could not list swarm services: %s", err)
+	} else {
+		for _, service := range services {
+			if err := d.client.ServiceRemove(ctx, service.ID); err != nil {
+				return fmt.Errorf("failed to remove service %s with id %s", containerName, service.ID)
+			}
+		}
+	}
+
+	return nil
 }
 
 func getServiceId(input string) string {
-	return "stack-" + input
+	return input + "-stack"
 }
 
 func (d *dockerSwarm) Close() error {

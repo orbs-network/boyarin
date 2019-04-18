@@ -21,7 +21,7 @@ type Boyar interface {
 type boyar struct {
 	strelets    strelets.Strelets
 	config      config.NodeConfiguration
-	configCache config.BoyarConfigCache
+	configCache config.Cache
 	logger      log.Logger
 }
 
@@ -30,7 +30,7 @@ type errorContainer struct {
 	id    strelets.VirtualChainId
 }
 
-func NewBoyar(strelets strelets.Strelets, cfg config.NodeConfiguration, configCache config.BoyarConfigCache, logger log.Logger) Boyar {
+func NewBoyar(strelets strelets.Strelets, cfg config.NodeConfiguration, configCache config.Cache, logger log.Logger) Boyar {
 	return &boyar{
 		strelets:    strelets,
 		config:      cfg,
@@ -91,7 +91,7 @@ func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
 	data, _ := json.Marshal(keys)
 	hash := crypto.CalculateHash(data)
 
-	if hash == b.configCache[config.HTTP_REVERSE_PROXY_HASH] {
+	if hash == b.configCache.Get(config.HTTP_REVERSE_PROXY_HASH) {
 		return nil
 	}
 
@@ -107,7 +107,7 @@ func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
 
 	b.logger.Info("updated http proxy configuration")
 
-	b.configCache[config.HTTP_REVERSE_PROXY_HASH] = hash
+	b.configCache.Put(config.HTTP_REVERSE_PROXY_HASH, hash)
 	return nil
 }
 
@@ -120,7 +120,7 @@ func (b *boyar) removeVirtualChain(ctx context.Context, chain *strelets.VirtualC
 		data, _ := json.Marshal(input)
 		hash := crypto.CalculateHash(data)
 
-		if hash == b.configCache[chain.Id.String()] {
+		if hash == b.configCache.Get(chain.Id.String()) {
 			errChannel <- nil
 			return
 		}
@@ -131,7 +131,7 @@ func (b *boyar) removeVirtualChain(ctx context.Context, chain *strelets.VirtualC
 				log.Error(err))
 			errChannel <- &errorContainer{err, chain.Id}
 		} else {
-			b.configCache[chain.Id.String()] = hash
+			b.configCache.Put(chain.Id.String(), hash)
 			b.logger.Info("removed virtual chain", log_types.VirtualChainId(int64(chain.Id)))
 			errChannel <- nil
 		}
@@ -152,7 +152,7 @@ func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.Virtu
 		data, _ := json.Marshal(input)
 		hash := crypto.CalculateHash(data)
 
-		if hash == b.configCache[chain.Id.String()] {
+		if hash == b.configCache.Get(chain.Id.String()) {
 			errChannel <- nil
 			return
 		}
@@ -163,7 +163,7 @@ func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.Virtu
 				log.Error(err))
 			errChannel <- &errorContainer{err, chain.Id}
 		} else {
-			b.configCache[chain.Id.String()] = hash
+			b.configCache.Put(chain.Id.String(), hash)
 			b.logger.Info("updated virtual chain configuration",
 				log_types.VirtualChainId(int64(chain.Id)),
 				log.String("configuration", string(data)))

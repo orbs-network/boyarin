@@ -23,6 +23,15 @@ func getJSONConfig() string {
 	return string(contents)
 }
 
+func getJSONConfigWithSingleChain() string {
+	contents, err := ioutil.ReadFile("./config/test/configWithSingleChain.json")
+	if err != nil {
+		panic(err)
+	}
+
+	return string(contents)
+}
+
 func getJSONConfigWithActiveVchains() string {
 	contents, err := ioutil.ReadFile("./config/test/configWithActiveVchains.json")
 	if err != nil {
@@ -216,4 +225,85 @@ func TestBoyar_ProvisionHttpAPIEndpointReprovisionsIfConfigChanges(t *testing.T)
 	require.NoError(t, err)
 	orchestrator.AssertNumberOfCalls(t, "PrepareReverseProxy", 2)
 	httpProxyRunner.AssertNumberOfCalls(t, "Run", 2)
+}
+
+func Test_BoyarProvisionVirtualChainsReprovisionsWithErrors(t *testing.T) {
+	streletsMock := &StreletsMock{}
+
+	source, err := config.NewStringConfigurationSource(getJSONConfigWithSingleChain(), "")
+	source.SetKeyConfigPath("/tmp/fake-key-pair.json")
+	require.NoError(t, err)
+
+	cache := config.NewCache()
+	b := NewBoyar(streletsMock, source, cache, helpers.DefaultTestLogger())
+
+	streletsMock.On("ProvisionVirtualChain", mock.Anything, mock.Anything).Return(fmt.Errorf("unbearable catastrophe"))
+	err = b.ProvisionVirtualChains(context.Background())
+	require.EqualError(t, err, "failed to provision virtual chain 42")
+	require.Empty(t, cache.Get("1991"), "cache should be empty")
+	streletsMock.VerifyMocks(t)
+
+	streletsMockWithNoErrors := &StreletsMock{}
+	streletsMockWithNoErrors.On("ProvisionVirtualChain", mock.Anything, mock.Anything).Return(nil)
+
+	bWithNoErrors := NewBoyar(streletsMockWithNoErrors, source, cache, helpers.DefaultTestLogger())
+	err = bWithNoErrors.ProvisionVirtualChains(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, "9f1ec56888af85f24bb844d75d99e1771a1dfd0103b11eb120f0c8bd6ced2a88", cache.Get("42"))
+	streletsMockWithNoErrors.VerifyMocks(t)
+}
+
+func Test_BoyarProvisionVirtualChainsClearsCacheAfterFailedAttempts(t *testing.T) {
+	streletsMock := &StreletsMock{}
+
+	source, err := config.NewStringConfigurationSource(getJSONConfigWithSingleChain(), "")
+	source.SetKeyConfigPath("/tmp/fake-key-pair.json")
+	require.NoError(t, err)
+
+	cache := config.NewCache()
+	b := NewBoyar(streletsMock, source, cache, helpers.DefaultTestLogger())
+
+	streletsMock.On("ProvisionVirtualChain", mock.Anything, mock.Anything).Return(nil)
+
+	err = b.ProvisionVirtualChains(context.Background())
+	require.NoError(t, err)
+	streletsMock.VerifyMocks(t)
+	require.Equal(t, "9f1ec56888af85f24bb844d75d99e1771a1dfd0103b11eb120f0c8bd6ced2a88", cache.Get("42"))
+
+	streletsWithError := &StreletsMock{}
+	streletsWithError.On("ProvisionVirtualChain", mock.Anything, mock.Anything).Return(fmt.Errorf("unbearable catastrophe"))
+	source.Chains()[0].DockerConfig.Tag = "new-tag"
+
+	bWithError := NewBoyar(streletsWithError, source, cache, helpers.DefaultTestLogger())
+	err = bWithError.ProvisionVirtualChains(context.Background())
+	require.EqualError(t, err, "failed to provision virtual chain 42")
+	streletsWithError.VerifyMocks(t)
+	require.Empty(t, cache.Get("42"), "should clear cache after failed attempt")
+}
+
+func Test_BoyarProvisionVirtualChainsClearsCacheAfterRemovingChain(t *testing.T) {
+	streletsMock := &StreletsMock{}
+
+	source, err := config.NewStringConfigurationSource(getJSONConfigWithSingleChain(), "")
+	source.SetKeyConfigPath("/tmp/fake-key-pair.json")
+	require.NoError(t, err)
+
+	cache := config.NewCache()
+	b := NewBoyar(streletsMock, source, cache, helpers.DefaultTestLogger())
+
+	streletsMock.On("ProvisionVirtualChain", mock.Anything, mock.Anything).Return(nil)
+
+	err = b.ProvisionVirtualChains(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, "9f1ec56888af85f24bb844d75d99e1771a1dfd0103b11eb120f0c8bd6ced2a88", cache.Get("42"))
+	streletsMock.VerifyMocks(t)
+
+	streletsMock.On("RemoveVirtualChain", mock.Anything, mock.Anything).Return(nil)
+
+	source.Chains()[0].Disabled = true
+	err = b.ProvisionVirtualChains(context.Background())
+	require.NoError(t, err)
+	require.Empty(t, cache.Get("42"), "should clear cache")
+
+	streletsMock.VerifyMocks(t)
 }

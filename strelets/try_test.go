@@ -49,3 +49,16 @@ func TestTryWithError(t *testing.T) {
 	require.EqualError(t, err, "no!")
 	require.EqualValues(t, 7, *iPtr, "should attempt to execute 3 times")
 }
+
+func TestTryAllAttemptsFailed(t *testing.T) {
+	var iPtr *int32
+	iPtr = new(int32)
+
+	err := Try(context.Background(), 4, 10*time.Millisecond, 1*time.Millisecond, func(ctxWithTimeout context.Context) error {
+		atomic.AddInt32(iPtr, 1)
+		return fmt.Errorf("no!")
+	})
+
+	require.EqualError(t, err, "no!")
+	require.EqualValues(t, 4, *iPtr, "should attempt to execute 4 times")
+}

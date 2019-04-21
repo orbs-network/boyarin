@@ -17,7 +17,7 @@ func Test_getNginxServiceSpec(t *testing.T) {
 	}
 	spec := getNginxServiceSpec(secrets)
 
-	require.EqualValues(t, spec.Name, "stack-"+PROXY_CONTAINER_NAME)
+	require.EqualValues(t, spec.Name, PROXY_CONTAINER_NAME+"-stack")
 
 	require.EqualValues(t, spec.TaskTemplate, swarm.TaskSpec{
 		ContainerSpec: &swarm.ContainerSpec{

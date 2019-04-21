@@ -9,6 +9,12 @@ import (
 )
 
 func (d *dockerSwarm) Prepare(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) (Runner, error) {
+	serviceName := getServiceId(serviceConfig.ContainerName)
+
+	if err := d.RemoveContainer(ctx, serviceName); err != nil {
+		return nil, err
+	}
+
 	return &dockerSwarmRunner{
 		client: d.client,
 		spec: func() (swarm.ServiceSpec, error) {

@@ -102,6 +102,7 @@ func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
 		SSLOptions: b.config.SSLOptions(),
 	}); err != nil {
 		b.logger.Error("failed to apply http proxy configuration", log.Error(err))
+		b.configCache.Remove(config.HTTP_REVERSE_PROXY_HASH)
 		return err
 	}
 
@@ -131,10 +132,11 @@ func (b *boyar) removeVirtualChain(ctx context.Context, chain *strelets.VirtualC
 				log.Error(err))
 			errChannel <- &errorContainer{err, chain.Id}
 		} else {
-			b.configCache.Put(chain.Id.String(), hash)
 			b.logger.Info("removed virtual chain", log_types.VirtualChainId(int64(chain.Id)))
 			errChannel <- nil
 		}
+
+		b.configCache.Remove(chain.Id.String()) // clear cache
 	}()
 }
 
@@ -158,12 +160,13 @@ func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.Virtu
 		}
 
 		if err := b.strelets.ProvisionVirtualChain(ctx, input); err != nil {
+			b.configCache.Remove(chain.Id.String()) // clear cache
 			b.logger.Error("failed to apply virtual chain configuration",
 				log_types.VirtualChainId(int64(chain.Id)),
 				log.Error(err))
 			errChannel <- &errorContainer{err, chain.Id}
 		} else {
-			b.configCache.Put(chain.Id.String(), hash)
+			b.configCache.Put(chain.Id.String(), hash) // update cache
 			b.logger.Info("updated virtual chain configuration",
 				log_types.VirtualChainId(int64(chain.Id)),
 				log.String("configuration", string(data)))

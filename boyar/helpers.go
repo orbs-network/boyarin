@@ -28,7 +28,7 @@ func buildPeersMap(nodes []*strelets.FederationNode, gossipPort int) *strelets.P
 
 func getVcidFromServiceName(serviceName string) int64 {
 	tokens := strings.Split(serviceName, "-")
-	result, err := strconv.ParseInt(tokens[len(tokens)-1], 10, 0)
+	result, err := strconv.ParseInt(tokens[len(tokens)-2], 10, 0)
 	if err != nil {
 		return -1
 	}

@@ -16,12 +16,14 @@ func GetConfiguration(flags *Flags) (NodeConfiguration, error) {
 
 	config.SetSSLOptions(getSSLOptions(flags))
 
-	orchestratorOptions, err := getOrchestratorOptions(flags.OrchestratorOptions)
-	if err != nil {
-		return nil, err
-	}
+	if flags.OrchestratorOptions != "" {
+		orchestratorOptions, err := getOrchestratorOptions(flags.OrchestratorOptions)
+		if err != nil {
+			return nil, err
+		}
 
-	config.SetOrchestratorOptions(orchestratorOptions)
+		config.SetOrchestratorOptions(orchestratorOptions)
+	}
 
 	endpoint := config.EthereumEndpoint()
 	if endpoint != "" && flags.TopologyContractAddress != "" {

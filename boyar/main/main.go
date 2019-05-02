@@ -28,7 +28,7 @@ func main() {
 
 	loggerHttpEndpointPtr := flag.String("logger-http-endpoint", "", "")
 
-	orchestratorOptionsPtr := flag.String("orchestrator-options", "{}", "allows to override `orchestrator-options` section of boyar config, takes JSON object as a parameter")
+	orchestratorOptionsPtr := flag.String("orchestrator-options", "", "allows to override `orchestrator-options` section of boyar config, takes JSON object as a parameter")
 
 	sslCertificatePathPtr := flag.String("ssl-certificate", "", "SSL certificate")
 	sslPrivateKeyPtr := flag.String("ssl-private-key", "", "SSL private key")

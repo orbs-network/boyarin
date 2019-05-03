@@ -68,7 +68,7 @@ func getContainerSpec(imageName string, secrets []*swarm.SecretReference, mounts
 		Image:   imageName,
 		Command: command,
 		Secrets: secrets,
-		Sysctls: getSysctls(),
+		Sysctls: GetSysctls(),
 		Mounts:  mounts,
 	}
 }

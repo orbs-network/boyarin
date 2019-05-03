@@ -46,7 +46,7 @@ func Test_getNginxServiceSpec(t *testing.T) {
 					},
 				},
 			},
-			Sysctls: getSysctls(),
+			Sysctls: GetSysctls(),
 		},
 		RestartPolicy: &swarm.RestartPolicy{
 			Condition: "",

@@ -1,6 +1,6 @@
 package adapter
 
-func getSysctls() map[string]string {
+func GetSysctls() map[string]string {
 	sysctls := make(map[string]string)
 	sysctls["net.core.somaxconn"] = "25000"
 

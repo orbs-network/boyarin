@@ -122,6 +122,7 @@ func TestE2EKeepVolumesBetweenReloadsWithSwarm(t *testing.T) {
 }
 
 func TestCreateServiceSysctls(t *testing.T) {
+	t.Skip("not supported on Mac or CI, relies on 19.03 beta features")
 	helpers.SkipUnlessSwarmIsEnabled(t)
 
 	client, err := client.NewClientWithOpts(client.WithVersion(adapter.DOCKER_API_VERSION))

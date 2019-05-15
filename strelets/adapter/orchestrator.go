@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-const DOCKER_API_VERSION = "1.38"
+const DOCKER_API_VERSION = "1.40"
 
 const PROXY_CONTAINER_NAME = "http-api-reverse-proxy"
 

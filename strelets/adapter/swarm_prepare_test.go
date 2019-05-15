@@ -42,7 +42,7 @@ func Test_getServiceSpec(t *testing.T) {
 				"--config", "/var/run/secrets/some-secret.json",
 			},
 			Secrets: secrets,
-			Sysctls: getSysctls(),
+			Sysctls: GetSysctls(),
 			Mounts:  mounts,
 		},
 		RestartPolicy: &swarm.RestartPolicy{

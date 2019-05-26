@@ -25,6 +25,15 @@ func getTestJSONConfigWithOverrides() string {
 	return string(contents)
 }
 
+func getTestJSONConfigSigner() string {
+	contents, err := ioutil.ReadFile("./test/configWithSigner.json")
+	if err != nil {
+		panic(err)
+	}
+
+	return string(contents)
+}
+
 func Test_StringConfigurationSource(t *testing.T) {
 	source, err := NewStringConfigurationSource(getTestJSONConfig(), "")
 	source.SetKeyConfigPath("/tmp/fake-key-pair.json")
@@ -50,6 +59,8 @@ func Test_StringConfigurationSource(t *testing.T) {
 
 	require.NotNil(t, source, source.Chains()[1].DockerConfig.Resources.Limits)
 	require.NotNil(t, source, source.Chains()[1].DockerConfig.Resources.Reservations)
+
+	require.NotNil(t, source.Services())
 }
 
 func Test_StringConfigurationSourceFromEmptyConfig(t *testing.T) {
@@ -70,4 +81,15 @@ func Test_StringConfigurationSourceWithOverrides(t *testing.T) {
 	require.Equal(t, "http://some.ethereum.node", source.EthereumEndpoint())
 	require.Equal(t, 1*time.Minute, source.OrchestratorOptions().MaxReloadTimedDelay())
 	require.Equal(t, "http://some.ethereum.node", source.Chains()[0].Config["ethereum-endpoint"])
+}
+
+func Test_StringConfigurationSourceWithSigner(t *testing.T) {
+	source, err := NewStringConfigurationSource(getTestJSONConfigSigner(), "http://some.ethereum.node")
+	require.NoError(t, err)
+	source.SetKeyConfigPath("/tmp/fake-key-pair.json")
+
+	require.NotNil(t, source.Services())
+	require.NotNil(t, source.Services().Signer)
+	require.NotNil(t, source.Services().Signer.DockerConfig)
+	require.NotNil(t, source.Services().Signer.Config)
 }

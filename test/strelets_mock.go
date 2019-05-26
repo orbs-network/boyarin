@@ -29,3 +29,8 @@ func (s *StreletsMock) UpdateReverseProxy(ctx context.Context, input *strelets.U
 	result := s.MethodCalled("UpdateReverseProxy", input)
 	return result.Error(0)
 }
+
+func (s *StreletsMock) UpdateService(ctx context.Context, input *strelets.UpdateServiceInput) error {
+	result := s.MethodCalled("UpdateService", input)
+	return result.Error(0)
+}

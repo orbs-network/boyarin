@@ -16,6 +16,7 @@ import (
 type Boyar interface {
 	ProvisionVirtualChains(ctx context.Context) error
 	ProvisionHttpAPIEndpoint(ctx context.Context) error
+	ProvisionServices(ctx context.Context) error
 }
 
 type boyar struct {
@@ -109,6 +110,17 @@ func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
 	b.logger.Info("updated http proxy configuration")
 
 	b.configCache.Put(config.HTTP_REVERSE_PROXY_HASH, hash)
+	return nil
+}
+
+func (b *boyar) ProvisionServices(ctx context.Context) error {
+	// FIXME handle unnecessary reloads later, currently we don't ever reload
+	if signer := b.config.Services().Signer; signer != nil {
+		return b.strelets.UpdateService(ctx, &strelets.UpdateServiceInput{
+			Service: signer,
+		})
+	}
+
 	return nil
 }
 

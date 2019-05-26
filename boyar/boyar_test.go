@@ -23,6 +23,15 @@ func getJSONConfig() string {
 	return string(contents)
 }
 
+func getJSONConfigWithSigner() string {
+	contents, err := ioutil.ReadFile("./config/test/configWithSigner.json")
+	if err != nil {
+		panic(err)
+	}
+
+	return string(contents)
+}
+
 func getJSONConfigWithSingleChain() string {
 	contents, err := ioutil.ReadFile("./config/test/configWithSingleChain.json")
 	if err != nil {
@@ -305,5 +314,23 @@ func Test_BoyarProvisionVirtualChainsClearsCacheAfterRemovingChain(t *testing.T)
 	require.NoError(t, err)
 	require.Empty(t, cache.Get("42"), "should clear cache")
 
+	streletsMock.VerifyMocks(t)
+}
+
+func Test_BoyarProvisionServices(t *testing.T) {
+	streletsMock := &StreletsMock{}
+
+	source, err := config.NewStringConfigurationSource(getJSONConfigWithSigner(), "")
+	source.SetKeyConfigPath("/tmp/fake-key-pair.json")
+	require.NoError(t, err)
+
+	cache := config.NewCache()
+	b := NewBoyar(streletsMock, source, cache, helpers.DefaultTestLogger())
+
+	streletsMock.On("UpdateService", mock.Anything, mock.Anything).Return(nil)
+
+	err = b.ProvisionServices(context.Background())
+
+	require.NoError(t, err)
 	streletsMock.VerifyMocks(t)
 }

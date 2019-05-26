@@ -96,10 +96,10 @@ func (n *nodeConfigurationContainer) VerifyConfig() error {
 	return nil
 }
 
-func (n *nodeConfiguration) overrideValues(ethereumEndpoint string) {
-	if ethereumEndpoint != "" {
+func (n *nodeConfiguration) overrideValues(key string, value string) {
+	if value != "" {
 		for _, chain := range n.Chains {
-			chain.Config["ethereum-endpoint"] = ethereumEndpoint
+			chain.Config[key] = value
 		}
 	}
 }
@@ -110,7 +110,7 @@ func (c *nodeConfigurationContainer) EthereumEndpoint() string {
 
 func (c *nodeConfigurationContainer) SetEthereumEndpoint(ethereumEndpoint string) MutableNodeConfiguration {
 	c.ethereumEndpoint = ethereumEndpoint
-	c.value.overrideValues(ethereumEndpoint)
+	c.value.overrideValues("ethereum-endpoint", ethereumEndpoint)
 	return c
 }
 
@@ -122,4 +122,10 @@ func (c *nodeConfigurationContainer) SetOrchestratorOptions(options adapter.Orch
 func (c *nodeConfigurationContainer) SetSSLOptions(options adapter.SSLOptions) MutableNodeConfiguration {
 	c.sslOptions = options
 	return c
+}
+
+func (c *nodeConfigurationContainer) SetSignerEndpoint() {
+	if c.Services().SignerOn() {
+		c.value.overrideValues("signer-endpoint", "http://signer-service-stack:7777")
+	}
 }

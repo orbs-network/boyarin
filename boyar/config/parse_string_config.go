@@ -14,6 +14,7 @@ func parseStringConfig(jsonInput string, ethereumEndpoint string) (*nodeConfigur
 		value: value,
 	}
 	cfg.SetEthereumEndpoint(ethereumEndpoint)
+	cfg.SetSignerEndpoint()
 
 	return cfg, nil
 }

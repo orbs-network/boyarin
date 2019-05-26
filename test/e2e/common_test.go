@@ -8,6 +8,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
+	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
 	"time"
@@ -28,10 +29,6 @@ func getConfigPath() string {
 }
 
 func removeAllDockerVolumes(t *testing.T) {
-	if os.Getenv("ENABLE_SWARM") != "true" {
-		return
-	}
-
 	t.Log("Removing all docker volumes")
 
 	ctx := context.Background()
@@ -65,4 +62,24 @@ func removeAllDockerVolumes(t *testing.T) {
 			}
 		}
 	}
+}
+
+func removeAllServices(t *testing.T) {
+	t.Log("Removing all swarm services")
+
+	ctx := context.Background()
+	client, err := client.NewClientWithOpts(client.WithVersion(adapter.DOCKER_API_VERSION))
+	if err != nil {
+		t.Errorf("could not connect to docker: %s", err)
+		t.FailNow()
+	}
+
+	services, err := client.ServiceList(ctx, types.ServiceListOptions{})
+	require.NoError(t, err)
+
+	for _, s := range services {
+		client.ServiceRemove(ctx, s.ID)
+	}
+
+	// FIXME add Eventually() to wait until shutdown
 }

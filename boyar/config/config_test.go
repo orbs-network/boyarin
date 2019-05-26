@@ -61,6 +61,7 @@ func Test_StringConfigurationSource(t *testing.T) {
 	require.NotNil(t, source, source.Chains()[1].DockerConfig.Resources.Reservations)
 
 	require.NotNil(t, source.Services())
+	require.Empty(t, source.Chains()[0].Config["signer-endpoint"])
 }
 
 func Test_StringConfigurationSourceFromEmptyConfig(t *testing.T) {
@@ -92,4 +93,6 @@ func Test_StringConfigurationSourceWithSigner(t *testing.T) {
 	require.NotNil(t, source.Services().Signer)
 	require.NotNil(t, source.Services().Signer.DockerConfig)
 	require.NotNil(t, source.Services().Signer.Config)
+
+	require.Equal(t, "http://signer-service-stack:7777", source.Chains()[0].Config["signer-endpoint"])
 }

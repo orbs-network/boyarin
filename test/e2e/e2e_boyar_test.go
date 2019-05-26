@@ -36,7 +36,7 @@ func getBoyarVchains(nodeIndex int, vchainIds ...int) []*strelets.VirtualChain {
 	return chains
 }
 
-func getBoyarConfig(vchains []*strelets.VirtualChain) []byte {
+func getConfigMap(vchains []*strelets.VirtualChain) map[string]interface{} {
 	ip := helpers.LocalIP()
 
 	configMap := make(map[string]interface{})
@@ -51,6 +51,27 @@ func getBoyarConfig(vchains []*strelets.VirtualChain) []byte {
 
 	configMap["network"] = network
 	configMap["chains"] = vchains
+
+	return configMap
+}
+
+func getBoyarConfig(vchains []*strelets.VirtualChain) []byte {
+	configMap := getConfigMap(vchains)
+	jsonConfig, _ := json.Marshal(configMap)
+	return jsonConfig
+}
+
+func getBoyarConfigWithSigner(vchains []*strelets.VirtualChain) []byte {
+	configMap := getConfigMap(vchains)
+	configMap["services"] = strelets.Services{
+		Signer: &strelets.Service{
+			Port: 7777,
+			DockerConfig: strelets.DockerConfig{
+				Image: "orbs",
+				Tag:   "signer",
+			},
+		},
+	}
 
 	jsonConfig, _ := json.Marshal(configMap)
 	return jsonConfig

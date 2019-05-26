@@ -27,7 +27,7 @@ func (s *strelets) UpdateService(ctx context.Context, input *UpdateServiceInput)
 	service := input.Service
 	keyPair, err := ioutil.ReadFile(input.KeyPairConfigPath)
 	if err != nil {
-		return fmt.Errorf("could not read key pair config: %s at %s", err, input.KeyPairConfigPath)
+		return fmt.Errorf("could not read key pair config for signer service: %s at %s", err, input.KeyPairConfigPath)
 	}
 
 	serviceConfig := &adapter.ServiceConfig{
@@ -53,4 +53,8 @@ func (s *strelets) UpdateService(ctx context.Context, input *UpdateServiceInput)
 	} else {
 		return runner.Run(ctx)
 	}
+}
+
+func (s Services) SignerOn() bool {
+	return s.Signer != nil && s.Signer.Disabled == false
 }

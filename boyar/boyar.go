@@ -115,9 +115,10 @@ func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
 
 func (b *boyar) ProvisionServices(ctx context.Context) error {
 	// FIXME handle unnecessary reloads later, currently we don't ever reload
-	if signer := b.config.Services().Signer; signer != nil {
+	if b.config.Services().SignerOn() {
 		return b.strelets.UpdateService(ctx, &strelets.UpdateServiceInput{
-			Service: signer,
+			Service:           b.config.Services().Signer,
+			KeyPairConfigPath: b.config.KeyConfigPath(),
 		})
 	}
 

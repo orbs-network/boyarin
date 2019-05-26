@@ -8,8 +8,6 @@ import (
 )
 
 func (d *dockerSwarm) PrepareService(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) (Runner, error) {
-	fmt.Println(serviceConfig, appConfig)
-
 	serviceName := getServiceId(serviceConfig.ContainerName)
 
 	if err := d.RemoveContainer(ctx, serviceName); err != nil {

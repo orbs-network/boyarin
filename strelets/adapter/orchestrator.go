@@ -21,8 +21,9 @@ type ServiceConfig struct {
 	NodeAddress   string
 	ImageName     string
 	ContainerName string
-	HttpPort      int
-	GossipPort    int
+
+	HttpPort   int
+	GossipPort int
 
 	LimitedMemory  int64
 	LimitedCPU     float64
@@ -50,6 +51,7 @@ type Orchestrator interface {
 	Prepare(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) (Runner, error)
 	RemoveContainer(ctx context.Context, containerName string) error
 
+	PrepareService(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) (Runner, error)
 	PrepareReverseProxy(ctx context.Context, config *ReverseProxyConfig) (Runner, error)
 
 	GetStatus(ctx context.Context) ([]*ContainerStatus, error)

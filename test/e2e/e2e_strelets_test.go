@@ -181,3 +181,47 @@ func TestCreateServiceSysctls(t *testing.T) {
 		"failed to set service sysctls",
 	)
 }
+
+func TestCreateSignerService(t *testing.T) {
+	//helpers.SkipUnlessSwarmIsEnabled(t)
+
+	client, err := client.NewClientWithOpts(client.WithVersion(adapter.DOCKER_API_VERSION))
+	if err != nil {
+		t.Errorf("could not connect to docker: %s", err)
+		t.FailNow()
+	}
+	defer client.Close()
+
+	ctx := context.Background()
+
+	swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
+	require.NoError(t, err)
+	s := strelets.NewStrelets(swarm)
+
+	err = s.UpdateService(ctx, &strelets.UpdateServiceInput{
+		Service: &strelets.Service{
+			DockerConfig: strelets.DockerConfig{
+				Image:               "orbs",
+				Tag:                 "signer",
+				ContainerNamePrefix: "signer",
+			},
+		},
+		KeyPairConfigPath: getConfigPath() + "/node1/keys.json",
+	})
+	require.NoError(t, err)
+
+	time.Sleep(5 * time.Second)
+
+	// get all of the tasks of the service, so we can get the container
+	filter := filters.NewArgs()
+	filter.Add("service", "signer-service-stack")
+	tasks, err := client.TaskList(ctx, types.TaskListOptions{
+		Filters: filter,
+	})
+	require.NoError(t, err)
+	require.Len(t, tasks, 1)
+
+	for _, t := range tasks {
+		client.ServiceRemove(ctx, t.ServiceID)
+	}
+}

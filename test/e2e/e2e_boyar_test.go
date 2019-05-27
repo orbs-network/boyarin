@@ -61,14 +61,15 @@ func getBoyarConfig(vchains []*strelets.VirtualChain) []byte {
 	return jsonConfig
 }
 
-func getBoyarConfigWithSigner(vchains []*strelets.VirtualChain) []byte {
+func getBoyarConfigWithSigner(i int, vchains []*strelets.VirtualChain) []byte {
 	configMap := getConfigMap(vchains)
 	configMap["services"] = strelets.Services{
 		Signer: &strelets.Service{
 			Port: 7777,
 			DockerConfig: strelets.DockerConfig{
-				Image: "orbs",
-				Tag:   "signer",
+				ContainerNamePrefix: fmt.Sprintf("node%d", i),
+				Image:               "orbs",
+				Tag:                 "signer",
 			},
 		},
 	}

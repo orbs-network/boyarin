@@ -14,6 +14,14 @@ type Service struct {
 	Disabled     bool
 }
 
+func (s *Service) getContainerName() string {
+	return fmt.Sprintf("%s-signer-service", s.DockerConfig.ContainerNamePrefix)
+}
+
+func (s *Service) InternalEndpoint() string {
+	return fmt.Sprintf("%s:%d", adapter.GetServiceId(s.getContainerName()), s.Port)
+}
+
 type Services struct {
 	Signer *Service `json:"signer"`
 }
@@ -32,7 +40,7 @@ func (s *strelets) UpdateService(ctx context.Context, input *UpdateServiceInput)
 
 	serviceConfig := &adapter.ServiceConfig{
 		ImageName:     service.DockerConfig.FullImageName(),
-		ContainerName: "signer-service",
+		ContainerName: service.getContainerName(),
 
 		HttpPort: 7777,
 

@@ -24,7 +24,7 @@ func TestE2ESingleVchainWithSignerWithSwarmAndBoyar(t *testing.T) {
 		s := strelets.NewStrelets(swarm)
 
 		vchains := getBoyarVchains(i, 42)
-		boyarConfig := getBoyarConfigWithSigner(vchains)
+		boyarConfig := getBoyarConfigWithSigner(i, vchains)
 		cfg, err := config.NewStringConfigurationSource(string(boyarConfig), "")
 		cfg.SetKeyConfigPath(fmt.Sprintf("%s/node%d/keys.json", getConfigPath(), i))
 		require.NoError(t, err)

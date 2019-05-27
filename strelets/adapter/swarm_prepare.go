@@ -9,7 +9,7 @@ import (
 )
 
 func (d *dockerSwarm) Prepare(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) (Runner, error) {
-	serviceName := getServiceId(serviceConfig.ContainerName)
+	serviceName := GetServiceId(serviceConfig.ContainerName)
 
 	if err := d.RemoveContainer(ctx, serviceName); err != nil {
 		return nil, err
@@ -36,7 +36,7 @@ func (d *dockerSwarm) Prepare(ctx context.Context, serviceConfig *ServiceConfig,
 
 			return getVirtualChainServiceSpec(serviceConfig, secrets, mounts), nil
 		},
-		serviceName: getServiceId(serviceConfig.ContainerName),
+		serviceName: GetServiceId(serviceConfig.ContainerName),
 		imageName:   serviceConfig.ImageName,
 	}, nil
 }
@@ -148,7 +148,7 @@ func getVirtualChainServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.S
 		Mode:         getServiceMode(replicas),
 		EndpointSpec: getEndpointsSpec(serviceConfig.HttpPort, serviceConfig.GossipPort),
 	}
-	spec.Name = getServiceId(serviceConfig.ContainerName)
+	spec.Name = GetServiceId(serviceConfig.ContainerName)
 
 	return spec
 }

@@ -126,6 +126,7 @@ func (c *nodeConfigurationContainer) SetSSLOptions(options adapter.SSLOptions) M
 
 func (c *nodeConfigurationContainer) SetSignerEndpoint() {
 	if c.Services().SignerOn() {
-		c.value.overrideValues("signer-endpoint", "http://signer-service-stack:7777")
+		value := "http://" + c.Services().Signer.InternalEndpoint()
+		c.value.overrideValues("signer-endpoint", value)
 	}
 }

@@ -22,6 +22,7 @@ type ServiceConfig struct {
 	ImageName     string
 	ContainerName string
 
+	// FIXME rename ports to be less vchain-specific
 	HttpPort   int
 	GossipPort int
 

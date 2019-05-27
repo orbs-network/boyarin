@@ -92,7 +92,7 @@ func (d *dockerSwarm) RemoveContainer(ctx context.Context, containerName string)
 	return nil
 }
 
-func getServiceId(input string) string {
+func GetServiceId(input string) string {
 	return input + "-stack"
 }
 

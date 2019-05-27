@@ -8,7 +8,7 @@ import (
 )
 
 func (d *dockerSwarm) PrepareService(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) (Runner, error) {
-	serviceName := getServiceId(serviceConfig.ContainerName)
+	serviceName := GetServiceId(serviceConfig.ContainerName)
 
 	if err := d.RemoveContainer(ctx, serviceName); err != nil {
 		return nil, err
@@ -29,7 +29,7 @@ func (d *dockerSwarm) PrepareService(ctx context.Context, serviceConfig *Service
 
 			return getServiceSpec(serviceConfig, secrets), nil
 		},
-		serviceName: getServiceId(serviceConfig.ContainerName),
+		serviceName: GetServiceId(serviceConfig.ContainerName),
 		imageName:   serviceConfig.ImageName,
 	}, nil
 }
@@ -66,19 +66,19 @@ func getServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.SecretReferen
 				serviceConfig.ReservedMemory, serviceConfig.ReservedCPU),
 		},
 		Mode: getServiceMode(replicas),
-		EndpointSpec: &swarm.EndpointSpec{
-			Ports: []swarm.PortConfig{
-				{
-					Protocol: "tcp",
-					// FIXME should publish only for overlay network
-					PublishMode:   swarm.PortConfigPublishModeIngress,
-					PublishedPort: uint32(serviceConfig.HttpPort),
-					TargetPort:    uint32(serviceConfig.HttpPort),
-				},
-			},
-		},
+		//EndpointSpec: &swarm.EndpointSpec{
+		//	Ports: []swarm.PortConfig{
+		//		{
+		//			Protocol: "tcp",
+		//			// FIXME should publish only for overlay network
+		//			PublishMode:   swarm.PortConfigPublishModeIngress,
+		//			PublishedPort: uint32(serviceConfig.HttpPort),
+		//			TargetPort:    uint32(serviceConfig.HttpPort),
+		//		},
+		//	},
+		//},
 	}
-	spec.Name = getServiceId(serviceConfig.ContainerName)
+	spec.Name = GetServiceId(serviceConfig.ContainerName)
 
 	return spec
 }

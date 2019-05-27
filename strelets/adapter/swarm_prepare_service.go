@@ -14,6 +14,11 @@ func (d *dockerSwarm) PrepareService(ctx context.Context, serviceConfig *Service
 		return nil, err
 	}
 
+	networks, err := d.getNetworks(ctx, SHARED_SIGNER_NETWORK)
+	if err != nil {
+		return nil, err
+	}
+
 	return &dockerSwarmRunner{
 		client: d.client,
 		spec: func() (swarm.ServiceSpec, error) {
@@ -27,7 +32,7 @@ func (d *dockerSwarm) PrepareService(ctx context.Context, serviceConfig *Service
 				getSecretReference(serviceConfig.ContainerName, config.keysSecretId, "keyPair", "keys.json"),
 			}
 
-			return getServiceSpec(serviceConfig, secrets), nil
+			return getServiceSpec(serviceConfig, secrets, networks), nil
 		},
 		serviceName: GetServiceId(serviceConfig.ContainerName),
 		imageName:   serviceConfig.ImageName,
@@ -52,7 +57,7 @@ func (d *dockerSwarm) storeServiceConfiguration(ctx context.Context, containerNa
 	return secrets, nil
 }
 
-func getServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.SecretReference) swarm.ServiceSpec {
+func getServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.SecretReference, networks []swarm.NetworkAttachmentConfig) swarm.ServiceSpec {
 	restartDelay := time.Duration(10 * time.Second)
 	replicas := uint64(1)
 
@@ -65,18 +70,8 @@ func getServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.SecretReferen
 			Resources: getResourceRequirements(serviceConfig.LimitedMemory, serviceConfig.LimitedCPU,
 				serviceConfig.ReservedMemory, serviceConfig.ReservedCPU),
 		},
-		Mode: getServiceMode(replicas),
-		//EndpointSpec: &swarm.EndpointSpec{
-		//	Ports: []swarm.PortConfig{
-		//		{
-		//			Protocol: "tcp",
-		//			// FIXME should publish only for overlay network
-		//			PublishMode:   swarm.PortConfigPublishModeIngress,
-		//			PublishedPort: uint32(serviceConfig.HttpPort),
-		//			TargetPort:    uint32(serviceConfig.HttpPort),
-		//		},
-		//	},
-		//},
+		Networks: networks,
+		Mode:     getServiceMode(replicas),
 	}
 	spec.Name = GetServiceId(serviceConfig.ContainerName)
 

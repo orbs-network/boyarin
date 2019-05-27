@@ -55,6 +55,8 @@ type Orchestrator interface {
 	PrepareService(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) (Runner, error)
 	PrepareReverseProxy(ctx context.Context, config *ReverseProxyConfig) (Runner, error)
 
+	GetOverlayNetwork(ctx context.Context, name string) (string, error)
+
 	GetStatus(ctx context.Context) ([]*ContainerStatus, error)
 
 	io.Closer

@@ -15,7 +15,7 @@ import (
 func TestE2ESingleVchainWithSignerWithSwarmAndBoyar(t *testing.T) {
 	//helpers.SkipUnlessSwarmIsEnabled(t)
 	removeAllDockerVolumes(t)
-	defer removeAllServices(t)
+	//defer removeAllServices(t)
 
 	for i := 1; i <= 3; i++ {
 		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})

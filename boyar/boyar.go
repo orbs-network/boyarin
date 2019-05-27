@@ -8,6 +8,7 @@ import (
 	"github.com/orbs-network/boyarin/crypto"
 	"github.com/orbs-network/boyarin/log_types"
 	"github.com/orbs-network/boyarin/strelets"
+	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/orbs-network/scribe/log"
 	"strings"
@@ -114,6 +115,12 @@ func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
 }
 
 func (b *boyar) ProvisionServices(ctx context.Context) error {
+	if err := b.strelets.ProvisionSharedNetwork(ctx, &strelets.ProvisionSharedNetworkInput{
+		Name: adapter.SHARED_SIGNER_NETWORK,
+	}); err != nil {
+		return err
+	}
+
 	// FIXME handle unnecessary reloads later, currently we don't ever reload
 	if b.config.Services().SignerOn() {
 		return b.strelets.UpdateService(ctx, &strelets.UpdateServiceInput{

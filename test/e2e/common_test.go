@@ -12,6 +12,7 @@ import (
 	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/stretchr/testify/require"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -76,7 +77,7 @@ func removeAllDockerVolumes(t *testing.T) {
 }
 
 func removeAllServices(t *testing.T) {
-	t.Log("Removing all swarm services")
+	fmt.Println("Removing all swarm services")
 
 	ctx := context.Background()
 	client, err := client.NewClientWithOpts(client.WithVersion(adapter.DOCKER_API_VERSION))
@@ -89,7 +90,7 @@ func removeAllServices(t *testing.T) {
 	require.NoError(t, err)
 
 	for _, s := range services {
-		t.Logf("Removing service %s", s.Spec.Name)
+		fmt.Println("Removing service", s.Spec.Name)
 		client.ServiceRemove(ctx, s.ID)
 	}
 
@@ -102,10 +103,22 @@ func removeAllServices(t *testing.T) {
 		return len(services) == 0
 	}), "failed to remove swarm services in time")
 
+	// Depends on CI
+	CI := os.Getenv("CI") != ""
+	numContainers := 0
+	if CI {
+		numContainers = 2
+	}
+
 	containers, err := client.ContainerList(ctx, types.ContainerListOptions{})
 	require.NoError(t, err)
 
 	for _, c := range containers {
+		if CI && (strings.Contains(c.Names[0], "ganache") || strings.Contains(c.Names[0], "boyar")) {
+			continue
+		}
+
+		fmt.Println("removing container", c.Names[0])
 		client.ContainerRemove(ctx, c.ID, types.ContainerRemoveOptions{
 			Force: true,
 		})
@@ -117,6 +130,6 @@ func removeAllServices(t *testing.T) {
 			return false
 		}
 
-		return len(containers) == 0
+		return len(containers) <= numContainers
 	}), "failed to remove docker containers in time")
 }

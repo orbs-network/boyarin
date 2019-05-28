@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func Test_getServiceSpec(t *testing.T) {
+func Test_getVirtualChainServiceSpec(t *testing.T) {
 	containerName := "node1-vchain-42"
 	secrets := []*swarm.SecretReference{
 		getSecretReference(containerName, "some-secret-id", "some-secret-name", "some-secret.json"),

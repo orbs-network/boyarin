@@ -37,9 +37,20 @@ type UpdateServiceInput struct {
 
 func (s *strelets) UpdateService(ctx context.Context, input *UpdateServiceInput) error {
 	service := input.Service
+	imageName := service.DockerConfig.FullImageName()
+
+	if service.Disabled {
+		return fmt.Errorf("signer service is disabled")
+	}
+
+	if service.DockerConfig.Pull {
+		if err := s.orchestrator.PullImage(ctx, imageName); err != nil {
+			return fmt.Errorf("could not pull docker image: %s", err)
+		}
+	}
 
 	serviceConfig := &adapter.ServiceConfig{
-		ImageName:     service.DockerConfig.FullImageName(),
+		ImageName:     imageName,
 		ContainerName: service.getContainerName(),
 
 		LimitedMemory:  service.DockerConfig.Resources.Limits.Memory,

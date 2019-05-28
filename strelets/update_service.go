@@ -2,6 +2,7 @@ package strelets
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"io/ioutil"
@@ -24,6 +25,10 @@ func (s *Service) InternalEndpoint() string {
 
 type Services struct {
 	Signer *Service `json:"signer"`
+}
+
+func (s Services) SignerOn() bool {
+	return s.Signer != nil && s.Signer.Disabled == false
 }
 
 type UpdateServiceInput struct {
@@ -52,10 +57,11 @@ func (s *strelets) UpdateService(ctx context.Context, input *UpdateServiceInput)
 		ReservedCPU:    service.DockerConfig.Resources.Reservations.CPUs,
 	}
 
+	jsonConfig, _ := json.Marshal(service.Config)
+
 	appConfig := &adapter.AppConfig{
 		KeyPair: keyPair,
-		// FIXME add proper config serialization
-		Config: []byte("{}"),
+		Config:  jsonConfig,
 	}
 
 	if runner, err := s.orchestrator.PrepareService(ctx, serviceConfig, appConfig); err != nil {
@@ -63,8 +69,4 @@ func (s *strelets) UpdateService(ctx context.Context, input *UpdateServiceInput)
 	} else {
 		return runner.Run(ctx)
 	}
-}
-
-func (s Services) SignerOn() bool {
-	return s.Signer != nil && s.Signer.Disabled == false
 }

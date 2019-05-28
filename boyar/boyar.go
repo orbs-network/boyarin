@@ -168,10 +168,9 @@ func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.Virtu
 		keyPairConfig := b.config.KeyConfig().JSON(signerOn)
 
 		input := &strelets.ProvisionVirtualChainInput{
-			VirtualChain:  chain,
-			KeyPairConfig: keyPairConfig, // FIXME PREVENT KEY LEAK VIA LOG
-			Peers:         peers,
-			NodeAddress:   b.config.NodeAddress(),
+			VirtualChain: chain,
+			Peers:        peers,
+			NodeAddress:  b.config.NodeAddress(),
 		}
 
 		data, _ := json.Marshal(input)
@@ -181,6 +180,8 @@ func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.Virtu
 			errChannel <- nil
 			return
 		}
+
+		input.KeyPairConfig = keyPairConfig // Prevents key leak via log
 
 		if err := b.strelets.ProvisionVirtualChain(ctx, input); err != nil {
 			b.configCache.Remove(chain.Id.String()) // clear cache

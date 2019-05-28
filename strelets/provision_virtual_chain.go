@@ -12,7 +12,7 @@ type ProvisionVirtualChainInput struct {
 	Peers        *PeersMap
 	NodeAddress  NodeAddress
 
-	KeyPairConfig []byte
+	KeyPairConfig []byte `json:"-"` // Prevents key leak via log
 }
 
 type Peer struct {

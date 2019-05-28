@@ -24,15 +24,6 @@ func chain(i int) *strelets.VirtualChain {
 	}
 }
 
-func stopChainWithStrelets(t *testing.T, s strelets.Strelets, i int) {
-	err := s.RemoveVirtualChain(context.Background(), &strelets.RemoveVirtualChainInput{
-		VirtualChain: chain(i),
-	})
-
-	require.NoError(t, err)
-	fmt.Println(fmt.Sprintf("stopped node%d", i))
-}
-
 func startChainWithStrelets(t *testing.T, s strelets.Strelets, i int) {
 	localIP := helpers.LocalIP()
 	ctx := context.Background()
@@ -83,6 +74,7 @@ func peers(ip string) *strelets.PeersMap {
 func TestE2EWithDockerSwarm(t *testing.T) {
 	helpers.SkipUnlessSwarmIsEnabled(t)
 	removeAllDockerVolumes(t)
+	defer removeAllServices(t)
 
 	swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
 	require.NoError(t, err)
@@ -90,7 +82,6 @@ func TestE2EWithDockerSwarm(t *testing.T) {
 
 	for i := 1; i <= 3; i++ {
 		startChainWithStrelets(t, s, i)
-		defer stopChainWithStrelets(t, s, i)
 	}
 
 	helpers.WaitForBlock(t, helpers.GetMetricsForPort(8081), 3, WAIT_FOR_BLOCK_TIMEOUT)
@@ -99,6 +90,7 @@ func TestE2EWithDockerSwarm(t *testing.T) {
 func TestE2EKeepVolumesBetweenReloadsWithSwarm(t *testing.T) {
 	helpers.SkipUnlessSwarmIsEnabled(t)
 	removeAllDockerVolumes(t)
+	defer removeAllServices(t)
 
 	swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
 	require.NoError(t, err)
@@ -106,7 +98,6 @@ func TestE2EKeepVolumesBetweenReloadsWithSwarm(t *testing.T) {
 
 	for i := 1; i <= 3; i++ {
 		startChainWithStrelets(t, s, i)
-		defer stopChainWithStrelets(t, s, i)
 	}
 
 	helpers.WaitForBlock(t, helpers.GetMetricsForPort(8081), 10, WAIT_FOR_BLOCK_TIMEOUT)
@@ -114,7 +105,11 @@ func TestE2EKeepVolumesBetweenReloadsWithSwarm(t *testing.T) {
 	expectedBlockHeight, err := helpers.GetBlockHeight(helpers.GetMetricsForPort(8081))
 	require.NoError(t, err)
 
-	stopChainWithStrelets(t, s, 1)
+	err = s.RemoveVirtualChain(context.Background(), &strelets.RemoveVirtualChainInput{
+		VirtualChain: chain(1),
+	})
+	require.NoError(t, err)
+
 	time.Sleep(3 * time.Second)
 	startChainWithStrelets(t, s, 1)
 
@@ -124,6 +119,7 @@ func TestE2EKeepVolumesBetweenReloadsWithSwarm(t *testing.T) {
 func TestCreateServiceSysctls(t *testing.T) {
 	t.Skip("not supported on Mac or CI, relies on 19.03 beta features")
 	helpers.SkipUnlessSwarmIsEnabled(t)
+	defer removeAllServices(t)
 
 	client, err := client.NewClientWithOpts(client.WithVersion(adapter.DOCKER_API_VERSION))
 	if err != nil {
@@ -139,7 +135,6 @@ func TestCreateServiceSysctls(t *testing.T) {
 	s := strelets.NewStrelets(swarm)
 
 	startChainWithStrelets(t, s, 1)
-	defer stopChainWithStrelets(t, s, 1)
 
 	time.Sleep(5 * time.Second)
 
@@ -183,7 +178,8 @@ func TestCreateServiceSysctls(t *testing.T) {
 }
 
 func TestCreateSignerService(t *testing.T) {
-	//helpers.SkipUnlessSwarmIsEnabled(t)
+	helpers.SkipUnlessSwarmIsEnabled(t)
+	defer removeAllServices(t)
 
 	client, err := client.NewClientWithOpts(client.WithVersion(adapter.DOCKER_API_VERSION))
 	if err != nil {
@@ -203,25 +199,24 @@ func TestCreateSignerService(t *testing.T) {
 			DockerConfig: strelets.DockerConfig{
 				Image:               "orbs",
 				Tag:                 "signer",
-				ContainerNamePrefix: "signer",
+				ContainerNamePrefix: "node1",
 			},
 		},
 		KeyPairConfigPath: getConfigPath() + "/node1/keys.json",
 	})
 	require.NoError(t, err)
 
-	time.Sleep(5 * time.Second)
+	require.True(t, helpers.Eventually(5*time.Second, func() bool {
+		filter := filters.NewArgs()
+		filter.Add("service", "node1-signer-service-stack")
+		tasks, err := client.TaskList(ctx, types.TaskListOptions{
+			Filters: filter,
+		})
 
-	// get all of the tasks of the service, so we can get the container
-	filter := filters.NewArgs()
-	filter.Add("service", "signer-service-stack")
-	tasks, err := client.TaskList(ctx, types.TaskListOptions{
-		Filters: filter,
-	})
-	require.NoError(t, err)
-	require.Len(t, tasks, 1)
+		if err != nil || len(tasks) == 0 {
+			return false
+		}
 
-	for _, t := range tasks {
-		client.ServiceRemove(ctx, t.ServiceID)
-	}
+		return tasks[0].Status.State == "running"
+	}))
 }

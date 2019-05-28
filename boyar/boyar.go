@@ -169,7 +169,7 @@ func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.Virtu
 
 		input := &strelets.ProvisionVirtualChainInput{
 			VirtualChain:  chain,
-			KeyPairConfig: keyPairConfig,
+			KeyPairConfig: keyPairConfig, // FIXME PREVENT KEY LEAK VIA LOG
 			Peers:         peers,
 			NodeAddress:   b.config.NodeAddress(),
 		}

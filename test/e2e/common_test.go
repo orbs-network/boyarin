@@ -9,6 +9,7 @@ import (
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
+	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
@@ -88,8 +89,34 @@ func removeAllServices(t *testing.T) {
 	require.NoError(t, err)
 
 	for _, s := range services {
+		t.Logf("Removing service %s", s.Spec.Name)
 		client.ServiceRemove(ctx, s.ID)
 	}
 
-	// FIXME add Eventually() to wait until shutdown
+	require.Truef(t, helpers.Eventually(10*time.Second, func() bool {
+		services, err := client.ServiceList(ctx, types.ServiceListOptions{})
+		if err != nil {
+			return false
+		}
+
+		return len(services) == 0
+	}), "failed to remove swarm services in time")
+
+	containers, err := client.ContainerList(ctx, types.ContainerListOptions{})
+	require.NoError(t, err)
+
+	for _, c := range containers {
+		client.ContainerRemove(ctx, c.ID, types.ContainerRemoveOptions{
+			Force: true,
+		})
+	}
+
+	require.Truef(t, helpers.Eventually(10*time.Second, func() bool {
+		containers, err := client.ContainerList(ctx, types.ContainerListOptions{})
+		if err != nil {
+			return false
+		}
+
+		return len(containers) == 0
+	}), "failed to remove docker containers in time")
 }

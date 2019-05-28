@@ -104,6 +104,7 @@ func disableChains(t *testing.T, b boyar.Boyar, chains []*strelets.VirtualChain)
 func TestE2EProvisionMultipleVchainsWithSwarmAndBoyar(t *testing.T) {
 	helpers.SkipUnlessSwarmIsEnabled(t)
 	removeAllDockerVolumes(t)
+	defer removeAllServices(t)
 
 	swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
 	require.NoError(t, err)
@@ -111,8 +112,7 @@ func TestE2EProvisionMultipleVchainsWithSwarmAndBoyar(t *testing.T) {
 	s := strelets.NewStrelets(swarm)
 
 	for i := 1; i <= 3; i++ {
-		b, chains := provisionVchains(t, s, i, 42, 92)
-		defer disableChains(t, b, chains)
+		provisionVchains(t, s, i, 42, 92)
 	}
 
 	helpers.WaitForBlock(t, helpers.GetMetricsForPort(8125), 3, WAIT_FOR_BLOCK_TIMEOUT)
@@ -122,6 +122,7 @@ func TestE2EProvisionMultipleVchainsWithSwarmAndBoyar(t *testing.T) {
 func TestE2EAddNewVirtualChainWithSwarmAndBoyar(t *testing.T) {
 	helpers.SkipUnlessSwarmIsEnabled(t)
 	removeAllDockerVolumes(t)
+	defer removeAllServices(t)
 
 	swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
 	require.NoError(t, err)
@@ -135,8 +136,7 @@ func TestE2EAddNewVirtualChainWithSwarmAndBoyar(t *testing.T) {
 	helpers.WaitForBlock(t, helpers.GetMetricsForPort(8125), 3, WAIT_FOR_BLOCK_TIMEOUT)
 
 	for i := 1; i <= 3; i++ {
-		b, chains := provisionVchains(t, s, i, 42, 92)
-		defer disableChains(t, b, chains)
+		provisionVchains(t, s, i, 42, 92)
 	}
 
 	helpers.WaitForBlock(t, helpers.GetMetricsForPort(8125), 3, WAIT_FOR_BLOCK_TIMEOUT)

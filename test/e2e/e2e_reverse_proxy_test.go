@@ -20,6 +20,7 @@ func Test_UpdateReverseProxyWithSwarm(t *testing.T) {
 	}
 
 	helpers.SkipUnlessSwarmIsEnabled(t)
+	defer removeAllServices(t)
 
 	port := 10080
 	server := helpers.CreateHttpServer("/test", port, func(writer http.ResponseWriter, request *http.Request) {
@@ -42,7 +43,6 @@ func Test_UpdateReverseProxyWithSwarm(t *testing.T) {
 		chains, ip, adapter.SSLOptions{},
 	})
 	require.NoError(t, err)
-	defer api.RemoveContainer(context.Background(), "http-api-reverse-proxy")
 
 	require.True(t, helpers.Eventually(1*time.Minute, func() bool {
 		url := fmt.Sprintf("http://%s/vchains/%d/test", ip, chain.Id)
@@ -74,6 +74,7 @@ func Test_CreateReverseProxyWithSSL(t *testing.T) {
 	}
 
 	helpers.SkipUnlessSwarmIsEnabled(t)
+	defer removeAllServices(t)
 
 	port := 10099
 	server := helpers.CreateHttpServer("/test", port, func(writer http.ResponseWriter, request *http.Request) {
@@ -96,7 +97,6 @@ func Test_CreateReverseProxyWithSSL(t *testing.T) {
 		chains, ip, adapter.SSLOptions{"./fixtures/cert.pem", "./fixtures/key.pem"},
 	})
 	require.NoError(t, err)
-	defer api.RemoveContainer(context.Background(), "http-api-reverse-proxy")
 
 	require.True(t, helpers.Eventually(1*time.Minute, func() bool {
 		url := fmt.Sprintf("https://%s:443/vchains/%d/test", ip, chain.Id)

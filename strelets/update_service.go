@@ -33,6 +33,8 @@ type UpdateServiceInput struct {
 
 func (s *strelets) UpdateService(ctx context.Context, input *UpdateServiceInput) error {
 	service := input.Service
+
+	// FIXME pass actual []byte
 	keyPair, err := ioutil.ReadFile(input.KeyPairConfigPath)
 	if err != nil {
 		return fmt.Errorf("could not read key pair config for signer service: %s at %s", err, input.KeyPairConfigPath)

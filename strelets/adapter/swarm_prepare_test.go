@@ -28,7 +28,11 @@ func Test_getServiceSpec(t *testing.T) {
 		HttpPort:      16160,
 	}
 
-	spec := getVirtualChainServiceSpec(serviceConfig, secrets, mounts)
+	networkConfig := []swarm.NetworkAttachmentConfig{
+		{Target: "signer"},
+	}
+
+	spec := getVirtualChainServiceSpec(serviceConfig, secrets, mounts, networkConfig)
 
 	require.EqualValues(t, spec.Name, containerName+"-stack")
 

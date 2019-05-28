@@ -38,10 +38,10 @@ func startChainWithStrelets(t *testing.T, s strelets.Strelets, i int) {
 	ctx := context.Background()
 
 	err := s.ProvisionVirtualChain(ctx, &strelets.ProvisionVirtualChainInput{
-		NodeAddress:       strelets.NodeAddress(helpers.NodeAddresses()[i-1]),
-		VirtualChain:      chain(i),
-		Peers:             peers(localIP),
-		KeyPairConfigPath: fmt.Sprintf("%s/node%d/keys.json", getConfigPath(), i),
+		NodeAddress:   strelets.NodeAddress(helpers.NodeAddresses()[i-1]),
+		VirtualChain:  chain(i),
+		Peers:         peers(localIP),
+		KeyPairConfig: getKeyPairConfigForNode(i, false),
 	})
 
 	require.NoError(t, err)

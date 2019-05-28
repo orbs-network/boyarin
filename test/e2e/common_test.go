@@ -6,6 +6,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
+	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/stretchr/testify/require"
@@ -26,6 +27,15 @@ func getConfigPath() string {
 	}
 
 	return configPath
+}
+
+func getKeyPairConfigForNode(i int, addressOnly bool) []byte {
+	cfg, err := config.NewKeysConfig(fmt.Sprintf("%s/node%d/keys.json", getConfigPath(), i))
+	if err != nil {
+		panic(err)
+	}
+
+	return cfg.JSON(addressOnly)
 }
 
 func removeAllDockerVolumes(t *testing.T) {

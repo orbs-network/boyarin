@@ -13,6 +13,7 @@ type NodeConfiguration interface {
 	Chains() []*strelets.VirtualChain
 	OrchestratorOptions() adapter.OrchestratorOptions
 	KeyConfigPath() string
+	KeyConfig() KeyConfig
 	ReloadTimeDelay(maxDelay time.Duration) time.Duration
 	EthereumEndpoint() string
 	NodeAddress() strelets.NodeAddress
@@ -129,4 +130,9 @@ func (c *nodeConfigurationContainer) SetSignerEndpoint() {
 		value := "http://" + c.Services().Signer.InternalEndpoint()
 		c.value.overrideValues("signer-endpoint", value)
 	}
+}
+
+func (n *nodeConfigurationContainer) KeyConfig() KeyConfig {
+	cfg, _ := n.readKeysConfig()
+	return cfg
 }

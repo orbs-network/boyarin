@@ -164,11 +164,14 @@ func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.Virtu
 	go func() {
 		peers := buildPeersMap(b.config.FederationNodes(), chain.GossipPort)
 
+		signerOn := b.config.Services().SignerOn()
+		keyPairConfig := b.config.KeyConfig().JSON(signerOn)
+
 		input := &strelets.ProvisionVirtualChainInput{
-			VirtualChain:      chain,
-			KeyPairConfigPath: b.config.KeyConfigPath(),
-			Peers:             peers,
-			NodeAddress:       b.config.NodeAddress(),
+			VirtualChain:  chain,
+			KeyPairConfig: keyPairConfig,
+			Peers:         peers,
+			NodeAddress:   b.config.NodeAddress(),
 		}
 
 		data, _ := json.Marshal(input)

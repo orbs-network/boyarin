@@ -15,7 +15,7 @@ type KeyConfig interface {
 
 type keyConfig struct {
 	NodeAddress    string `json:"node-address"`
-	NodePrivateKey string `json:"node-private-key"`
+	NodePrivateKey string `json:"node-private-key,omitempty"` // Very important to omit empty value to produce a valid config
 }
 
 func (n *nodeConfigurationContainer) readKeysConfig() (cfg KeyConfig, err error) {

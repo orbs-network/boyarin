@@ -121,12 +121,27 @@ func (b *boyar) ProvisionServices(ctx context.Context) error {
 		return err
 	}
 
-	// FIXME handle unnecessary reloads later, currently we don't ever reload
-	if b.config.Services().SignerOn() {
-		return b.strelets.UpdateService(ctx, &strelets.UpdateServiceInput{
-			Service:       b.config.Services().Signer,
-			KeyPairConfig: b.config.KeyConfig().JSON(false),
-		})
+	input := &strelets.UpdateServiceInput{
+		Service: b.config.Services().Signer,
+	}
+
+	data, _ := json.Marshal(input)
+	hash := crypto.CalculateHash(data)
+
+	input.KeyPairConfig = b.config.KeyConfig().JSON(false)
+
+	if hash != b.configCache.Get(config.SIGNER_SERVICE_HASH) {
+		if input.Service != nil {
+			err := b.strelets.UpdateService(ctx, input)
+			if err == nil {
+				b.configCache.Put(config.SIGNER_SERVICE_HASH, hash)
+				b.logger.Info("updated signer configuration")
+			} else {
+				b.configCache.Remove(config.SIGNER_SERVICE_HASH)
+				b.logger.Error("failed to update signer configuration", log.Error(err))
+				return err
+			}
+		}
 	}
 
 	return nil

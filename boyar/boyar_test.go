@@ -335,3 +335,69 @@ func Test_BoyarProvisionServices(t *testing.T) {
 	require.NoError(t, err)
 	streletsMock.VerifyMocks(t)
 }
+
+func Test_BoyarSignerOffOn(t *testing.T) {
+	streletsMock := &StreletsMock{}
+
+	cache := config.NewCache()
+
+	sourceWithoutSigner, err := config.NewStringConfigurationSource(getJSONConfig(), "")
+	sourceWithoutSigner.SetKeyConfigPath("./test/fake-key-pair.json")
+
+	boyarWithoutSigner := NewBoyar(streletsMock, sourceWithoutSigner, cache, helpers.DefaultTestLogger())
+
+	streletsMock.On("ProvisionSharedNetwork", mock.Anything, mock.Anything).Return(nil).Once()
+
+	err = boyarWithoutSigner.ProvisionServices(context.Background())
+	require.NoError(t, err)
+	streletsMock.VerifyMocks(t) // nothing happens
+
+	sourceWithSigner, err := config.NewStringConfigurationSource(getJSONConfigWithSigner(), "")
+	sourceWithSigner.SetKeyConfigPath("./test/fake-key-pair.json")
+	require.NoError(t, err)
+
+	streletsMock.On("ProvisionSharedNetwork", mock.Anything, mock.Anything).Return(nil).Once()
+	streletsMock.On("UpdateService", mock.Anything, mock.Anything).Return(nil).Once()
+
+	boyarWithSigner := NewBoyar(streletsMock, sourceWithSigner, cache, helpers.DefaultTestLogger())
+
+	err = boyarWithSigner.ProvisionServices(context.Background())
+	require.NoError(t, err)
+	streletsMock.VerifyMocks(t)
+
+	streletsMock.On("ProvisionSharedNetwork", mock.Anything, mock.Anything).Return(nil).Once()
+
+	err = boyarWithSigner.ProvisionServices(context.Background())
+	require.NoError(t, err)
+	streletsMock.VerifyMocks(t)
+}
+
+func Test_BoyarSignerOnOff(t *testing.T) {
+	streletsMock := &StreletsMock{}
+
+	cache := config.NewCache()
+
+	sourceWithSigner, err := config.NewStringConfigurationSource(getJSONConfigWithSigner(), "")
+	sourceWithSigner.SetKeyConfigPath("./test/fake-key-pair.json")
+	require.NoError(t, err)
+
+	streletsMock.On("ProvisionSharedNetwork", mock.Anything, mock.Anything).Return(nil).Once()
+	streletsMock.On("UpdateService", mock.Anything, mock.Anything).Return(nil).Once()
+
+	boyarWithSigner := NewBoyar(streletsMock, sourceWithSigner, cache, helpers.DefaultTestLogger())
+
+	err = boyarWithSigner.ProvisionServices(context.Background())
+	require.NoError(t, err)
+	streletsMock.VerifyMocks(t)
+
+	sourceWithoutSigner, err := config.NewStringConfigurationSource(getJSONConfig(), "")
+	sourceWithoutSigner.SetKeyConfigPath("./test/fake-key-pair.json")
+
+	boyarWithoutSigner := NewBoyar(streletsMock, sourceWithoutSigner, cache, helpers.DefaultTestLogger())
+
+	streletsMock.On("ProvisionSharedNetwork", mock.Anything, mock.Anything).Return(nil).Once()
+
+	err = boyarWithoutSigner.ProvisionServices(context.Background())
+	require.NoError(t, err)
+	streletsMock.VerifyMocks(t) // nothing happens
+}

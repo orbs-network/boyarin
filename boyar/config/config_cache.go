@@ -13,6 +13,7 @@ type HttpReverseProxyCompositeKey struct {
 }
 
 const HTTP_REVERSE_PROXY_HASH = "proxy"
+const SIGNER_SERVICE_HASH = "signer"
 
 type Cache interface {
 	Get(key string) string

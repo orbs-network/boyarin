@@ -202,7 +202,7 @@ func TestCreateSignerService(t *testing.T) {
 				ContainerNamePrefix: "node1",
 			},
 		},
-		KeyPairConfigPath: getConfigPath() + "/node1/keys.json",
+		KeyPairConfig: getKeyPairConfigForNode(1, false),
 	})
 	require.NoError(t, err)
 

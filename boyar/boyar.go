@@ -124,8 +124,8 @@ func (b *boyar) ProvisionServices(ctx context.Context) error {
 	// FIXME handle unnecessary reloads later, currently we don't ever reload
 	if b.config.Services().SignerOn() {
 		return b.strelets.UpdateService(ctx, &strelets.UpdateServiceInput{
-			Service:           b.config.Services().Signer,
-			KeyPairConfigPath: b.config.KeyConfigPath(),
+			Service:       b.config.Services().Signer,
+			KeyPairConfig: b.config.KeyConfig().JSON(false),
 		})
 	}
 

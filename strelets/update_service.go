@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/orbs-network/boyarin/strelets/adapter"
-	"io/ioutil"
 )
 
 type Service struct {
@@ -32,24 +31,16 @@ func (s Services) SignerOn() bool {
 }
 
 type UpdateServiceInput struct {
-	Service           *Service
-	KeyPairConfigPath string
+	Service       *Service
+	KeyPairConfig []byte `json:"-"` // Prevents possible key leak via log
 }
 
 func (s *strelets) UpdateService(ctx context.Context, input *UpdateServiceInput) error {
 	service := input.Service
 
-	// FIXME pass actual []byte
-	keyPair, err := ioutil.ReadFile(input.KeyPairConfigPath)
-	if err != nil {
-		return fmt.Errorf("could not read key pair config for signer service: %s at %s", err, input.KeyPairConfigPath)
-	}
-
 	serviceConfig := &adapter.ServiceConfig{
 		ImageName:     service.DockerConfig.FullImageName(),
 		ContainerName: service.getContainerName(),
-
-		HttpPort: 7777,
 
 		LimitedMemory:  service.DockerConfig.Resources.Limits.Memory,
 		LimitedCPU:     service.DockerConfig.Resources.Limits.CPUs,
@@ -60,7 +51,7 @@ func (s *strelets) UpdateService(ctx context.Context, input *UpdateServiceInput)
 	jsonConfig, _ := json.Marshal(service.Config)
 
 	appConfig := &adapter.AppConfig{
-		KeyPair: keyPair,
+		KeyPair: input.KeyPairConfig,
 		Config:  jsonConfig,
 	}
 

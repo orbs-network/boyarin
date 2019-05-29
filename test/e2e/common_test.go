@@ -41,22 +41,13 @@ func getKeyPairConfigForNode(i int, addressOnly bool) []byte {
 }
 
 func removeAllDockerVolumes(t *testing.T) {
-	t.Log("Removing all docker volumes")
+	fmt.Println("Removing all docker volumes")
 
 	ctx := context.Background()
 	client, err := client.NewClientWithOpts(client.WithVersion(adapter.DOCKER_API_VERSION))
 	if err != nil {
 		t.Errorf("could not connect to docker: %s", err)
 		t.FailNow()
-	}
-
-	if containers, err := client.ContainerList(ctx, types.ContainerListOptions{}); err != nil {
-		t.Errorf("could not list docker containers: %s", err)
-		t.FailNow()
-	} else {
-		for _, c := range containers {
-			t.Log("container", c.Names[0], "is still up with state", c.State)
-		}
 	}
 
 	if volumes, err := client.VolumeList(ctx, filters.Args{}); err != nil {
@@ -70,6 +61,16 @@ func removeAllDockerVolumes(t *testing.T) {
 				return client.VolumeRemove(ctx, v.Name, true)
 			}); err != nil {
 				t.Errorf("could not list docker volumes: %s", err)
+				if containers, err := client.ContainerList(ctx, types.ContainerListOptions{
+					All: true,
+				}); err != nil {
+					t.Errorf("could not list docker containers: %s", err)
+					t.FailNow()
+				} else {
+					for _, c := range containers {
+						t.Log("container", c.Names[0], "is still up with state", c.State)
+					}
+				}
 				t.FailNow()
 			}
 		}
@@ -94,7 +95,7 @@ func removeAllServices(t *testing.T) {
 		client.ServiceRemove(ctx, s.ID)
 	}
 
-	require.Truef(t, helpers.Eventually(10*time.Second, func() bool {
+	require.Truef(t, helpers.Eventually(20*time.Second, func() bool {
 		services, err := client.ServiceList(ctx, types.ServiceListOptions{})
 		if err != nil {
 			return false
@@ -110,7 +111,9 @@ func removeAllServices(t *testing.T) {
 		numContainers = 2
 	}
 
-	containers, err := client.ContainerList(ctx, types.ContainerListOptions{})
+	containers, err := client.ContainerList(ctx, types.ContainerListOptions{
+		All: true,
+	})
 	require.NoError(t, err)
 
 	for _, c := range containers {
@@ -124,12 +127,26 @@ func removeAllServices(t *testing.T) {
 		})
 	}
 
-	require.Truef(t, helpers.Eventually(10*time.Second, func() bool {
-		containers, err := client.ContainerList(ctx, types.ContainerListOptions{})
+	require.Truef(t, helpers.Eventually(20*time.Second, func() bool {
+		containers, err := client.ContainerList(ctx, types.ContainerListOptions{
+			All: true,
+		})
 		if err != nil {
 			return false
 		}
 
 		return len(containers) <= numContainers
 	}), "failed to remove docker containers in time")
+}
+
+func withCleanContext(t *testing.T, f func(t *testing.T)) {
+	helpers.SkipUnlessSwarmIsEnabled(t)
+
+	removeAllServices(t)
+	removeAllDockerVolumes(t)
+
+	t.Run("clean docker context", f)
+
+	removeAllServices(t)
+	removeAllDockerVolumes(t)
 }

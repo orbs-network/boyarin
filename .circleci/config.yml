@@ -7,10 +7,8 @@ jobs:
       - run: ./git-submodule-checkout.sh
       - run: ./docker-build.sh
       - run: $(aws ecr get-login --no-include-email --region us-west-2)
-      # FIXME replace tag with master
-      - run: docker pull $ORBS_NODE_DOCKER_IMAGE:feature-signing-service-poc && docker tag $ORBS_NODE_DOCKER_IMAGE:feature-signing-service-poc orbs:export
-      # FIXME replace tag with master
-      - run: docker pull $SIGNER_DOCKER_IMAGE:feature-signing-service-poc && docker tag $SIGNER_DOCKER_IMAGE:feature-signing-service-poc orbs:signer
+      - run: docker pull $ORBS_NODE_DOCKER_IMAGE:master && docker tag $ORBS_NODE_DOCKER_IMAGE:master orbs:export
+      - run: docker pull $SIGNER_DOCKER_IMAGE:master && docker tag $SIGNER_DOCKER_IMAGE:master orbs:signer
       - run: docker swarm init
       - run:
           command: export DOCKER_IMAGE=$ORBS_NODE_DOCKER_IMAGE DOCKER_TAG=master ENABLE_SWARM=true  && ./docker-test.sh

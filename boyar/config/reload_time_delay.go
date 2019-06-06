@@ -23,7 +23,7 @@ func (n *nodeConfigurationContainer) ReloadTimeDelay(maxDelay time.Duration) tim
 		return maxDelay
 	}
 
-	hash := sha256.Sum256([]byte(cfg.PrivateKey))
+	hash := sha256.Sum256([]byte(cfg.PrivateKey()))
 	buf := bytes.NewBuffer(hash[:])
 	seed, err := binary.ReadVarint(buf)
 	if err != nil {

@@ -6,27 +6,59 @@ import (
 	"io/ioutil"
 )
 
-type keysConfig struct {
-	Address    string `json:"node-address"`
-	PrivateKey string `json:"node-private-key"`
+type KeyConfig interface {
+	Address() string
+	PrivateKey() string
+
+	JSON(addressOnly bool) []byte
 }
 
-func (n *nodeConfigurationContainer) readKeysConfig() (cfg *keysConfig, err error) {
-	data, err := ioutil.ReadFile(n.keyConfigPath)
+type keyConfig struct {
+	NodeAddress    string `json:"node-address"`
+	NodePrivateKey string `json:"node-private-key,omitempty"` // Very important to omit empty value to produce a valid config
+}
+
+func (n *nodeConfigurationContainer) readKeysConfig() (cfg KeyConfig, err error) {
+	return NewKeysConfig(n.keyConfigPath)
+}
+
+func NewKeysConfig(path string) (cfg KeyConfig, err error) {
+	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read keys config: %s", err)
 	}
 
-	cfg = &keysConfig{}
+	cfg = &keyConfig{}
 	err = json.Unmarshal(data, cfg)
 
 	if err != nil {
 		return nil, fmt.Errorf("invalid keys config: %s", err)
 	}
 
-	if cfg.Address == "" || cfg.PrivateKey == "" {
+	if cfg.Address() == "" || cfg.PrivateKey() == "" {
 		return nil, fmt.Errorf("invalid keys in config: one or both values are empty")
 	}
 
 	return
+}
+
+func (k *keyConfig) JSON(addressOnly bool) []byte {
+	keys := keyConfig{
+		NodeAddress: k.NodeAddress,
+	}
+
+	if !addressOnly {
+		keys.NodePrivateKey = k.NodePrivateKey
+	}
+
+	data, _ := json.Marshal(keys)
+	return data
+}
+
+func (k *keyConfig) Address() string {
+	return k.NodeAddress
+}
+
+func (k *keyConfig) PrivateKey() string {
+	return k.NodePrivateKey
 }

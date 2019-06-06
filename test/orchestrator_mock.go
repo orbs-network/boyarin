@@ -40,6 +40,16 @@ func (a *OrchestratorMock) GetStatus(ctx context.Context) (results []*adapter.Co
 	return nil, nil
 }
 
+func (a *OrchestratorMock) PrepareService(ctx context.Context, serviceConfig *adapter.ServiceConfig, appConfig *adapter.AppConfig) (adapter.Runner, error) {
+	panic("not implemented")
+	return nil, nil
+}
+
+func (a *OrchestratorMock) GetOverlayNetwork(ctx context.Context, name string) (string, error) {
+	panic("not implemented")
+	return "", nil
+}
+
 func NewOrchestratorAndRunnerMocks() (orchestrator *OrchestratorMock, virtualChainRunner *RunnerMock, reverseProxyRunner *RunnerMock) {
 	orchestrator = &OrchestratorMock{}
 

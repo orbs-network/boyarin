@@ -24,24 +24,15 @@ func chain(i int) *strelets.VirtualChain {
 	}
 }
 
-func stopChainWithStrelets(t *testing.T, s strelets.Strelets, i int) {
-	err := s.RemoveVirtualChain(context.Background(), &strelets.RemoveVirtualChainInput{
-		VirtualChain: chain(i),
-	})
-
-	require.NoError(t, err)
-	fmt.Println(fmt.Sprintf("stopped node%d", i))
-}
-
 func startChainWithStrelets(t *testing.T, s strelets.Strelets, i int) {
 	localIP := helpers.LocalIP()
 	ctx := context.Background()
 
 	err := s.ProvisionVirtualChain(ctx, &strelets.ProvisionVirtualChainInput{
-		NodeAddress:       strelets.NodeAddress(helpers.NodeAddresses()[i-1]),
-		VirtualChain:      chain(i),
-		Peers:             peers(localIP),
-		KeyPairConfigPath: fmt.Sprintf("%s/node%d/keys.json", getConfigPath(), i),
+		NodeAddress:   strelets.NodeAddress(helpers.NodeAddresses()[i-1]),
+		VirtualChain:  chain(i),
+		Peers:         peers(localIP),
+		KeyPairConfig: getKeyPairConfigForNode(i, false),
 	})
 
 	require.NoError(t, err)
@@ -81,103 +72,147 @@ func peers(ip string) *strelets.PeersMap {
 }
 
 func TestE2EWithDockerSwarm(t *testing.T) {
-	helpers.SkipUnlessSwarmIsEnabled(t)
-	removeAllDockerVolumes(t)
+	withCleanContext(t, func(t *testing.T) {
+		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
+		require.NoError(t, err)
+		s := strelets.NewStrelets(swarm)
 
-	swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
-	require.NoError(t, err)
-	s := strelets.NewStrelets(swarm)
+		for i := 1; i <= 3; i++ {
+			startChainWithStrelets(t, s, i)
+		}
 
-	for i := 1; i <= 3; i++ {
-		startChainWithStrelets(t, s, i)
-		defer stopChainWithStrelets(t, s, i)
-	}
-
-	helpers.WaitForBlock(t, helpers.GetMetricsForPort(8081), 3, WAIT_FOR_BLOCK_TIMEOUT)
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8081), 3, WAIT_FOR_BLOCK_TIMEOUT)
+	})
 }
 
 func TestE2EKeepVolumesBetweenReloadsWithSwarm(t *testing.T) {
-	helpers.SkipUnlessSwarmIsEnabled(t)
-	removeAllDockerVolumes(t)
+	withCleanContext(t, func(t *testing.T) {
+		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
+		require.NoError(t, err)
+		s := strelets.NewStrelets(swarm)
 
-	swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
-	require.NoError(t, err)
-	s := strelets.NewStrelets(swarm)
+		for i := 1; i <= 3; i++ {
+			startChainWithStrelets(t, s, i)
+		}
 
-	for i := 1; i <= 3; i++ {
-		startChainWithStrelets(t, s, i)
-		defer stopChainWithStrelets(t, s, i)
-	}
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8081), 10, WAIT_FOR_BLOCK_TIMEOUT)
 
-	helpers.WaitForBlock(t, helpers.GetMetricsForPort(8081), 10, WAIT_FOR_BLOCK_TIMEOUT)
+		expectedBlockHeight, err := helpers.GetBlockHeight(helpers.GetMetricsForPort(8081))
+		require.NoError(t, err)
 
-	expectedBlockHeight, err := helpers.GetBlockHeight(helpers.GetMetricsForPort(8081))
-	require.NoError(t, err)
+		err = s.RemoveVirtualChain(context.Background(), &strelets.RemoveVirtualChainInput{
+			VirtualChain: chain(1),
+		})
+		require.NoError(t, err)
 
-	stopChainWithStrelets(t, s, 1)
-	time.Sleep(3 * time.Second)
-	startChainWithStrelets(t, s, 1)
+		time.Sleep(3 * time.Second)
+		startChainWithStrelets(t, s, 1)
 
-	helpers.WaitForBlock(t, helpers.GetMetricsForPort(8081), expectedBlockHeight, WAIT_FOR_BLOCK_TIMEOUT)
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8081), expectedBlockHeight, WAIT_FOR_BLOCK_TIMEOUT)
+	})
 }
 
 func TestCreateServiceSysctls(t *testing.T) {
 	t.Skip("not supported on Mac or CI, relies on 19.03 beta features")
-	helpers.SkipUnlessSwarmIsEnabled(t)
 
-	client, err := client.NewClientWithOpts(client.WithVersion(adapter.DOCKER_API_VERSION))
-	if err != nil {
-		t.Errorf("could not connect to docker: %s", err)
-		t.FailNow()
-	}
-	defer client.Close()
+	withCleanContext(t, func(t *testing.T) {
 
-	ctx := context.Background()
+		client, err := client.NewClientWithOpts(client.WithVersion(adapter.DOCKER_API_VERSION))
+		if err != nil {
+			t.Errorf("could not connect to docker: %s", err)
+			t.FailNow()
+		}
+		defer client.Close()
 
-	swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
-	require.NoError(t, err)
-	s := strelets.NewStrelets(swarm)
+		ctx := context.Background()
 
-	startChainWithStrelets(t, s, 1)
-	defer stopChainWithStrelets(t, s, 1)
+		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
+		require.NoError(t, err)
+		s := strelets.NewStrelets(swarm)
 
-	time.Sleep(5 * time.Second)
+		startChainWithStrelets(t, s, 1)
 
-	// Straight from Docker integration test:
-	// integration/service/create_test.go
-	// https://github.com/moby/moby/pull/37701/files#diff-204a9536b52c895f8a02e75d2e00dd16
+		time.Sleep(5 * time.Second)
 
-	// we're going to check 3 things:
-	//
-	//   1. Does the container, when inspected, have the sysctl option set?
-	//   2. Does the task have the sysctl in the spec?
-	//   3. Does the service have the sysctl in the spec?
-	//
-	// if all 3 of these things are true, we know that the sysctl has been
-	// plumbed correctly through the engine.
+		// Straight from Docker integration test:
+		// integration/service/create_test.go
+		// https://github.com/moby/moby/pull/37701/files#diff-204a9536b52c895f8a02e75d2e00dd16
 
-	// get all of the tasks of the service, so we can get the container
-	filter := filters.NewArgs()
-	filter.Add("service", "node1-chain-42-stack")
-	tasks, err := client.TaskList(ctx, types.TaskListOptions{
-		Filters: filter,
+		// we're going to check 3 things:
+		//
+		//   1. Does the container, when inspected, have the sysctl option set?
+		//   2. Does the task have the sysctl in the spec?
+		//   3. Does the service have the sysctl in the spec?
+		//
+		// if all 3 of these things are true, we know that the sysctl has been
+		// plumbed correctly through the engine.
+
+		// get all of the tasks of the service, so we can get the container
+		filter := filters.NewArgs()
+		filter.Add("service", "node1-chain-42-stack")
+		tasks, err := client.TaskList(ctx, types.TaskListOptions{
+			Filters: filter,
+		})
+		require.NoError(t, err)
+		require.Len(t, tasks, 1)
+
+		// verify that the container has the sysctl option set
+		ctnr, err := client.ContainerInspect(ctx, tasks[0].Status.ContainerStatus.ContainerID)
+		require.NoError(t, err)
+		require.EqualValuesf(t, adapter.GetSysctls(), ctnr.HostConfig.Sysctls, "failed to set container sysctls")
+
+		// verify that the task has the sysctl option set in the task object
+		require.EqualValuesf(t, adapter.GetSysctls(), tasks[0].Spec.ContainerSpec.Sysctls, "failed to set container spec sysctls")
+
+		// verify that the service also has the sysctl set in the spec.
+		service, _, err := client.ServiceInspectWithRaw(ctx, "node1-chain-42-stack", types.ServiceInspectOptions{})
+		require.NoError(t, err)
+		require.EqualValuesf(t,
+			adapter.GetSysctls(), service.Spec.TaskTemplate.ContainerSpec.Sysctls,
+			"failed to set service sysctls",
+		)
 	})
-	require.NoError(t, err)
-	require.Len(t, tasks, 1)
+}
 
-	// verify that the container has the sysctl option set
-	ctnr, err := client.ContainerInspect(ctx, tasks[0].Status.ContainerStatus.ContainerID)
-	require.NoError(t, err)
-	require.EqualValuesf(t, adapter.GetSysctls(), ctnr.HostConfig.Sysctls, "failed to set container sysctls")
+func TestCreateSignerService(t *testing.T) {
+	withCleanContext(t, func(t *testing.T) {
+		client, err := client.NewClientWithOpts(client.WithVersion(adapter.DOCKER_API_VERSION))
+		if err != nil {
+			t.Errorf("could not connect to docker: %s", err)
+			t.FailNow()
+		}
+		defer client.Close()
 
-	// verify that the task has the sysctl option set in the task object
-	require.EqualValuesf(t, adapter.GetSysctls(), tasks[0].Spec.ContainerSpec.Sysctls, "failed to set container spec sysctls")
+		ctx := context.Background()
 
-	// verify that the service also has the sysctl set in the spec.
-	service, _, err := client.ServiceInspectWithRaw(ctx, "node1-chain-42-stack", types.ServiceInspectOptions{})
-	require.NoError(t, err)
-	require.EqualValuesf(t,
-		adapter.GetSysctls(), service.Spec.TaskTemplate.ContainerSpec.Sysctls,
-		"failed to set service sysctls",
-	)
+		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
+		require.NoError(t, err)
+		s := strelets.NewStrelets(swarm)
+
+		err = s.UpdateService(ctx, &strelets.UpdateServiceInput{
+			Service: &strelets.Service{
+				DockerConfig: strelets.DockerConfig{
+					Image:               "orbs",
+					Tag:                 "signer",
+					ContainerNamePrefix: "node1",
+				},
+			},
+			KeyPairConfig: getKeyPairConfigForNode(1, false),
+		})
+		require.NoError(t, err)
+
+		require.True(t, helpers.Eventually(10*time.Second, func() bool {
+			filter := filters.NewArgs()
+			filter.Add("service", "node1-signer-service-stack")
+			tasks, err := client.TaskList(ctx, types.TaskListOptions{
+				Filters: filter,
+			})
+
+			if err != nil || len(tasks) == 0 {
+				return false
+			}
+
+			return tasks[0].Status.State == "running"
+		}))
+	})
 }

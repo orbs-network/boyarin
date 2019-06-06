@@ -22,20 +22,22 @@ func ReportStatus(ctx context.Context, logger log.Logger) error {
 	}
 
 	for _, s := range status {
+		fields := []*log.Field{
+			log.String("name", s.Name),
+			log.String("state", s.State),
+			log.String("workerId", s.NodeID),
+			log.String("createdAt", formatAsISO6801(s.CreatedAt)),
+		}
+
+		if vcid := getVcidFromServiceName(s.Name); vcid > 0 {
+			fields = append(fields, log_types.VirtualChainId(vcid))
+		}
+
 		if s.Error != "" {
-			logger.Error("service failure",
-				log_types.VirtualChainId(getVcidFromServiceName(s.Name)),
-				log.String("name", s.Name),
-				log.String("state", s.State),
-				log.Error(fmt.Errorf(s.Error)),
-				log.String("logs", s.Logs))
+			fields = append(fields, log.Error(fmt.Errorf(s.Error)), log.String("logs", s.Logs))
+			logger.Error("service failure", fields...)
 		} else {
-			logger.Info("service status",
-				log_types.VirtualChainId(getVcidFromServiceName(s.Name)),
-				log.String("name", s.Name),
-				log.String("state", s.State),
-				log.String("workerId", s.NodeID),
-				log.String("createdAt", formatAsISO6801(s.CreatedAt)))
+			logger.Info("service status", fields...)
 		}
 	}
 

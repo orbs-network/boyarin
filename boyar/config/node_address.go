@@ -8,5 +8,5 @@ func (n *nodeConfigurationContainer) NodeAddress() strelets.NodeAddress {
 		return "orbs-network"
 	}
 
-	return strelets.NodeAddress(cfg.Address)
+	return strelets.NodeAddress(cfg.Address())
 }

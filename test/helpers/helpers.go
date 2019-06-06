@@ -48,6 +48,7 @@ func NodeAddresses() []string {
 func ChainConfigWithGenesisValidatorAddresses() map[string]interface{} {
 	config := make(map[string]interface{})
 	config["genesis-validator-addresses"] = NodeAddresses()
+	config["benchmark-consensus-constant-leader"] = NodeAddresses()[0]
 
 	return config
 }

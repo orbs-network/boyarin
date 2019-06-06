@@ -9,9 +9,14 @@ import (
 )
 
 func (d *dockerSwarm) Prepare(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) (Runner, error) {
-	serviceName := getServiceId(serviceConfig.ContainerName)
+	serviceName := GetServiceId(serviceConfig.ContainerName)
 
 	if err := d.RemoveContainer(ctx, serviceName); err != nil {
+		return nil, err
+	}
+
+	networks, err := d.getNetworks(ctx, SHARED_SIGNER_NETWORK)
+	if err != nil {
 		return nil, err
 	}
 
@@ -34,9 +39,9 @@ func (d *dockerSwarm) Prepare(ctx context.Context, serviceConfig *ServiceConfig,
 				return swarm.ServiceSpec{}, fmt.Errorf("failed to provision volumes: %s", err)
 			}
 
-			return getVirtualChainServiceSpec(serviceConfig, secrets, mounts), nil
+			return getVirtualChainServiceSpec(serviceConfig, secrets, mounts, networks), nil
 		},
-		serviceName: getServiceId(serviceConfig.ContainerName),
+		serviceName: GetServiceId(serviceConfig.ContainerName),
 		imageName:   serviceConfig.ImageName,
 	}, nil
 }
@@ -132,7 +137,7 @@ func getResourceRequirements(limitMemory int64, limitCPU float64, reserveMemory 
 	}
 }
 
-func getVirtualChainServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.SecretReference, mounts []mount.Mount) swarm.ServiceSpec {
+func getVirtualChainServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.SecretReference, mounts []mount.Mount, networks []swarm.NetworkAttachmentConfig) swarm.ServiceSpec {
 	restartDelay := time.Duration(10 * time.Second)
 	replicas := uint64(1)
 
@@ -145,10 +150,24 @@ func getVirtualChainServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.S
 			Resources: getResourceRequirements(serviceConfig.LimitedMemory, serviceConfig.LimitedCPU,
 				serviceConfig.ReservedMemory, serviceConfig.ReservedCPU),
 		},
+		Networks:     networks,
 		Mode:         getServiceMode(replicas),
 		EndpointSpec: getEndpointsSpec(serviceConfig.HttpPort, serviceConfig.GossipPort),
 	}
-	spec.Name = getServiceId(serviceConfig.ContainerName)
+	spec.Name = GetServiceId(serviceConfig.ContainerName)
 
 	return spec
+}
+
+func (d *dockerSwarm) getNetworks(ctx context.Context, name string) (networks []swarm.NetworkAttachmentConfig, err error) {
+	target, err := d.GetOverlayNetwork(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+
+	networks = append(networks, swarm.NetworkAttachmentConfig{
+		Target: target,
+	})
+
+	return
 }

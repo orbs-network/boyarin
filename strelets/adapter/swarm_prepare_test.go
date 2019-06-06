@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func Test_getServiceSpec(t *testing.T) {
+func Test_getVirtualChainServiceSpec(t *testing.T) {
 	containerName := "node1-vchain-42"
 	secrets := []*swarm.SecretReference{
 		getSecretReference(containerName, "some-secret-id", "some-secret-name", "some-secret.json"),
@@ -28,7 +28,11 @@ func Test_getServiceSpec(t *testing.T) {
 		HttpPort:      16160,
 	}
 
-	spec := getVirtualChainServiceSpec(serviceConfig, secrets, mounts)
+	networkConfig := []swarm.NetworkAttachmentConfig{
+		{Target: "signer"},
+	}
+
+	spec := getVirtualChainServiceSpec(serviceConfig, secrets, mounts, networkConfig)
 
 	require.EqualValues(t, spec.Name, containerName+"-stack")
 

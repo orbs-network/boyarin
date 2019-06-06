@@ -36,7 +36,7 @@ func getBoyarVchains(nodeIndex int, vchainIds ...int) []*strelets.VirtualChain {
 	return chains
 }
 
-func getBoyarConfig(vchains []*strelets.VirtualChain) []byte {
+func getConfigMap(vchains []*strelets.VirtualChain) map[string]interface{} {
 	ip := helpers.LocalIP()
 
 	configMap := make(map[string]interface{})
@@ -51,6 +51,28 @@ func getBoyarConfig(vchains []*strelets.VirtualChain) []byte {
 
 	configMap["network"] = network
 	configMap["chains"] = vchains
+
+	return configMap
+}
+
+func getBoyarConfig(vchains []*strelets.VirtualChain) []byte {
+	configMap := getConfigMap(vchains)
+	jsonConfig, _ := json.Marshal(configMap)
+	return jsonConfig
+}
+
+func getBoyarConfigWithSigner(i int, vchains []*strelets.VirtualChain) []byte {
+	configMap := getConfigMap(vchains)
+	configMap["services"] = strelets.Services{
+		Signer: &strelets.Service{
+			Port: 7777,
+			DockerConfig: strelets.DockerConfig{
+				ContainerNamePrefix: fmt.Sprintf("node%d", i),
+				Image:               "orbs",
+				Tag:                 "signer",
+			},
+		},
+	}
 
 	jsonConfig, _ := json.Marshal(configMap)
 	return jsonConfig
@@ -71,52 +93,41 @@ func provisionVchains(t *testing.T, s strelets.Strelets, i int, vchainIds ...int
 	return b, cfg.Chains()
 }
 
-func disableChains(t *testing.T, b boyar.Boyar, chains []*strelets.VirtualChain) {
-	for _, chain := range chains {
-		chain.Disabled = true
-	}
-	err := b.ProvisionVirtualChains(context.Background())
-	require.NoError(t, err)
-}
-
 func TestE2EProvisionMultipleVchainsWithSwarmAndBoyar(t *testing.T) {
-	helpers.SkipUnlessSwarmIsEnabled(t)
-	removeAllDockerVolumes(t)
+	withCleanContext(t, func(t *testing.T) {
+		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
+		require.NoError(t, err)
 
-	swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
-	require.NoError(t, err)
+		s := strelets.NewStrelets(swarm)
 
-	s := strelets.NewStrelets(swarm)
+		for i := 1; i <= 3; i++ {
+			provisionVchains(t, s, i, 42, 92)
+		}
 
-	for i := 1; i <= 3; i++ {
-		b, chains := provisionVchains(t, s, i, 42, 92)
-		defer disableChains(t, b, chains)
-	}
-
-	helpers.WaitForBlock(t, helpers.GetMetricsForPort(8125), 3, WAIT_FOR_BLOCK_TIMEOUT)
-	helpers.WaitForBlock(t, helpers.GetMetricsForPort(8175), 0, WAIT_FOR_BLOCK_TIMEOUT)
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8125), 3, WAIT_FOR_BLOCK_TIMEOUT)
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8175), 0, WAIT_FOR_BLOCK_TIMEOUT)
+	})
 }
 
 func TestE2EAddNewVirtualChainWithSwarmAndBoyar(t *testing.T) {
-	helpers.SkipUnlessSwarmIsEnabled(t)
-	removeAllDockerVolumes(t)
+	withCleanContext(t, func(t *testing.T) {
 
-	swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
-	require.NoError(t, err)
+		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
+		require.NoError(t, err)
 
-	s := strelets.NewStrelets(swarm)
+		s := strelets.NewStrelets(swarm)
 
-	for i := 1; i <= 3; i++ {
-		provisionVchains(t, s, i, 42)
-	}
+		for i := 1; i <= 3; i++ {
+			provisionVchains(t, s, i, 42)
+		}
 
-	helpers.WaitForBlock(t, helpers.GetMetricsForPort(8125), 3, WAIT_FOR_BLOCK_TIMEOUT)
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8125), 3, WAIT_FOR_BLOCK_TIMEOUT)
 
-	for i := 1; i <= 3; i++ {
-		b, chains := provisionVchains(t, s, i, 42, 92)
-		defer disableChains(t, b, chains)
-	}
+		for i := 1; i <= 3; i++ {
+			provisionVchains(t, s, i, 42, 92)
+		}
 
-	helpers.WaitForBlock(t, helpers.GetMetricsForPort(8125), 3, WAIT_FOR_BLOCK_TIMEOUT)
-	helpers.WaitForBlock(t, helpers.GetMetricsForPort(8175), 0, WAIT_FOR_BLOCK_TIMEOUT)
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8125), 3, WAIT_FOR_BLOCK_TIMEOUT)
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8175), 0, WAIT_FOR_BLOCK_TIMEOUT)
+	})
 }

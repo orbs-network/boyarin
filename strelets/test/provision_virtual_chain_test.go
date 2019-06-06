@@ -2,11 +2,17 @@ package test
 
 import (
 	"context"
+	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/strelets"
 	. "github.com/orbs-network/boyarin/test"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
+
+func getKeyPairConfig() []byte {
+	cfg, _ := config.NewKeysConfig("./fixtures/keys.json")
+	return cfg.JSON(false)
+}
 
 func TestStrelets_ProvisionVirtualChain(t *testing.T) {
 	orchestrator, runner, _ := NewOrchestratorAndRunnerMocks()
@@ -19,8 +25,8 @@ func TestStrelets_ProvisionVirtualChain(t *testing.T) {
 		VirtualChain: &strelets.VirtualChain{
 			Id: strelets.VirtualChainId(1972),
 		},
-		Peers:             &peers,
-		KeyPairConfigPath: "./fixtures/keys.json",
+		Peers:         &peers,
+		KeyPairConfig: getKeyPairConfig(),
 	})
 
 	require.NoError(t, err)
@@ -39,8 +45,8 @@ func TestStrelets_ProvisionVirtualChainWithRetries(t *testing.T) {
 		VirtualChain: &strelets.VirtualChain{
 			Id: strelets.VirtualChainId(1972),
 		},
-		Peers:             &peers,
-		KeyPairConfigPath: "./fixtures/keys.json",
+		Peers:         &peers,
+		KeyPairConfig: getKeyPairConfig(),
 	})
 
 	require.NoError(t, err)
@@ -60,8 +66,8 @@ func TestStrelets_ProvisionVirtualChainWhenDisabled(t *testing.T) {
 			Id:       strelets.VirtualChainId(1972),
 			Disabled: true,
 		},
-		Peers:             &peers,
-		KeyPairConfigPath: "./fixtures/keys.json",
+		Peers:         &peers,
+		KeyPairConfig: getKeyPairConfig(),
 	})
 
 	require.Error(t, err, "virtual chain 1972 is disabled")

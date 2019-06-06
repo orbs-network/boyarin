@@ -21,8 +21,10 @@ type ServiceConfig struct {
 	NodeAddress   string
 	ImageName     string
 	ContainerName string
-	HttpPort      int
-	GossipPort    int
+
+	// FIXME rename ports to be less vchain-specific
+	HttpPort   int
+	GossipPort int
 
 	LimitedMemory  int64
 	LimitedCPU     float64
@@ -50,7 +52,10 @@ type Orchestrator interface {
 	Prepare(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) (Runner, error)
 	RemoveContainer(ctx context.Context, containerName string) error
 
+	PrepareService(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) (Runner, error)
 	PrepareReverseProxy(ctx context.Context, config *ReverseProxyConfig) (Runner, error)
+
+	GetOverlayNetwork(ctx context.Context, name string) (string, error)
 
 	GetStatus(ctx context.Context) ([]*ContainerStatus, error)
 

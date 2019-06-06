@@ -4,15 +4,15 @@ import (
 	"context"
 	"fmt"
 	"github.com/orbs-network/boyarin/strelets/adapter"
-	"io/ioutil"
 	"time"
 )
 
 type ProvisionVirtualChainInput struct {
-	VirtualChain      *VirtualChain
-	KeyPairConfigPath string
-	Peers             *PeersMap
-	NodeAddress       NodeAddress
+	VirtualChain *VirtualChain
+	Peers        *PeersMap
+	NodeAddress  NodeAddress
+
+	KeyPairConfig []byte `json:"-"` // Prevents key leak via log
 }
 
 type Peer struct {
@@ -46,11 +46,6 @@ func (s *strelets) ProvisionVirtualChain(ctx context.Context, input *ProvisionVi
 		}
 	}
 
-	keyPair, err := ioutil.ReadFile(input.KeyPairConfigPath)
-	if err != nil {
-		return fmt.Errorf("could not read key pair config: %s at %s", err, input.KeyPairConfigPath)
-	}
-
 	return Try(ctx, PROVISION_VCHAIN_MAX_TRIES, PROVISION_VCHAIN_ATTEMPT_TIMEOUT, PROVISION_VCHAIN_RETRY_INTERVAL,
 		func(ctxWithTimeout context.Context) error {
 			serviceConfig := &adapter.ServiceConfig{
@@ -68,7 +63,7 @@ func (s *strelets) ProvisionVirtualChain(ctx context.Context, input *ProvisionVi
 			}
 
 			appConfig := &adapter.AppConfig{
-				KeyPair: keyPair,
+				KeyPair: input.KeyPairConfig,
 				Network: getNetworkConfigJSON(input.Peers),
 				Config:  chain.getSerializedConfig(),
 			}

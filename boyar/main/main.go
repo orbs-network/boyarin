@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar"
 	"github.com/orbs-network/boyarin/boyar/config"
+	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/supervized"
 	"github.com/orbs-network/scribe/log"
 	"os"
@@ -41,6 +42,7 @@ func main() {
 
 	if *showVersion {
 		fmt.Println(config.GetVersion().String())
+		fmt.Println("Docker API version", adapter.DOCKER_API_VERSION)
 		return
 	}
 

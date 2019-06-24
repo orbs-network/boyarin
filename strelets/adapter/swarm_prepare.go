@@ -34,7 +34,8 @@ func (d *dockerSwarm) Prepare(ctx context.Context, serviceConfig *ServiceConfig,
 				getSecretReference(serviceConfig.ContainerName, config.networkSecretId, "network", "network.json"),
 			}
 
-			mounts, err := d.provisionVolumes(ctx, serviceConfig.NodeAddress, serviceConfig.Id)
+			mounts, err := d.provisionVolumes(ctx, serviceConfig.NodeAddress, serviceConfig.Id,
+				defaultValue(serviceConfig.BlocksVolumeSize, 100), defaultValue(serviceConfig.LogsVolumeSize, 2))
 			if err != nil {
 				return swarm.ServiceSpec{}, fmt.Errorf("failed to provision volumes: %s", err)
 			}
@@ -170,4 +171,12 @@ func (d *dockerSwarm) getNetworks(ctx context.Context, name string) (networks []
 	})
 
 	return
+}
+
+func defaultValue(value, defaultV int) int {
+	if value != 0 {
+		return value
+	}
+
+	return defaultV
 }

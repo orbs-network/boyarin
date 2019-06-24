@@ -5,6 +5,12 @@ type Resource struct {
 	CPUs   float64
 }
 
+// In Gb with defaults of 100 and 2
+type DockerVolumes struct {
+	Blocks int
+	Logs   int
+}
+
 type DockerResources struct {
 	Limits       Resource
 	Reservations Resource
@@ -16,6 +22,7 @@ type DockerConfig struct {
 	Pull                bool
 	ContainerNamePrefix string
 	Resources           DockerResources
+	Volumes             DockerVolumes
 }
 
 func (c *DockerConfig) FullImageName() string {

@@ -30,6 +30,9 @@ type ServiceConfig struct {
 	LimitedCPU     float64
 	ReservedMemory int64
 	ReservedCPU    float64
+
+	BlocksVolumeSize int
+	LogsVolumeSize   int
 }
 
 type Runner interface {

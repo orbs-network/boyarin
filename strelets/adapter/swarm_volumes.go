@@ -21,13 +21,13 @@ func getVolumeName(nodeAddress string, id uint32, postfix string) string {
 }
 
 func (d *dockerSwarm) provisionVolumes(ctx context.Context, nodeAddress string, id uint32, blocksVolumeSize int, logsVolumeSize int) (mounts []mount.Mount, err error) {
-	if logsMount, err := d.provisionVolume(ctx, getVolumeName(nodeAddress, id, "logs"), ORBS_LOGS_TARGET, blocksVolumeSize); err != nil {
+	if logsMount, err := d.provisionVolume(ctx, getVolumeName(nodeAddress, id, "logs"), ORBS_LOGS_TARGET, logsVolumeSize); err != nil {
 		return mounts, err
 	} else {
 		mounts = append(mounts, logsMount)
 	}
 
-	if blocksMount, err := d.provisionVolume(ctx, getVolumeName(nodeAddress, id, "blocks"), ORBS_BLOCKS_TARGET, logsVolumeSize); err != nil {
+	if blocksMount, err := d.provisionVolume(ctx, getVolumeName(nodeAddress, id, "blocks"), ORBS_BLOCKS_TARGET, blocksVolumeSize); err != nil {
 		return mounts, err
 	} else {
 		mounts = append(mounts, blocksMount)

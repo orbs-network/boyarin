@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar"
 	"github.com/orbs-network/boyarin/boyar/config"
+	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/supervized"
 	"github.com/orbs-network/scribe/log"
 	"os"
@@ -28,19 +29,20 @@ func main() {
 
 	loggerHttpEndpointPtr := flag.String("logger-http-endpoint", "", "")
 
-	orchestratorOptionsPtr := flag.String("orchestrator-options", "", "allows to override `orchestrator-options` section of boyar config, takes JSON object as a parameter")
+	orchestratorOptionsPtr := flag.String("orchestrator-options", "", "allows to override `orchestrator` section of boyar config, takes JSON object as a parameter")
 
 	sslCertificatePathPtr := flag.String("ssl-certificate", "", "SSL certificate")
 	sslPrivateKeyPtr := flag.String("ssl-private-key", "", "SSL private key")
 
-	showConfiguration := flag.Bool("show-configuration", false, "Show configuration and exit")
-	help := flag.Bool("help", false, "Show usage")
-	showVersion := flag.Bool("version", false, "Show version")
+	showConfiguration := flag.Bool("show-configuration", false, "show configuration and exit")
+	help := flag.Bool("help", false, "show usage")
+	showVersion := flag.Bool("version", false, "show version")
 
 	flag.Parse()
 
 	if *showVersion {
 		fmt.Println(config.GetVersion().String())
+		fmt.Println("Docker API version", adapter.DOCKER_API_VERSION)
 		return
 	}
 

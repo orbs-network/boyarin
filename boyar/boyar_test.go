@@ -136,7 +136,7 @@ func TestBoyar_ProvisionVirtualChainsWithNoConfigChanges(t *testing.T) {
 	require.NoError(t, err)
 	orchestrator.AssertNumberOfCalls(t, "Prepare", 2)
 	virtualChainRunner.AssertNumberOfCalls(t, "Run", 2)
-	require.EqualValues(t, "fc93b32643976e87ef258a07644d245f79e251b9bf306df2a4ff8a000bc19d07", cache.Get("42"))
+	require.EqualValues(t, "dda31ee86b1842d0474d6f8c7f386b59fe58a4a507cfff977ddfaf3fc91fbe27", cache.Get("42"))
 
 	err = b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
@@ -158,7 +158,7 @@ func TestBoyar_ProvisionVirtualChainsReprovisionsIfConfigChanges(t *testing.T) {
 	require.NoError(t, err)
 	orchestrator.AssertNumberOfCalls(t, "Prepare", 2)
 	virtualChainRunner.AssertNumberOfCalls(t, "Run", 2)
-	require.EqualValues(t, "fc93b32643976e87ef258a07644d245f79e251b9bf306df2a4ff8a000bc19d07", cache.Get("42"))
+	require.EqualValues(t, "dda31ee86b1842d0474d6f8c7f386b59fe58a4a507cfff977ddfaf3fc91fbe27", cache.Get("42"))
 
 	cfg.Chains()[0].Config["active-consensus-algo"] = 999
 
@@ -182,7 +182,7 @@ func TestBoyar_ProvisionVirtualChainsReprovisionsIfDockerConfigChanges(t *testin
 	require.NoError(t, err)
 	orchestrator.AssertNumberOfCalls(t, "Prepare", 2)
 	virtualChainRunner.AssertNumberOfCalls(t, "Run", 2)
-	require.EqualValues(t, "fc93b32643976e87ef258a07644d245f79e251b9bf306df2a4ff8a000bc19d07", cache.Get("42"))
+	require.EqualValues(t, "dda31ee86b1842d0474d6f8c7f386b59fe58a4a507cfff977ddfaf3fc91fbe27", cache.Get("42"))
 
 	cfg.Chains()[1].DockerConfig.Tag = "beta"
 
@@ -258,7 +258,7 @@ func Test_BoyarProvisionVirtualChainsReprovisionsWithErrors(t *testing.T) {
 	bWithNoErrors := NewBoyar(streletsMockWithNoErrors, source, cache, helpers.DefaultTestLogger())
 	err = bWithNoErrors.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
-	require.Equal(t, "fc93b32643976e87ef258a07644d245f79e251b9bf306df2a4ff8a000bc19d07", cache.Get("42"))
+	require.Equal(t, "dda31ee86b1842d0474d6f8c7f386b59fe58a4a507cfff977ddfaf3fc91fbe27", cache.Get("42"))
 	streletsMockWithNoErrors.VerifyMocks(t)
 }
 
@@ -277,7 +277,7 @@ func Test_BoyarProvisionVirtualChainsClearsCacheAfterFailedAttempts(t *testing.T
 	err = b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
 	streletsMock.VerifyMocks(t)
-	require.Equal(t, "fc93b32643976e87ef258a07644d245f79e251b9bf306df2a4ff8a000bc19d07", cache.Get("42"))
+	require.Equal(t, "dda31ee86b1842d0474d6f8c7f386b59fe58a4a507cfff977ddfaf3fc91fbe27", cache.Get("42"))
 
 	streletsWithError := &StreletsMock{}
 	streletsWithError.On("ProvisionVirtualChain", mock.Anything, mock.Anything).Return(fmt.Errorf("unbearable catastrophe"))
@@ -304,7 +304,7 @@ func Test_BoyarProvisionVirtualChainsClearsCacheAfterRemovingChain(t *testing.T)
 
 	err = b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
-	require.Equal(t, "fc93b32643976e87ef258a07644d245f79e251b9bf306df2a4ff8a000bc19d07", cache.Get("42"))
+	require.Equal(t, "dda31ee86b1842d0474d6f8c7f386b59fe58a4a507cfff977ddfaf3fc91fbe27", cache.Get("42"))
 	streletsMock.VerifyMocks(t)
 
 	streletsMock.On("RemoveVirtualChain", mock.Anything, mock.Anything).Return(nil)

@@ -20,14 +20,14 @@ func getVolumeName(nodeAddress string, id uint32, postfix string) string {
 	return fmt.Sprintf("%s-%d-%s", nodeAddress, id, postfix)
 }
 
-func (d *dockerSwarm) provisionVolumes(ctx context.Context, nodeAddress string, id uint32) (mounts []mount.Mount, err error) {
-	if logsMount, err := d.provisionVolume(ctx, getVolumeName(nodeAddress, id, "logs"), ORBS_LOGS_TARGET, 2); err != nil {
+func (d *dockerSwarm) provisionVolumes(ctx context.Context, nodeAddress string, id uint32, blocksVolumeSize int, logsVolumeSize int) (mounts []mount.Mount, err error) {
+	if logsMount, err := d.provisionVolume(ctx, getVolumeName(nodeAddress, id, "logs"), ORBS_LOGS_TARGET, logsVolumeSize); err != nil {
 		return mounts, err
 	} else {
 		mounts = append(mounts, logsMount)
 	}
 
-	if blocksMount, err := d.provisionVolume(ctx, getVolumeName(nodeAddress, id, "blocks"), ORBS_BLOCKS_TARGET, 100); err != nil {
+	if blocksMount, err := d.provisionVolume(ctx, getVolumeName(nodeAddress, id, "blocks"), ORBS_BLOCKS_TARGET, blocksVolumeSize); err != nil {
 		return mounts, err
 	} else {
 		mounts = append(mounts, blocksMount)
@@ -36,7 +36,6 @@ func (d *dockerSwarm) provisionVolumes(ctx context.Context, nodeAddress string, 
 	return mounts, nil
 }
 
-// FIXME propagate maxSize from the config
 func (d *dockerSwarm) provisionVolume(ctx context.Context, volumeName string, target string, maxSizeInGb int) (mount.Mount, error) {
 	driverName, driverOptions := getVolumeDriverOptions(volumeName, d.options, maxSizeInGb)
 

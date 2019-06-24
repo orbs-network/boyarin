@@ -60,6 +60,9 @@ func (s *strelets) ProvisionVirtualChain(ctx context.Context, input *ProvisionVi
 				LimitedCPU:     chain.DockerConfig.Resources.Limits.CPUs,
 				ReservedMemory: chain.DockerConfig.Resources.Reservations.Memory,
 				ReservedCPU:    chain.DockerConfig.Resources.Reservations.CPUs,
+
+				BlocksVolumeSize: chain.DockerConfig.Volumes.Blocks,
+				LogsVolumeSize:   chain.DockerConfig.Volumes.Logs,
 			}
 
 			appConfig := &adapter.AppConfig{

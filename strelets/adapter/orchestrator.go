@@ -6,7 +6,8 @@ import (
 	"time"
 )
 
-const DOCKER_API_VERSION = "1.40"
+// FIXME revert to 1.40 when Docker 19.03 is released
+const DOCKER_API_VERSION = "1.39"
 
 const PROXY_CONTAINER_NAME = "http-api-reverse-proxy"
 
@@ -30,6 +31,9 @@ type ServiceConfig struct {
 	LimitedCPU     float64
 	ReservedMemory int64
 	ReservedCPU    float64
+
+	BlocksVolumeSize int
+	LogsVolumeSize   int
 }
 
 type Runner interface {

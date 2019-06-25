@@ -141,9 +141,11 @@ func execute(flags *config.Flags, logger log.Logger) error {
 	if flags.Daemonize {
 		supervized.GoForever(func() {
 			for {
-				if err := boyar.ReportStatus(context.Background(), logger); err != nil {
+				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+				if err := boyar.ReportStatus(ctx, logger); err != nil {
 					logger.Error("status check failed", log.Error(err))
 				}
+				cancel()
 				<-time.After(1 * time.Minute)
 			}
 		})

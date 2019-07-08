@@ -52,10 +52,13 @@ func Test_StringConfigurationSource(t *testing.T) {
 	require.NotNil(t, source.OrchestratorOptions().StorageOptions)
 	require.Equal(t, "100", source.OrchestratorOptions().StorageOptions["maxRetries"])
 
-	require.EqualValues(t, 1024, source.Chains()[0].DockerConfig.Resources.Limits.Memory)
-	require.EqualValues(t, 1, source.Chains()[0].DockerConfig.Resources.Limits.CPUs)
-	require.EqualValues(t, 512, source.Chains()[0].DockerConfig.Resources.Reservations.Memory)
-	require.EqualValues(t, 0.5, source.Chains()[0].DockerConfig.Resources.Reservations.CPUs)
+	resources := source.Chains()[0].DockerConfig.Resources
+	require.EqualValues(t, 1024, resources.Limits.Memory)
+	require.EqualValues(t, 1, resources.Limits.CPUs)
+	require.EqualValues(t, 512, resources.Reservations.Memory)
+	require.EqualValues(t, 0.5, resources.Reservations.CPUs)
+	require.EqualValues(t, 5, source.Chains()[0].DockerConfig.Volumes.Blocks)
+	require.EqualValues(t, 1, source.Chains()[0].DockerConfig.Volumes.Logs)
 
 	require.NotNil(t, source, source.Chains()[1].DockerConfig.Resources.Limits)
 	require.NotNil(t, source, source.Chains()[1].DockerConfig.Resources.Reservations)

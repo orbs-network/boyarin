@@ -8,6 +8,8 @@ Management layer that provisions virtual chains for [ORBS blockchain](https://gi
 
 Works together with [Nebula](https://github.com/orbs-network/nebula).
 
+Staring from version 0.17.0, Boyar only works with Docker version higher than 19.03.
+
 ## Tips
 
 To remove all containers: `docker rm -f $(docker ps -aq)`

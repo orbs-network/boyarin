@@ -1,7 +1,9 @@
 package strelets
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/orbs-network/boyarin/version"
 	"strings"
 )
 
@@ -13,8 +15,26 @@ func getSSLNginxConfig(locations string) string {
 	return fmt.Sprintf(`server { listen 443; ssl on; ssl_certificate /var/run/secrets/ssl-cert; ssl_certificate_key /var/run/secrets/ssl-key; %s }`, locations)
 }
 
+type defaultNginxResponse struct {
+	Status string
+	Description string
+	Version version.Version
+}
+
+func getDefaultNginxResponse() string {
+	raw, _ := json.Marshal(defaultNginxResponse{
+		Status: "OK",
+		Description: "ORBS blockchain node provisioned by Boyar",
+		Version: version.GetVersion(),
+	})
+
+	return string(raw)
+}
+
 func getNginxLocations(chains []*VirtualChain, ip string) string {
-	var locations []string
+	locations := []string {
+		fmt.Sprintf(`location / { return 200 '%s'; add_header Content-Type application/json; }`, getDefaultNginxResponse()),
+	}
 
 	for _, chain := range chains {
 		if chain.Disabled {

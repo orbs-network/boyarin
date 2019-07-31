@@ -15,17 +15,31 @@ func getSSLNginxConfig(locations string) string {
 	return fmt.Sprintf(`server { listen 443; ssl on; ssl_certificate /var/run/secrets/ssl-cert; ssl_certificate_key /var/run/secrets/ssl-key; %s }`, locations)
 }
 
+type boyar struct {
+	Version version.Version
+}
+
+
+type services struct {
+	Boyar boyar
+}
+
+
 type defaultNginxResponse struct {
 	Status string
 	Description string
-	Version version.Version
+	Services services
 }
 
 func getDefaultNginxResponse() string {
 	raw, _ := json.Marshal(defaultNginxResponse{
 		Status: "OK",
-		Description: "ORBS blockchain node provisioned by Boyar",
-		Version: version.GetVersion(),
+		Description: "ORBS blockchain node",
+		Services: services{
+			Boyar: boyar{
+				Version: version.GetVersion(),
+			},
+		},
 	})
 
 	return string(raw)

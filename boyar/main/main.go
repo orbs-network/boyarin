@@ -92,8 +92,14 @@ func getLogger(flags *config.Flags) (log.Logger, error) {
 			log.NewJsonFormatter().WithTimestampColumn("@timestamp"), 1))
 	}
 
+	tags := []*log.Field{
+		log.String("app", "boyar"),
+		log.String("version", version.GetVersion().Semantic),
+		log.String("commit", version.GetVersion().Commit),
+	}
+
 	logger := log.GetLogger().
-		WithTags(log.String("app", "boyar")).
+		WithTags(tags...).
 		WithOutput(outputs...).
 		WithSourcePrefix("boyarin/")
 

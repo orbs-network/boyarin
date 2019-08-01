@@ -1,4 +1,4 @@
-package config
+package version
 
 var SemanticVersion string
 var CommitVersion string

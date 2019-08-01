@@ -9,6 +9,7 @@ import (
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/supervized"
+	"github.com/orbs-network/boyarin/version"
 	"github.com/orbs-network/scribe/log"
 	"os"
 	"time"
@@ -41,7 +42,7 @@ func main() {
 	flag.Parse()
 
 	if *showVersion {
-		fmt.Println(config.GetVersion().String())
+		fmt.Println(version.GetVersion().String())
 		fmt.Println("Docker API version", adapter.DOCKER_API_VERSION)
 		return
 	}
@@ -91,8 +92,14 @@ func getLogger(flags *config.Flags) (log.Logger, error) {
 			log.NewJsonFormatter().WithTimestampColumn("@timestamp"), 1))
 	}
 
+	tags := []*log.Field{
+		log.String("app", "boyar"),
+		log.String("version", version.GetVersion().Semantic),
+		log.String("commit", version.GetVersion().Commit),
+	}
+
 	logger := log.GetLogger().
-		WithTags(log.String("app", "boyar")).
+		WithTags(tags...).
 		WithOutput(outputs...).
 		WithSourcePrefix("boyarin/")
 

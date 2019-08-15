@@ -2,6 +2,7 @@ package strelets
 
 import (
 	"context"
+	"github.com/orbs-network/boyarin/strelets/adapter"
 )
 
 type RemoveVirtualChainInput struct {
@@ -9,6 +10,6 @@ type RemoveVirtualChainInput struct {
 }
 
 func (s *strelets) RemoveVirtualChain(ctx context.Context, input *RemoveVirtualChainInput) error {
-	containerName := input.VirtualChain.getContainerName()
-	return s.orchestrator.RemoveContainer(ctx, containerName)
+	serviceName := adapter.GetServiceId(input.VirtualChain.getContainerName())
+	return s.orchestrator.RemoveContainer(ctx, serviceName)
 }

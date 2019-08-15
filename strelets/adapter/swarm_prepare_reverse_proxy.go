@@ -13,7 +13,8 @@ type ReverseProxyConfig struct {
 }
 
 func (d *dockerSwarm) PrepareReverseProxy(ctx context.Context, config *ReverseProxyConfig) (Runner, error) {
-	if err := d.RemoveContainer(ctx, PROXY_CONTAINER_NAME); err != nil {
+	serviceName := GetServiceId(PROXY_CONTAINER_NAME)
+	if err := d.RemoveContainer(ctx, serviceName); err != nil {
 		return nil, err
 	}
 
@@ -26,7 +27,7 @@ func (d *dockerSwarm) PrepareReverseProxy(ctx context.Context, config *ReversePr
 			}
 			return getNginxServiceSpec(storedSecrets), nil
 		},
-		serviceName: GetServiceId(PROXY_CONTAINER_NAME),
+		serviceName: serviceName,
 	}, nil
 }
 

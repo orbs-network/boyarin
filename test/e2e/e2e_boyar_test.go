@@ -131,3 +131,31 @@ func TestE2EAddNewVirtualChainWithSwarmAndBoyar(t *testing.T) {
 		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8175), 0, WAIT_FOR_BLOCK_TIMEOUT)
 	})
 }
+
+// Tests boyar.Flow as close as it gets to production starting up
+func TestE2EWithFullFlowAndDisabledSimilarVchainId(t *testing.T) {
+	withCleanContext(t, func(t *testing.T) {
+		for i := 1; i <= 3; i++ {
+			vchains := getBoyarVchains(i, 1000, 92, 100)
+			vchains[len(vchains) - 1].Disabled = true // Check for namespace clashes: 100 will be removed but 1000 should be intact
+
+			boyarConfig := getBoyarConfig(vchains)
+			cfg, err := config.NewStringConfigurationSource(string(boyarConfig), "")
+			cfg.SetKeyConfigPath(fmt.Sprintf("%s/node%d/keys.json", getConfigPath(), i))
+			require.NoError(t, err)
+
+			logger := helpers.DefaultTestLogger()
+			cache := config.NewCache()
+			err = boyar.Flow(context.Background(), cfg, cache, logger)
+			require.NoError(t, err)
+		}
+
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(9081), 3, WAIT_FOR_BLOCK_TIMEOUT)
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8175), 0, WAIT_FOR_BLOCK_TIMEOUT)
+
+		helpers.Eventually(WAIT_FOR_BLOCK_TIMEOUT, func() bool {
+			_, err := helpers.GetMetricsForPort(8181)() // port for vcid 100
+			return err != nil
+		})
+	})
+}

@@ -9,15 +9,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"testing"
 	"time"
 )
 
 func Test_UpdateReverseProxyWithSwarm(t *testing.T) {
-	if os.Getenv("CI") != "" {
-		t.Skip("skipped on CI because of flakiness")
-	}
+	helpers.SkipOnCI(t)
 
 	withCleanContext(t, func(t *testing.T) {
 		port := 10080
@@ -68,9 +65,7 @@ func Test_UpdateReverseProxyWithSwarm(t *testing.T) {
 }
 
 func Test_CreateReverseProxyWithSSL(t *testing.T) {
-	if os.Getenv("CI") != "" {
-		t.Skip("skipped on CI because of flakiness")
-	}
+	helpers.SkipOnCI(t)
 
 	withCleanContext(t, func(t *testing.T) {
 
@@ -105,7 +100,7 @@ func Test_CreateReverseProxyWithSSL(t *testing.T) {
 			}
 			_, err := client.Get(url)
 			fmt.Println(err.Error())
-			return err.Error() == fmt.Sprintf("Get %s: x509: cannot validate certificate for 10.4.12.224 because it doesn't contain any IP SANs", url)
+			return err.Error() == fmt.Sprintf("Get %s: x509: cannot validate certificate for %s because it doesn't contain any IP SANs", url, ip)
 		}))
 	})
 }

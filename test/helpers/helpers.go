@@ -71,6 +71,12 @@ func SkipUnlessSwarmIsEnabled(t *testing.T) {
 	}
 }
 
+func SkipOnCI(t *testing.T) {
+	if os.Getenv("CI") != "" {
+		t.Skip("skipped on CI because of flakiness")
+	}
+}
+
 func WaitForBlock(t *testing.T, getMetrics func() (map[string]interface{}, error), targetBlockHeight int, timeout time.Duration) {
 	require.Truef(t, Eventually(timeout, func() bool {
 		blockHeight, err := GetBlockHeight(getMetrics)

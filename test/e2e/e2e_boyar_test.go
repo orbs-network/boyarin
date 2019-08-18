@@ -19,8 +19,8 @@ func getBoyarVchains(nodeIndex int, vchainIds ...int) []*strelets.VirtualChain {
 	for _, vchainId := range vchainIds {
 		chain := &strelets.VirtualChain{
 			Id:         strelets.VirtualChainId(vchainId),
-			HttpPort:   HTTP_PORT + vchainId + nodeIndex,
-			GossipPort: GOSSIP_PORT + vchainId + nodeIndex,
+			HttpPort:   getHttpPortForVchain(nodeIndex, vchainId),
+			GossipPort: getGossipPortForVchain(nodeIndex, vchainId),
 			DockerConfig: strelets.DockerConfig{
 				ContainerNamePrefix: fmt.Sprintf("node%d", nodeIndex),
 				Image:               "orbs",
@@ -104,8 +104,8 @@ func TestE2EProvisionMultipleVchainsWithSwarmAndBoyar(t *testing.T) {
 			provisionVchains(t, s, i, 42, 92)
 		}
 
-		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8125), 3, WAIT_FOR_BLOCK_TIMEOUT)
-		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8175), 0, WAIT_FOR_BLOCK_TIMEOUT)
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(getHttpPortForVchain(1, 42)), 3, WAIT_FOR_BLOCK_TIMEOUT)
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(getHttpPortForVchain(1, 92)), 0, WAIT_FOR_BLOCK_TIMEOUT)
 	})
 }
 
@@ -121,14 +121,14 @@ func TestE2EAddNewVirtualChainWithSwarmAndBoyar(t *testing.T) {
 			provisionVchains(t, s, i, 42)
 		}
 
-		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8125), 3, WAIT_FOR_BLOCK_TIMEOUT)
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(getHttpPortForVchain(1, 42)), 3, WAIT_FOR_BLOCK_TIMEOUT)
 
 		for i := 1; i <= 3; i++ {
 			provisionVchains(t, s, i, 42, 92)
 		}
 
-		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8125), 3, WAIT_FOR_BLOCK_TIMEOUT)
-		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8175), 0, WAIT_FOR_BLOCK_TIMEOUT)
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(getHttpPortForVchain(1, 42)), 3, WAIT_FOR_BLOCK_TIMEOUT)
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(getHttpPortForVchain(1, 92)), 0, WAIT_FOR_BLOCK_TIMEOUT)
 	})
 }
 
@@ -150,12 +150,11 @@ func TestE2EWithFullFlowAndDisabledSimilarVchainId(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		helpers.WaitForBlock(t, helpers.GetMetricsForPort(9081), 3, WAIT_FOR_BLOCK_TIMEOUT)
-		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8175), 0, WAIT_FOR_BLOCK_TIMEOUT)
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(getHttpPortForVchain(1, 1000)), 3, WAIT_FOR_BLOCK_TIMEOUT)
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(getHttpPortForVchain(1, 92)), 0, WAIT_FOR_BLOCK_TIMEOUT)
 
-		helpers.Eventually(WAIT_FOR_BLOCK_TIMEOUT, func() bool {
-			_, err := helpers.GetMetricsForPort(8181)() // port for vcid 100
-			return err != nil
-		})
+
+		_, err := helpers.GetMetricsForPort(getHttpPortForVchain(1, 100))() // port for vcid 100
+		require.Regexp(t, ".*connection refused.*", err.Error())
 	})
 }

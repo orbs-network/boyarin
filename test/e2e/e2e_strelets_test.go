@@ -64,7 +64,7 @@ func peers(ip string) *strelets.PeersMap {
 	for i, key := range helpers.NodeAddresses() {
 		peers[strelets.NodeAddress(key)] = &strelets.Peer{
 			IP:   ip,
-			Port: 4400 + i + 1,
+			Port: GOSSIP_PORT + i + 1,
 		}
 	}
 
@@ -113,7 +113,7 @@ func TestE2EKeepVolumesBetweenReloadsWithSwarm(t *testing.T) {
 }
 
 func TestCreateServiceSysctls(t *testing.T) {
-	t.Skip("not supported on Mac or CI, relies on 19.03 beta features")
+	helpers.SkipOnCI(t)
 
 	withCleanContext(t, func(t *testing.T) {
 

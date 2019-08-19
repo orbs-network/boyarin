@@ -35,6 +35,6 @@ func TestE2ESingleVchainWithSignerWithSwarmAndBoyar(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8125), 3, WAIT_FOR_BLOCK_TIMEOUT)
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(getHttpPortForVchain(1, 42)), 3, WAIT_FOR_BLOCK_TIMEOUT)
 	})
 }

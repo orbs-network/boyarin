@@ -150,3 +150,11 @@ func withCleanContext(t *testing.T, f func(t *testing.T)) {
 	removeAllServices(t)
 	removeAllDockerVolumes(t)
 }
+
+func getHttpPortForVchain(nodeIndex int, vchainId int) int {
+	return HTTP_PORT + vchainId + nodeIndex
+}
+
+func getGossipPortForVchain(nodeIndex int, vchainId int) int {
+	return GOSSIP_PORT + vchainId + nodeIndex
+}

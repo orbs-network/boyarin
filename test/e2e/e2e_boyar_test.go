@@ -19,8 +19,8 @@ func getBoyarVchains(nodeIndex int, vchainIds ...int) []*strelets.VirtualChain {
 	for _, vchainId := range vchainIds {
 		chain := &strelets.VirtualChain{
 			Id:         strelets.VirtualChainId(vchainId),
-			HttpPort:   HTTP_PORT + vchainId + nodeIndex,
-			GossipPort: GOSSIP_PORT + vchainId + nodeIndex,
+			HttpPort:   getHttpPortForVchain(nodeIndex, vchainId),
+			GossipPort: getGossipPortForVchain(nodeIndex, vchainId),
 			DockerConfig: strelets.DockerConfig{
 				ContainerNamePrefix: fmt.Sprintf("node%d", nodeIndex),
 				Image:               "orbs",
@@ -104,8 +104,8 @@ func TestE2EProvisionMultipleVchainsWithSwarmAndBoyar(t *testing.T) {
 			provisionVchains(t, s, i, 42, 92)
 		}
 
-		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8125), 3, WAIT_FOR_BLOCK_TIMEOUT)
-		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8175), 0, WAIT_FOR_BLOCK_TIMEOUT)
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(getHttpPortForVchain(1, 42)), 3, WAIT_FOR_BLOCK_TIMEOUT)
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(getHttpPortForVchain(1, 92)), 0, WAIT_FOR_BLOCK_TIMEOUT)
 	})
 }
 
@@ -121,13 +121,40 @@ func TestE2EAddNewVirtualChainWithSwarmAndBoyar(t *testing.T) {
 			provisionVchains(t, s, i, 42)
 		}
 
-		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8125), 3, WAIT_FOR_BLOCK_TIMEOUT)
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(getHttpPortForVchain(1, 42)), 3, WAIT_FOR_BLOCK_TIMEOUT)
 
 		for i := 1; i <= 3; i++ {
 			provisionVchains(t, s, i, 42, 92)
 		}
 
-		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8125), 3, WAIT_FOR_BLOCK_TIMEOUT)
-		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8175), 0, WAIT_FOR_BLOCK_TIMEOUT)
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(getHttpPortForVchain(1, 42)), 3, WAIT_FOR_BLOCK_TIMEOUT)
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(getHttpPortForVchain(1, 92)), 0, WAIT_FOR_BLOCK_TIMEOUT)
+	})
+}
+
+// Tests boyar.Flow as close as it gets to production starting up
+func TestE2EWithFullFlowAndDisabledSimilarVchainId(t *testing.T) {
+	withCleanContext(t, func(t *testing.T) {
+		for i := 1; i <= 3; i++ {
+			vchains := getBoyarVchains(i, 1000, 92, 100)
+			vchains[len(vchains) - 1].Disabled = true // Check for namespace clashes: 100 will be removed but 1000 should be intact
+
+			boyarConfig := getBoyarConfig(vchains)
+			cfg, err := config.NewStringConfigurationSource(string(boyarConfig), "")
+			cfg.SetKeyConfigPath(fmt.Sprintf("%s/node%d/keys.json", getConfigPath(), i))
+			require.NoError(t, err)
+
+			logger := helpers.DefaultTestLogger()
+			cache := config.NewCache()
+			err = boyar.Flow(context.Background(), cfg, cache, logger)
+			require.NoError(t, err)
+		}
+
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(getHttpPortForVchain(1, 1000)), 3, WAIT_FOR_BLOCK_TIMEOUT)
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(getHttpPortForVchain(1, 92)), 0, WAIT_FOR_BLOCK_TIMEOUT)
+
+
+		_, err := helpers.GetMetricsForPort(getHttpPortForVchain(1, 100))() // port for vcid 100
+		require.Regexp(t, ".*connection refused.*", err.Error())
 	})
 }

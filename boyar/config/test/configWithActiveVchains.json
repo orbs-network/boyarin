@@ -25,7 +25,7 @@
           },
           "Reservations": {
             "Memory": 512,
-            "CPUs": 0.5
+            "CPUs": 0.00000001
           }
         }
       },

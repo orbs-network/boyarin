@@ -8,10 +8,21 @@ import (
 
 type VirtualChainId uint32
 
+type ResourcesSpec struct {
+	Memory uint64
+	CPUs   float64
+}
+
+type VirtualChainResources struct {
+	Limits       ResourcesSpec
+	Reservations ResourcesSpec
+}
+
 type VirtualChain struct {
 	Id           VirtualChainId
 	HttpPort     int
 	GossipPort   int
+	Resources    VirtualChainResources
 	DockerConfig DockerConfig
 	Config       map[string]interface{}
 	Disabled     bool

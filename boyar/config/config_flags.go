@@ -19,6 +19,7 @@ type Flags struct {
 	TopologyContractAddress string
 
 	LoggerHttpEndpoint string
+	LogFilePath string
 
 	OrchestratorOptions string
 }

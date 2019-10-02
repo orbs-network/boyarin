@@ -6,15 +6,16 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"io/ioutil"
+	"time"
 )
 
-func (d *dockerSwarm) GetStatus(ctx context.Context) (results []*ContainerStatus, err error) {
+func (d *dockerSwarm) GetStatus(ctx context.Context, since time.Duration) (results []*ContainerStatus, err error) {
 	if tasks, err := d.client.TaskList(ctx, types.TaskListOptions{}); err != nil {
 		return nil, fmt.Errorf("failed to retrieve task list: %s", err)
 	} else {
 		for _, task := range tasks {
 			name, _ := d.getServiceName(ctx, task.ServiceID)
-			logs, _ := d.getLogs(ctx, task.ServiceID)
+			logs, _ := d.getLogs(ctx, task.ServiceID, since)
 
 			results = append(results, &ContainerStatus{
 				Name:      name,
@@ -45,11 +46,14 @@ func (d *dockerSwarm) getServiceName(ctx context.Context, serviceID string) (str
 	}
 }
 
-func (d *dockerSwarm) getLogs(ctx context.Context, serviceID string) (string, error) {
+const ERROR_LOGS_OVERLAP_MARGIN = 1*time.Second
+
+func (d *dockerSwarm) getLogs(ctx context.Context, serviceID string, since time.Duration) (string, error) {
 	io, err := d.client.ServiceLogs(ctx, serviceID, types.ContainerLogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
 		Timestamps: true,
+		Since: (since + ERROR_LOGS_OVERLAP_MARGIN).String(),
 	})
 
 	if err != nil {

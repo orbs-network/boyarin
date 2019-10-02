@@ -22,7 +22,7 @@ func TestDockerSwarm_GetStatusIfUnableToStart(t *testing.T) {
 	require.NoError(t, err)
 
 	require.True(t, helpers.Eventually(15*time.Second, func() bool {
-		status, err := swarm.GetStatus(context.TODO())
+		status, err := swarm.GetStatus(context.TODO(), 30*time.Second)
 		if err != nil {
 			return false
 		}
@@ -44,7 +44,7 @@ func TestDockerSwarm_GetStatusIfExitsImmediately(t *testing.T) {
 	require.NoError(t, err)
 
 	require.True(t, helpers.Eventually(15*time.Second, func() bool {
-		status, err := swarm.GetStatus(context.TODO())
+		status, err := swarm.GetStatus(context.TODO(), 30*time.Second)
 		if err != nil {
 			return false
 		}

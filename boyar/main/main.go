@@ -15,6 +15,9 @@ import (
 	"time"
 )
 
+const SERVICE_STATUS_REPORT_PERIOD = 1 * time.Minute
+const SERVICE_STATUS_REPORT_TIMEOUT = 30 * time.Second
+
 func main() {
 	configUrlPtr := flag.String("config-url", "", "http://my-config/config.json")
 	keyPairConfigPathPtr := flag.String("keys", "", "path to public/private key pair in json format")
@@ -148,12 +151,13 @@ func execute(flags *config.Flags, logger log.Logger) error {
 	if flags.Daemonize {
 		supervized.GoForever(func() {
 			for {
-				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-				if err := boyar.ReportStatus(ctx, logger); err != nil {
+				start := time.Now()
+				ctx, cancel := context.WithTimeout(context.Background(), SERVICE_STATUS_REPORT_TIMEOUT)
+				if err := boyar.ReportStatus(ctx, logger, SERVICE_STATUS_REPORT_PERIOD); err != nil {
 					logger.Error("status check failed", log.Error(err))
 				}
 				cancel()
-				<-time.After(1 * time.Minute)
+				<-time.After(SERVICE_STATUS_REPORT_PERIOD - time.Since(start)) // to report exactly every minute
 			}
 		})
 

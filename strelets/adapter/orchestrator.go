@@ -60,7 +60,7 @@ type Orchestrator interface {
 
 	GetOverlayNetwork(ctx context.Context, name string) (string, error)
 
-	GetStatus(ctx context.Context) ([]*ContainerStatus, error)
+	GetStatus(ctx context.Context, since time.Duration) ([]*ContainerStatus, error)
 
 	io.Closer
 }

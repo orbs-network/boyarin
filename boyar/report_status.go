@@ -6,9 +6,10 @@ import (
 	"github.com/orbs-network/boyarin/log_types"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/scribe/log"
+	"time"
 )
 
-func ReportStatus(ctx context.Context, logger log.Logger) error {
+func ReportStatus(ctx context.Context, logger log.Logger, since time.Duration) error {
 	// We really don't need any options here since we're just observing
 	orchestrator, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
 	if err != nil {
@@ -16,7 +17,7 @@ func ReportStatus(ctx context.Context, logger log.Logger) error {
 	}
 	defer orchestrator.Close()
 
-	status, err := orchestrator.GetStatus(ctx)
+	status, err := orchestrator.GetStatus(ctx, since)
 	if err != nil {
 		return fmt.Errorf("failed to report status: %s", err)
 	}

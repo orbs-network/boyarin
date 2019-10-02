@@ -15,6 +15,9 @@ import (
 	"time"
 )
 
+const SERVICE_STATUS_REPORT_PERIOD = 1 * time.Minute
+const SERVICE_STATUS_REPORT_TIMEOUT = 30 * time.Second
+
 func main() {
 	configUrlPtr := flag.String("config-url", "", "http://my-config/config.json")
 	keyPairConfigPathPtr := flag.String("keys", "", "path to public/private key pair in json format")
@@ -28,7 +31,8 @@ func main() {
 	ethereumEndpointPtr := flag.String("ethereum-endpoint", "", "Ethereum endpoint")
 	topologyContractAddressPtr := flag.String("topology-contract-address", "", "Ethereum address for topology contract")
 
-	loggerHttpEndpointPtr := flag.String("logger-http-endpoint", "", "")
+	loggerHttpEndpointPtr := flag.String("logger-http-endpoint", "", "Logz.io http endpoint")
+	logFilePath := flag.String("log", "", "path to log file")
 
 	orchestratorOptionsPtr := flag.String("orchestrator-options", "", "allows to override `orchestrator` section of boyar config, takes JSON object as a parameter")
 
@@ -50,6 +54,7 @@ func main() {
 	flags := &config.Flags{
 		ConfigUrl:               *configUrlPtr,
 		KeyPairConfigPath:       *keyPairConfigPathPtr,
+		LogFilePath:             *logFilePath,
 		Daemonize:               *daemonizePtr,
 		PollingInterval:         *pollingIntervalPtr,
 		Timeout:                 *timeoutPtr,
@@ -62,7 +67,7 @@ func main() {
 		SSLPrivateKeyPath:       *sslPrivateKeyPtr,
 	}
 
-	logger, err := getLogger(flags)
+	logger, err := config.GetLogger(flags)
 	if err != nil {
 		os.Exit(1)
 	}
@@ -81,36 +86,6 @@ func main() {
 		logger.Error("Startup failure", log.Error(err))
 		os.Exit(1)
 	}
-}
-
-func getLogger(flags *config.Flags) (log.Logger, error) {
-	outputs := []log.Output{log.NewFormattingOutput(os.Stdout, log.NewHumanReadableFormatter())}
-
-	if flags.LoggerHttpEndpoint != "" {
-		outputs = append(outputs, log.NewBulkOutput(
-			log.NewHttpWriter(flags.LoggerHttpEndpoint),
-			log.NewJsonFormatter().WithTimestampColumn("@timestamp"), 1))
-	}
-
-	tags := []*log.Field{
-		log.String("app", "boyar"),
-		log.String("version", version.GetVersion().Semantic),
-		log.String("commit", version.GetVersion().Commit),
-	}
-
-	logger := log.GetLogger().
-		WithTags(tags...).
-		WithOutput(outputs...).
-		WithSourcePrefix("boyarin/")
-
-	cfg, _ := config.NewStringConfigurationSource("{}", "")
-	cfg.SetKeyConfigPath(flags.KeyPairConfigPath)
-	if err := cfg.VerifyConfig(); err != nil {
-		logger.Error("Invalid configuration", log.Error(err))
-		return nil, err
-	}
-
-	return logger.WithTags(log.Node(string(cfg.NodeAddress()))), nil
 }
 
 func printConfiguration(flags *config.Flags, logger log.Logger) {
@@ -148,12 +123,13 @@ func execute(flags *config.Flags, logger log.Logger) error {
 	if flags.Daemonize {
 		supervized.GoForever(func() {
 			for {
-				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-				if err := boyar.ReportStatus(ctx, logger); err != nil {
+				start := time.Now()
+				ctx, cancel := context.WithTimeout(context.Background(), SERVICE_STATUS_REPORT_TIMEOUT)
+				if err := boyar.ReportStatus(ctx, logger, SERVICE_STATUS_REPORT_PERIOD); err != nil {
 					logger.Error("status check failed", log.Error(err))
 				}
 				cancel()
-				<-time.After(1 * time.Minute)
+				<-time.After(SERVICE_STATUS_REPORT_PERIOD - time.Since(start)) // to report exactly every minute
 			}
 		})
 

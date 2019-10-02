@@ -20,6 +20,8 @@ To remove all containers: `docker rm -f $(docker ps -aq)`
 
 ## CLI options
 
+`--log` path to log file, otherwise will log to stdout
+
 `--config-url` path to Boyar configuration
 
 `--daemonize` do not exit the program and keep polling for changes

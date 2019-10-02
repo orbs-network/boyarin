@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/stretchr/testify/mock"
+	"time"
 )
 
 type OrchestratorMock struct {
@@ -35,7 +36,7 @@ func (a *OrchestratorMock) Close() error {
 	return nil
 }
 
-func (a *OrchestratorMock) GetStatus(ctx context.Context) (results []*adapter.ContainerStatus, err error) {
+func (a *OrchestratorMock) GetStatus(ctx context.Context, since time.Duration) (results []*adapter.ContainerStatus, err error) {
 	panic("not implemented")
 	return nil, nil
 }

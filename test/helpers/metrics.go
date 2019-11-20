@@ -52,7 +52,13 @@ func getMetricsForEndpoint(getEndpoint func() string) func() (map[string]interfa
 	}
 }
 
-func GetBlockHeight(getMetrics func() (map[string]interface{}, error)) (int, error) {
+func GetBlockHeight(getMetrics func() (map[string]interface{}, error)) (value int, err error) {
+	defer func() {
+		if e := recover(); e != nil {
+			value = 0
+			err = e.(error)
+		}
+	}()
 	metrics, err := getMetrics()
 	if err != nil {
 		return 0, err

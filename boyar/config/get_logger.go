@@ -38,8 +38,7 @@ func GetLogger(flags *Flags) (log.Logger, error) {
 
 	logger := log.GetLogger().
 		WithTags(tags...).
-		WithOutput(outputs...).
-		WithSourcePrefix("boyarin/")
+		WithOutput(outputs...)
 
 	cfg, _ := NewStringConfigurationSource("{}", "")
 	cfg.SetKeyConfigPath(flags.KeyPairConfigPath)

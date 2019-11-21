@@ -1,10 +1,14 @@
-FROM golang:1.10-alpine
+FROM golang:1.12-alpine
+
+ARG git_commit
 
 RUN apk add --no-cache gcc linux-headers libc-dev git
 
-WORKDIR /go/src/github.com/orbs-network/boyarin/
+WORKDIR /src
 
-ADD . /go/src/github.com/orbs-network/boyarin/
+ADD . /src
+
+RUN go get
 
 RUN env
 
@@ -12,4 +16,4 @@ RUN go env
 
 RUN ./test.sh
 
-RUN sh -x build-binaries.sh
+RUN GIT_COMMIT=${git_commit:-unknown} sh -x build-binaries.sh

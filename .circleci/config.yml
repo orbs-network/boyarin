@@ -1,12 +1,16 @@
 version: 2
 jobs:
-  build:
+  test:
     docker:
       - image: circleci/golang:1.12
-    machine: true
     steps:
       - checkout
       - run: go test ./... -v
+
+  build:
+    machine: true
+    steps:
+      - checkout
       - run: ./docker-build.sh
       - run: $(aws ecr get-login --no-include-email --region us-west-2)
       - run: docker pull $ORBS_NODE_DOCKER_IMAGE:master && docker tag $ORBS_NODE_DOCKER_IMAGE:master orbs:export
@@ -20,4 +24,5 @@ workflows:
   version: 2
   build:
     jobs:
+      - test
       - build

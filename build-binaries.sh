@@ -1,6 +1,5 @@
 #!/bin/sh -xe
 
-export GIT_COMMIT=$(git rev-parse HEAD)
 export SEMVER=$(cat ./.version)
 export CONFIG_PKG="github.com/orbs-network/boyarin/version"
 

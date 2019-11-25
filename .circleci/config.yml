@@ -9,9 +9,25 @@ jobs:
 
   test-e2e:
     machine: true
+    environment:
+      TEST_RESULTS: /tmp/test-results # path to where test results will be saved
     steps:
       - checkout
-      - run: ./ci-e2e.sh
+      - run: mkdir -p $TEST_RESULTS # create the test results directory
+      - run:
+          name: setting up e2e environment
+          command: ./ci-e2e.sh
+      - run:
+          name: run tests
+          environment:
+            ENABLE_ETHEREUM: 'true'
+            ETHEREUM_PRIVATE_KEY: 7a16631b19e5a7d121f13c3ece279c10c996ff14d8bebe609bf1eca41211b291
+            ETHEREUM_ENDPOINT: http://ganache:7545
+            ENABLE_SWARM: 'true'
+          command: |
+            export LOCAL_IP=$(python -c "import socket; print socket.gethostbyname(socket.gethostname())")
+            PACKAGE_NAMES=$(go list ./... | circleci tests split --split-by=timings --timings-type=classname)
+            gotestsum --junitfile ${TEST_RESULTS}/gotestsum-report.xml -- $PACKAGE_NAMES
 
   build:
     machine: true

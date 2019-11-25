@@ -28,7 +28,8 @@ jobs:
             export LOCAL_IP=$(python -c "import socket; print socket.gethostbyname(socket.gethostname())")
             PACKAGE_NAMES=$(go list ./... | circleci tests split --split-by=timings --timings-type=classname)
             gotestsum --junitfile ${TEST_RESULTS}/gotestsum-report.xml -- $PACKAGE_NAMES
-
+      - store_test_results: # Upload test results for display in Test Summary: https://circleci.com/docs/2.0/collect-test-data/
+          path: /tmp/test-results
   build:
     machine: true
     steps:

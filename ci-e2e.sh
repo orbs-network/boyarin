@@ -9,6 +9,8 @@ go version
 env
 go env
 
+go test ./... -v
+
 $(aws ecr get-login --no-include-email --region us-west-2)
 docker pull $ORBS_NODE_DOCKER_IMAGE:master
 docker pull $SIGNER_DOCKER_IMAGE:master

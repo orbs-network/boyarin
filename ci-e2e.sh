@@ -1,10 +1,10 @@
 #!/bin/bash -x
 
 GO_VERSION=1.12.9
-which go
 
+rm -rvf $(which go)
 curl -sSL "https://dl.google.com/go/go$GO_VERSION.linux-amd64.tar.gz" | sudo tar -xz -C /usr/local/
-PATH=/usr/local/go/bin:$PATH # echo "export PATH=$PATH:/usr/local/go/bin" >> $BASH_ENV
+PATH=$PATH:/usr/local/go/bin # echo "export PATH=$PATH:/usr/local/go/bin" >> $BASH_ENV
 
 #GOPATH=$GOPATH:$(pwd)
 go version

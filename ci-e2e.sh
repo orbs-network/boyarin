@@ -5,7 +5,6 @@ GO_VERSION=1.12.9
 curl -sSL "https://dl.google.com/go/go$GO_VERSION.linux-amd64.tar.gz" | sudo tar -xz -C /usr/local/
 PATH=$PATH:/usr/local/go/bin # echo "export PATH=$PATH:/usr/local/go/bin" >> $BASH_ENV
 
-go get
 env
 go env
 

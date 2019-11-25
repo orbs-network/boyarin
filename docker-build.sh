@@ -1,11 +1,11 @@
 #!/bin/bash -xe
 
-docker build -f Dockerfile.build -t orbs:build .
+docker build --build-arg git_commit=$(git rev-parse HEAD) -f Dockerfile.build -t orbs:build .
 
 [ "$(docker ps -a | grep orbs_build)" ] && docker rm -f orbs_build
 
 docker run --name orbs_build orbs:build sleep 1
 
-export SRC=/go/src/github.com/orbs-network/boyarin
+export SRC=/src
 
 docker cp orbs_build:$SRC/boyar.bin .

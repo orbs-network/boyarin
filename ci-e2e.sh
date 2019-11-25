@@ -2,7 +2,7 @@
 
 GO_VERSION=1.12.9
 
-sudo rm -rvf $(dirname $(which go))
+sudo rm -rvf $(dirname $(dirname $(which go))) # remove go base dir (/usr/local/go)  to avoid src duplications
 curl -sSL "https://dl.google.com/go/go$GO_VERSION.linux-amd64.tar.gz" | sudo tar -xz -C /usr/local/
 PATH=$PATH:/usr/local/go/bin # echo "export PATH=$PATH:/usr/local/go/bin" >> $BASH_ENV
 

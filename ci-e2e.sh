@@ -2,7 +2,7 @@
 
 GO_VERSION=1.12.9
 
-rm -rvf $(which go)
+sudo rm -rvf $(which go)
 curl -sSL "https://dl.google.com/go/go$GO_VERSION.linux-amd64.tar.gz" | sudo tar -xz -C /usr/local/
 PATH=$PATH:/usr/local/go/bin # echo "export PATH=$PATH:/usr/local/go/bin" >> $BASH_ENV
 

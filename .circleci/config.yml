@@ -7,6 +7,12 @@ jobs:
       - checkout
       - run: go test ./... -v
 
+  test-e2e:
+    machine: true
+    steps:
+      - checkout
+      - run: ./ci-e2e.sh
+
   build:
     machine: true
     steps:
@@ -25,4 +31,5 @@ workflows:
   build:
     jobs:
       - test
+      - test-e2e
       - build

@@ -29,12 +29,12 @@ docker swarm init
 DOCKER_INSTANCES=$(docker ps -aq)
 DOCKER_SERVICES=$(docker service ls -q)
 DOCKER_SECRETS=$(docker secret ls -q)
-if [ -z "${DOCKER_INSTANCES}" ]; then
+if [ -n "${DOCKER_INSTANCES}" ]; then
   docker rm -f ${DOCKER_INSTANCES}
 fi
-if [ -z "${DOCKER_SERVICES}" ]; then
+if [ -n "${DOCKER_SERVICES}" ]; then
   docker service rm ${DOCKER_SERVICES}
 fi
-if [ -z "${DOCKER_SECRETS}" ]; then
+if [ -n "${DOCKER_SECRETS}" ]; then
   docker secret rm ${DOCKER_SECRETS}
 fi

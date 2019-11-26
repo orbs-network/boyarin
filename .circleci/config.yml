@@ -16,7 +16,11 @@ jobs:
       - run: mkdir -p $TEST_RESULTS # create the test results directory
       - run:
           name: setting up e2e environment
-          command: ./ci-e2e.sh
+          command: ./setup-e2e.sh
+      - run:
+          name: spinning up ganache
+          command: docker run -p "7545:7545" -d trufflesuite/ganache-cli -m 'pet talent sugar must audit chief biology trash change wheat educate bone' -i 5777 -p 7545
+      - run: go mod verify
       - run:
           name: run tests
           environment:

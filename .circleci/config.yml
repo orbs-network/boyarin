@@ -14,13 +14,13 @@ jobs:
     steps:
       - checkout
       - run: mkdir -p $TEST_RESULTS # create the test results directory
-      - run:
-          name: setting up e2e environment
-          command: ./setup-e2e.sh
+      - run: ./circleci/setup-machine.sh
+      - run: go version && env && go env
+      - run: ./setup-e2e.sh
       - run:
           name: spinning up ganache
           command: docker run -p "7545:7545" -d trufflesuite/ganache-cli -m 'pet talent sugar must audit chief biology trash change wheat educate bone' -i 5777 -p 7545
-      - run: go mod verify
+      - run: go mod download && go mod verify
       - run:
           name: run tests
           environment:
@@ -34,6 +34,7 @@ jobs:
             gotestsum --junitfile ${TEST_RESULTS}/gotestsum-report.xml -- $PACKAGE_NAMES
       - store_test_results: # Upload test results for display in Test Summary: https://circleci.com/docs/2.0/collect-test-data/
           path: /tmp/test-results
+
   build:
     machine: true
     steps:

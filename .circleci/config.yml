@@ -15,7 +15,11 @@ jobs:
       - checkout
       - run: mkdir -p $TEST_RESULTS # create the test results directory
       - run: .circleci/setup-machine.sh
-      - run: go version && env && go env
+      - run: |
+          cat $BASH_ENV
+          go version
+          env
+          go env
       - run: ./setup-e2e.sh
       - run:
           name: spinning up ganache

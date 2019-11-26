@@ -18,6 +18,7 @@ jobs:
       - run: |
           cat $BASH_ENV
           go version
+          node --version
           env
           go env
       - run: ./setup-e2e.sh

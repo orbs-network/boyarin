@@ -20,9 +20,11 @@ curl -sSL "https://github.com/gotestyourself/gotestsum/releases/download/v0.4.0/
 
 if ! [ -x "$(command -v nvm)" ]; then
   echo "nvm not installed. installing..."
-  $(curl -sSL "https://raw.githubusercontent.com/creationix/nvm/v0.35.1/install.sh") # install nvm
+  $(curl -sSL "https://raw.githubusercontent.com/creationix/nvm/v0.33.11/install.sh") # install nvm
 fi
-echo "\\nexport NVM_DIR=\"${NVM_DIR}\"\\n[ -s \"\$NVM_DIR/nvm.sh\" ] && \\. \"\$NVM_DIR/nvm.sh\"  # This loads nvm\\n" >> $BASH_ENV # ensure nvm is loaded in the next step
+LOAD_NVM_LINE="\\nexport NVM_DIR=\"${NVM_DIR}\"\\n[ -s \"\$NVM_DIR/nvm.sh\" ] && \\. \"\$NVM_DIR/nvm.sh\"  # This loads nvm\\n"
+echo ${LOAD_NVM_LINE//\\/\\\\} >> $BASH_ENV # ensure nvm is loaded in the next step
+
 # install node
 # https://www.cloudesire.com/how-to-upgrade-node-on-circleci-machine-executor/
 if [ -s "$NVM_DIR/nvm.sh" ]; then

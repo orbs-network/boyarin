@@ -19,7 +19,8 @@ jobs:
       - run: ./setup-e2e.sh
       - run:
           name: spinning up ganache
-          command: docker run -p "7545:7545" -d trufflesuite/ganache-cli -m 'pet talent sugar must audit chief biology trash change wheat educate bone' -i 5777 -p 7545
+          command: npm install -g ganache-cli && ganache-cli -m 'pet talent sugar must audit chief biology trash change wheat educate bone' -h 0.0.0.0  -i 5777 -p 7545
+          background: true
       - run: go mod download && go mod verify
       - run:
           name: run tests

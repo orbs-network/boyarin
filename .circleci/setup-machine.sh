@@ -4,11 +4,10 @@
 GO_VERSION=1.12.9
 NODE_VERSION=12.13
 
-# if go installed
-if [ $(hash go 2>/dev/null) ]; then
+if [ -x "$(command -v go)" ]; then
   echo "go already installed. deleting..."
   sudo rm -rf $(dirname $(dirname $(which go))) # remove go base dir (/usr/local/go) to avoid src duplications
-else # go not installed
+else
   echo "go not installed. adding 'usr/local/go/bin' to path..."
   # ensure /usr/local/go/bin is in path (in this step and the next)
   echo "export PATH=$PATH:/usr/local/go/bin" >> $BASH_ENV
@@ -19,8 +18,7 @@ fi
 curl -sSL "https://dl.google.com/go/go$GO_VERSION.linux-amd64.tar.gz" | sudo tar -xz -C /usr/local/
 curl -sSL "https://github.com/gotestyourself/gotestsum/releases/download/v0.4.0/gotestsum_0.4.0_linux_amd64.tar.gz" | sudo tar -xz -C /usr/local/bin
 
-# if nvm not installed
-if [ ! $(hash nvm 2>/dev/null) ]; then
+if ! [ -x "$(command -v nvm)" ]; then
   echo "nvm not installed. installing..."
   $(curl -sSL "https://raw.githubusercontent.com/creationix/nvm/v0.35.1/install.sh") # install nvm
 fi

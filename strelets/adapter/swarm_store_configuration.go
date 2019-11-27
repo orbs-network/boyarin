@@ -14,7 +14,7 @@ const VCHAINS_CONF = "vchains.conf"
 const SSL_CERT = "ssl-cert"
 const SSL_KEY = "ssl-key"
 
-func (d *dockerSwarm) storeVirtualChainConfiguration(ctx context.Context, containerName string, config *AppConfig) (*dockerSwarmSecretsConfig, error) {
+func (d *dockerSwarmOrchestrator) storeVirtualChainConfiguration(ctx context.Context, containerName string, config *AppConfig) (*dockerSwarmSecretsConfig, error) {
 	secrets := &dockerSwarmSecretsConfig{}
 
 	if configSecretId, err := d.saveSwarmSecret(ctx, containerName, "config", config.Config); err != nil {
@@ -38,7 +38,7 @@ func (d *dockerSwarm) storeVirtualChainConfiguration(ctx context.Context, contai
 	return secrets, nil
 }
 
-func (d *dockerSwarm) saveSwarmSecret(ctx context.Context, containerName string, secretName string, content []byte) (string, error) {
+func (d *dockerSwarmOrchestrator) saveSwarmSecret(ctx context.Context, containerName string, secretName string, content []byte) (string, error) {
 	secretId := getSwarmSecretName(containerName, secretName)
 
 	if secrets, err := d.client.SecretList(ctx, types.SecretListOptions{
@@ -69,7 +69,7 @@ func getSwarmSecretName(containerName string, secretName string) string {
 	return strings.Join([]string{containerName, secretName}, "-")
 }
 
-func (d *dockerSwarm) storeNginxConfiguration(ctx context.Context, config *ReverseProxyConfig) (*dockerSwarmNginxSecretsConfig, error) {
+func (d *dockerSwarmOrchestrator) storeNginxConfiguration(ctx context.Context, config *ReverseProxyConfig) (*dockerSwarmNginxSecretsConfig, error) {
 	secrets := &dockerSwarmNginxSecretsConfig{}
 
 	if nginxConfId, err := d.saveSwarmSecret(ctx, PROXY_CONTAINER_NAME, NGINX_CONF, []byte(DEFAULT_NGINX_CONFIG)); err != nil {

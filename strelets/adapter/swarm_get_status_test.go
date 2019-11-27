@@ -3,7 +3,7 @@ package adapter
 import (
 	"context"
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/swarm"
+	dockerSwarm "github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
 	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/stretchr/testify/require"
@@ -62,9 +62,9 @@ func startDefunctBusybox(t *testing.T) (serviceId string) {
 	client, err := client.NewClientWithOpts(client.WithVersion(DOCKER_API_VERSION))
 	require.NoError(t, err)
 
-	spec := swarm.ServiceSpec{
-		TaskTemplate: swarm.TaskSpec{
-			ContainerSpec: &swarm.ContainerSpec{
+	spec := dockerSwarm.ServiceSpec{
+		TaskTemplate: dockerSwarm.TaskSpec{
+			ContainerSpec: &dockerSwarm.ContainerSpec{
 				Image:   "busybox",
 				Command: []string{"this-program-does-not-exist"},
 			},
@@ -82,9 +82,9 @@ func startReloadingBusybox(t *testing.T) (serviceId string) {
 	client, err := client.NewClientWithOpts(client.WithVersion(DOCKER_API_VERSION))
 	require.NoError(t, err)
 
-	spec := swarm.ServiceSpec{
-		TaskTemplate: swarm.TaskSpec{
-			ContainerSpec: &swarm.ContainerSpec{
+	spec := dockerSwarm.ServiceSpec{
+		TaskTemplate: dockerSwarm.TaskSpec{
+			ContainerSpec: &dockerSwarm.ContainerSpec{
 				Image:   "busybox",
 				Command: []string{"sh", "-c", "echo I can not be contained && exit 999"},
 			},

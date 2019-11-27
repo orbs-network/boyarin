@@ -10,7 +10,7 @@ import (
 	"os"
 )
 
-type dockerSwarm struct {
+type dockerSwarmOrchestrator struct {
 	client  *client.Client
 	options OrchestratorOptions
 }
@@ -42,10 +42,10 @@ func NewDockerSwarm(options OrchestratorOptions) (Orchestrator, error) {
 		return nil, err
 	}
 
-	return &dockerSwarm{client: client, options: options}, nil
+	return &dockerSwarmOrchestrator{client: client, options: options}, nil
 }
 
-func (d *dockerSwarm) PullImage(ctx context.Context, imageName string) error {
+func (d *dockerSwarmOrchestrator) PullImage(ctx context.Context, imageName string) error {
 	return pullImage(ctx, d.client, imageName)
 }
 
@@ -76,7 +76,7 @@ func (r *dockerSwarmRunner) Run(ctx context.Context) error {
 	return err
 }
 
-func (d *dockerSwarm) RemoveContainer(ctx context.Context, containerName string) error {
+func (d *dockerSwarmOrchestrator) RemoveContainer(ctx context.Context, containerName string) error {
 	if services, err := d.client.ServiceList(ctx, types.ServiceListOptions{
 		Filters: filters.NewArgs(filters.KeyValuePair{"name", containerName}),
 	}); err != nil {
@@ -96,6 +96,6 @@ func GetServiceId(input string) string {
 	return input + "-stack"
 }
 
-func (d *dockerSwarm) Close() error {
+func (d *dockerSwarmOrchestrator) Close() error {
 	return d.client.Close()
 }

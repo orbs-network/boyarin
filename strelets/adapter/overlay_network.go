@@ -9,7 +9,7 @@ import (
 
 const SHARED_SIGNER_NETWORK = "signer-overlay"
 
-func (d *dockerSwarm) GetOverlayNetwork(ctx context.Context, name string) (string, error) {
+func (d *dockerSwarmOrchestrator) GetOverlayNetwork(ctx context.Context, name string) (string, error) {
 	networks, err := d.client.NetworkList(ctx, types.NetworkListOptions{
 		Filters: filters.NewArgs(filters.Arg("name", name)),
 	})

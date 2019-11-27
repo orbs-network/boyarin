@@ -17,8 +17,8 @@ import (
 func chain(i int) *strelets.VirtualChain {
 	return &strelets.VirtualChain{
 		Id:           42,
-		HttpPort:     HTTP_PORT + i,
-		GossipPort:   GOSSIP_PORT + i,
+		HttpPort:     HttpPort + i,
+		GossipPort:   GossipPort + i,
 		DockerConfig: dockerConfig(fmt.Sprintf("node%d", i)),
 		Config:       helpers.ChainConfigWithGenesisValidatorAddresses(),
 	}
@@ -64,7 +64,7 @@ func peers(ip string) *strelets.PeersMap {
 	for i, key := range helpers.NodeAddresses() {
 		peers[strelets.NodeAddress(key)] = &strelets.Peer{
 			IP:   ip,
-			Port: GOSSIP_PORT + i + 1,
+			Port: GossipPort + i + 1,
 		}
 	}
 
@@ -81,7 +81,7 @@ func TestE2EWithDockerSwarm(t *testing.T) {
 			startChainWithStrelets(t, s, i)
 		}
 
-		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8081), 3, WAIT_FOR_BLOCK_TIMEOUT)
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8081), 3, WaitForBlockTimeout)
 	})
 }
 
@@ -95,7 +95,7 @@ func TestE2EKeepVolumesBetweenReloadsWithSwarm(t *testing.T) {
 			startChainWithStrelets(t, s, i)
 		}
 
-		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8081), 10, WAIT_FOR_BLOCK_TIMEOUT)
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8081), 10, WaitForBlockTimeout)
 
 		expectedBlockHeight, err := helpers.GetBlockHeight(helpers.GetMetricsForPort(8081))
 		require.NoError(t, err)
@@ -108,7 +108,7 @@ func TestE2EKeepVolumesBetweenReloadsWithSwarm(t *testing.T) {
 		time.Sleep(3 * time.Second)
 		startChainWithStrelets(t, s, 1)
 
-		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8081), expectedBlockHeight, WAIT_FOR_BLOCK_TIMEOUT)
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8081), expectedBlockHeight, WaitForBlockTimeout)
 	})
 }
 

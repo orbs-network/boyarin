@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/client"
+	dockerClient "github.com/docker/docker/client"
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
@@ -17,10 +17,10 @@ import (
 	"time"
 )
 
-const HTTP_PORT = 8080
-const GOSSIP_PORT = 4400
+const HttpPort = 8080
+const GossipPort = 4400
 
-const WAIT_FOR_BLOCK_TIMEOUT = 3 * time.Minute
+const WaitForBlockTimeout = 3 * time.Minute
 
 func getConfigPath() string {
 	configPath := "../../e2e-config/"
@@ -44,7 +44,7 @@ func removeAllDockerVolumes(t *testing.T) {
 	fmt.Println("Removing all docker volumes")
 
 	ctx := context.Background()
-	client, err := client.NewClientWithOpts(client.WithVersion(adapter.DOCKER_API_VERSION))
+	client, err := dockerClient.NewClientWithOpts(dockerClient.WithVersion(adapter.DOCKER_API_VERSION))
 	if err != nil {
 		t.Errorf("could not connect to docker: %s", err)
 		t.FailNow()
@@ -81,7 +81,7 @@ func removeAllServices(t *testing.T) {
 	fmt.Println("Removing all swarm services")
 
 	ctx := context.Background()
-	client, err := client.NewClientWithOpts(client.WithVersion(adapter.DOCKER_API_VERSION))
+	client, err := dockerClient.NewClientWithOpts(dockerClient.WithVersion(adapter.DOCKER_API_VERSION))
 	if err != nil {
 		t.Errorf("could not connect to docker: %s", err)
 		t.FailNow()
@@ -92,7 +92,10 @@ func removeAllServices(t *testing.T) {
 
 	for _, s := range services {
 		fmt.Println("Removing service", s.Spec.Name)
-		client.ServiceRemove(ctx, s.ID)
+		err = client.ServiceRemove(ctx, s.ID)
+		if err != nil {
+			t.Logf("error removing service '%s': %p", s.Spec.Name, err)
+		}
 	}
 
 	require.Truef(t, helpers.Eventually(20*time.Second, func() bool {
@@ -117,14 +120,18 @@ func removeAllServices(t *testing.T) {
 	require.NoError(t, err)
 
 	for _, c := range containers {
+		// TODO: remove with legacy CI build environment
 		if CI && (strings.Contains(c.Names[0], "ganache") || strings.Contains(c.Names[0], "boyar")) {
 			continue
 		}
 
 		fmt.Println("removing container", c.Names[0])
-		client.ContainerRemove(ctx, c.ID, types.ContainerRemoveOptions{
+		err = client.ContainerRemove(ctx, c.ID, types.ContainerRemoveOptions{
 			Force: true,
 		})
+		if err != nil {
+			t.Logf("error removing container '%s': %p", c.Names[0], err)
+		}
 	}
 
 	require.Truef(t, helpers.Eventually(20*time.Second, func() bool {
@@ -145,16 +152,16 @@ func withCleanContext(t *testing.T, f func(t *testing.T)) {
 	removeAllServices(t)
 	removeAllDockerVolumes(t)
 
-	t.Run("clean docker context", f)
+	f(t)
 
 	removeAllServices(t)
 	removeAllDockerVolumes(t)
 }
 
-func getHttpPortForVchain(nodeIndex int, vchainId int) int {
-	return HTTP_PORT + vchainId + nodeIndex
+func getHttpPortForVChain(nodeIndex int, vchainId int) int {
+	return HttpPort + vchainId + nodeIndex
 }
 
-func getGossipPortForVchain(nodeIndex int, vchainId int) int {
-	return GOSSIP_PORT + vchainId + nodeIndex
+func getGossipPortForVChain(nodeIndex int, vchainId int) int {
+	return GossipPort + vchainId + nodeIndex
 }

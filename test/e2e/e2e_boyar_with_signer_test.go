@@ -24,8 +24,8 @@ func TestE2ESingleVchainWithSignerWithSwarmAndBoyar(t *testing.T) {
 			vchains := getBoyarVchains(i, 42)
 			boyarConfig := getBoyarConfigWithSigner(i, vchains)
 			cfg, err := config.NewStringConfigurationSource(string(boyarConfig), "")
-			cfg.SetKeyConfigPath(fmt.Sprintf("%s/node%d/keys.json", getConfigPath(), i))
 			require.NoError(t, err)
+			cfg.SetKeyConfigPath(fmt.Sprintf("%s/node%d/keys.json", getConfigPath(), i))
 
 			cache := config.NewCache()
 			b := boyar.NewBoyar(s, cfg, cache, helpers.DefaultTestLogger())
@@ -35,6 +35,6 @@ func TestE2ESingleVchainWithSignerWithSwarmAndBoyar(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		helpers.WaitForBlock(t, helpers.GetMetricsForPort(getHttpPortForVchain(1, 42)), 3, WAIT_FOR_BLOCK_TIMEOUT)
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(getHttpPortForVChain(1, 42)), 3, WaitForBlockTimeout)
 	})
 }

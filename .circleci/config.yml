@@ -41,23 +41,9 @@ jobs:
       - store_test_results: # Upload test results for display in Test Summary: https://circleci.com/docs/2.0/collect-test-data/
           path: /tmp/test-results
 
-  build:
-    machine: true
-    steps:
-      - checkout
-      - run: ./docker-build.sh
-      - run: $(aws ecr get-login --no-include-email --region us-west-2)
-      - run: docker pull $ORBS_NODE_DOCKER_IMAGE:master
-      - run: docker pull $SIGNER_DOCKER_IMAGE:master
-      - run: docker tag $ORBS_NODE_DOCKER_IMAGE:master orbs:export
-      - run: docker tag $SIGNER_DOCKER_IMAGE:master orbs:signer
-      - run: docker swarm init
-      - run: ./docker-test.sh
-
 workflows:
   version: 2
   build:
     jobs:
       - test
       - test-e2e
-      - build

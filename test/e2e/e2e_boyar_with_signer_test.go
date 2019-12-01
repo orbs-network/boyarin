@@ -13,7 +13,7 @@ import (
 )
 
 func TestE2ESingleVchainWithSignerWithSwarmAndBoyar(t *testing.T) {
-	withCleanContext(t, func(t *testing.T) {
+	helpers.WithCleanContext(t, func(t *testing.T) {
 
 		for i := 1; i <= 3; i++ {
 			swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})

@@ -72,7 +72,7 @@ func peers(ip string) *strelets.PeersMap {
 }
 
 func TestE2EWithDockerSwarm(t *testing.T) {
-	withCleanContext(t, func(t *testing.T) {
+	helpers.WithCleanContext(t, func(t *testing.T) {
 		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
 		require.NoError(t, err)
 		s := strelets.NewStrelets(swarm)
@@ -86,7 +86,7 @@ func TestE2EWithDockerSwarm(t *testing.T) {
 }
 
 func TestE2EKeepVolumesBetweenReloadsWithSwarm(t *testing.T) {
-	withCleanContext(t, func(t *testing.T) {
+	helpers.WithCleanContext(t, func(t *testing.T) {
 		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
 		require.NoError(t, err)
 		s := strelets.NewStrelets(swarm)
@@ -115,7 +115,7 @@ func TestE2EKeepVolumesBetweenReloadsWithSwarm(t *testing.T) {
 func TestCreateServiceSysctls(t *testing.T) {
 	helpers.SkipOnCI(t)
 
-	withCleanContext(t, func(t *testing.T) {
+	helpers.WithCleanContext(t, func(t *testing.T) {
 
 		client, err := client.NewClientWithOpts(client.WithVersion(adapter.DOCKER_API_VERSION))
 		if err != nil {
@@ -175,7 +175,7 @@ func TestCreateServiceSysctls(t *testing.T) {
 }
 
 func TestCreateSignerService(t *testing.T) {
-	withCleanContext(t, func(t *testing.T) {
+	helpers.WithCleanContext(t, func(t *testing.T) {
 		client, err := client.NewClientWithOpts(client.WithVersion(adapter.DOCKER_API_VERSION))
 		if err != nil {
 			t.Errorf("could not connect to docker: %s", err)

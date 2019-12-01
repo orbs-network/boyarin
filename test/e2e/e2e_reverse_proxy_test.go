@@ -16,7 +16,7 @@ import (
 func Test_UpdateReverseProxyWithSwarm(t *testing.T) {
 	helpers.SkipOnCI(t)
 
-	withCleanContext(t, func(t *testing.T) {
+	helpers.WithCleanContext(t, func(t *testing.T) {
 		port := 10080
 		server := helpers.CreateHttpServer("/test", port, func(writer http.ResponseWriter, request *http.Request) {
 			writer.Write([]byte("success"))
@@ -67,7 +67,7 @@ func Test_UpdateReverseProxyWithSwarm(t *testing.T) {
 func Test_CreateReverseProxyWithSSL(t *testing.T) {
 	helpers.SkipOnCI(t)
 
-	withCleanContext(t, func(t *testing.T) {
+	helpers.WithCleanContext(t, func(t *testing.T) {
 
 		port := 10099
 		server := helpers.CreateHttpServer("/test", port, func(writer http.ResponseWriter, request *http.Request) {

@@ -1,4 +1,4 @@
-package strelets
+package utils
 
 import (
 	"context"

@@ -94,7 +94,7 @@ func provisionVchains(t *testing.T, s strelets.Strelets, i int, vchainIds ...int
 }
 
 func TestE2EProvisionMultipleVchainsWithSwarmAndBoyar(t *testing.T) {
-	withCleanContext(t, func(t *testing.T) {
+	helpers.WithCleanContext(t, func(t *testing.T) {
 		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
 		require.NoError(t, err)
 
@@ -110,7 +110,7 @@ func TestE2EProvisionMultipleVchainsWithSwarmAndBoyar(t *testing.T) {
 }
 
 func TestE2EAddNewVirtualChainWithSwarmAndBoyar(t *testing.T) {
-	withCleanContext(t, func(t *testing.T) {
+	helpers.WithCleanContext(t, func(t *testing.T) {
 
 		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
 		require.NoError(t, err)
@@ -134,7 +134,7 @@ func TestE2EAddNewVirtualChainWithSwarmAndBoyar(t *testing.T) {
 
 // Tests boyar.Flow as close as it gets to production starting up
 func TestE2EWithFullFlowAndDisabledSimilarVchainId(t *testing.T) {
-	withCleanContext(t, func(t *testing.T) {
+	helpers.WithCleanContext(t, func(t *testing.T) {
 		for i := 1; i <= 3; i++ {
 			vchains := getBoyarVchains(i, 1000, 92, 100)
 			vchains[len(vchains)-1].Disabled = true // Check for namespace clashes: 100 will be removed but 1000 should be intact

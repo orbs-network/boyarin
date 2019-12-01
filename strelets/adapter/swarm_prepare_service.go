@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func (d *dockerSwarm) PrepareService(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) (Runner, error) {
+func (d *dockerSwarmOrchestrator) PrepareService(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) (Runner, error) {
 	serviceName := GetServiceId(serviceConfig.ContainerName)
 
 	if err := d.RemoveContainer(ctx, serviceName); err != nil {
@@ -39,7 +39,7 @@ func (d *dockerSwarm) PrepareService(ctx context.Context, serviceConfig *Service
 	}, nil
 }
 
-func (d *dockerSwarm) storeServiceConfiguration(ctx context.Context, containerName string, config *AppConfig) (*dockerSwarmSecretsConfig, error) {
+func (d *dockerSwarmOrchestrator) storeServiceConfiguration(ctx context.Context, containerName string, config *AppConfig) (*dockerSwarmSecretsConfig, error) {
 	secrets := &dockerSwarmSecretsConfig{}
 
 	if configSecretId, err := d.saveSwarmSecret(ctx, containerName, "config", config.Config); err != nil {

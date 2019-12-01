@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func (d *dockerSwarm) GetStatus(ctx context.Context, since time.Duration) (results []*ContainerStatus, err error) {
+func (d *dockerSwarmOrchestrator) GetStatus(ctx context.Context, since time.Duration) (results []*ContainerStatus, err error) {
 	if tasks, err := d.client.TaskList(ctx, types.TaskListOptions{}); err != nil {
 		return nil, fmt.Errorf("failed to retrieve task list: %s", err)
 	} else {
@@ -31,7 +31,7 @@ func (d *dockerSwarm) GetStatus(ctx context.Context, since time.Duration) (resul
 	return
 }
 
-func (d *dockerSwarm) getServiceName(ctx context.Context, serviceID string) (string, error) {
+func (d *dockerSwarmOrchestrator) getServiceName(ctx context.Context, serviceID string) (string, error) {
 	if specs, err := d.client.ServiceList(ctx, types.ServiceListOptions{
 		Filters: filters.NewArgs(filters.KeyValuePair{
 			"id",
@@ -46,14 +46,14 @@ func (d *dockerSwarm) getServiceName(ctx context.Context, serviceID string) (str
 	}
 }
 
-const ERROR_LOGS_OVERLAP_MARGIN = 1*time.Second
+const ERROR_LOGS_OVERLAP_MARGIN = 1 * time.Second
 
-func (d *dockerSwarm) getLogs(ctx context.Context, serviceID string, since time.Duration) (string, error) {
+func (d *dockerSwarmOrchestrator) getLogs(ctx context.Context, serviceID string, since time.Duration) (string, error) {
 	io, err := d.client.ServiceLogs(ctx, serviceID, types.ContainerLogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
 		Timestamps: true,
-		Since: (since + ERROR_LOGS_OVERLAP_MARGIN).String(),
+		Since:      (since + ERROR_LOGS_OVERLAP_MARGIN).String(),
 	})
 
 	if err != nil {

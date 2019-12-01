@@ -12,7 +12,7 @@ type ReverseProxyConfig struct {
 	SSLPrivateKey  []byte
 }
 
-func (d *dockerSwarm) PrepareReverseProxy(ctx context.Context, config *ReverseProxyConfig) (Runner, error) {
+func (d *dockerSwarmOrchestrator) PrepareReverseProxy(ctx context.Context, config *ReverseProxyConfig) (Runner, error) {
 	serviceName := GetServiceId(PROXY_CONTAINER_NAME)
 	if err := d.RemoveContainer(ctx, serviceName); err != nil {
 		return nil, err

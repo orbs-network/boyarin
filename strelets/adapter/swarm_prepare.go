@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func (d *dockerSwarm) Prepare(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) (Runner, error) {
+func (d *dockerSwarmOrchestrator) Prepare(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) (Runner, error) {
 	serviceName := GetServiceId(serviceConfig.ContainerName)
 
 	if err := d.RemoveContainer(ctx, serviceName); err != nil {
@@ -160,7 +160,7 @@ func getVirtualChainServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.S
 	return spec
 }
 
-func (d *dockerSwarm) getNetworks(ctx context.Context, name string) (networks []swarm.NetworkAttachmentConfig, err error) {
+func (d *dockerSwarmOrchestrator) getNetworks(ctx context.Context, name string) (networks []swarm.NetworkAttachmentConfig, err error) {
 	target, err := d.GetOverlayNetwork(ctx, name)
 	if err != nil {
 		return nil, err

@@ -24,9 +24,7 @@ func TestDockerSwarm_GetStatusIfUnableToStart(t *testing.T) {
 
 		require.True(t, helpers.Eventually(15*time.Second, func() bool {
 			status, err := swarm.GetStatus(context.TODO(), time.Second)
-			if err != nil {
-				return false
-			}
+			require.NoError(t, err)
 			for _, s := range status {
 				return s.Name == "defunctBusybox" && strings.Contains(s.Error, "executable file not found")
 			}
@@ -48,9 +46,7 @@ func TestDockerSwarm_GetStatusIfExitsImmediately(t *testing.T) {
 
 		require.True(t, helpers.Eventually(15*time.Second, func() bool {
 			status, err := swarm.GetStatus(context.TODO(), 30*time.Second)
-			if err != nil {
-				return false
-			}
+			require.NoError(t, err)
 			for _, s := range status {
 				return s.Name == "reloadingBusybox" &&
 					strings.Contains(s.Error, "non-zero exit") &&

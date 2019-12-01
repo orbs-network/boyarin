@@ -8,8 +8,6 @@ import (
 	dockerClient "github.com/docker/docker/client"
 	"github.com/orbs-network/boyarin/utils"
 	"github.com/stretchr/testify/require"
-	"os"
-	"strings"
 	"testing"
 	"time"
 )
@@ -70,7 +68,7 @@ func removeAllServices(t *testing.T) {
 		fmt.Println("Removing service", s.Spec.Name)
 		err = client.ServiceRemove(ctx, s.ID)
 		if err != nil {
-			t.Logf("error removing service '%s': %p", s.Spec.Name, err)
+			fmt.Printf("error removing service '%s': %p\n", s.Spec.Name, err)
 		}
 	}
 
@@ -83,30 +81,18 @@ func removeAllServices(t *testing.T) {
 		return len(services) == 0
 	}), "failed to remove swarm services in time")
 
-	// Depends on CI
-	CI := os.Getenv("CI") != ""
-	numContainers := 0
-	if CI {
-		numContainers = 2
-	}
-
 	containers, err := client.ContainerList(ctx, types.ContainerListOptions{
 		All: true,
 	})
 	require.NoError(t, err)
 
 	for _, c := range containers {
-		// TODO: remove with legacy CI build environment
-		if CI && (strings.Contains(c.Names[0], "ganache") || strings.Contains(c.Names[0], "boyar")) {
-			continue
-		}
-
 		fmt.Println("removing container", c.Names[0])
 		err = client.ContainerRemove(ctx, c.ID, types.ContainerRemoveOptions{
 			Force: true,
 		})
 		if err != nil {
-			t.Logf("error removing container '%s': %p", c.Names[0], err)
+			fmt.Printf("error removing container '%s': %p", c.Names[0], err)
 		}
 	}
 
@@ -118,7 +104,7 @@ func removeAllServices(t *testing.T) {
 			return false
 		}
 
-		return len(containers) <= numContainers
+		return len(containers) <= 0
 	}), "failed to remove docker containers in time")
 }
 

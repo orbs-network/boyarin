@@ -98,9 +98,9 @@ func startReloadingBusybox(t *testing.T) (serviceId string) {
 	return resp.ID
 }
 
-func destroyDefunctBusybox(t *testing.T, serviceId string) error {
+func destroyDefunctBusybox(t *testing.T, serviceId string) {
 	client, err := dockerClient.NewClientWithOpts(dockerClient.WithVersion(DOCKER_API_VERSION))
 	require.NoError(t, err)
 
-	return client.ServiceRemove(context.Background(), serviceId)
+	_ = client.ServiceRemove(context.Background(), serviceId)
 }

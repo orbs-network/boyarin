@@ -108,16 +108,9 @@ func removeAllServices(t *testing.T) {
 	}), "failed to remove docker containers in time")
 }
 
-func WithCleanContext(t *testing.T, f func(t *testing.T)) {
+func InitCleanSwarmEnvironment(t *testing.T) {
 	SkipUnlessSwarmIsEnabled(t)
 
 	removeAllServices(t)
 	removeAllDockerVolumes(t)
-
-	defer func() {
-		removeAllServices(t)
-		removeAllDockerVolumes(t)
-	}()
-
-	f(t)
 }

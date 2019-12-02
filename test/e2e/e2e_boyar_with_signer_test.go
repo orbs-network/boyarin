@@ -14,12 +14,11 @@ import (
 
 func TestE2ESingleVchainWithSignerWithSwarmAndBoyar(t *testing.T) {
 	helpers.WithCleanContext(t, func(t *testing.T) {
+		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
+		require.NoError(t, err)
+		s := strelets.NewStrelets(swarm)
 
 		for i := 1; i <= 3; i++ {
-			swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
-			require.NoError(t, err)
-
-			s := strelets.NewStrelets(swarm)
 
 			vchains := getBoyarVchains(i, 42)
 			boyarConfig := getBoyarConfigWithSigner(i, vchains)

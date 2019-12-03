@@ -19,7 +19,7 @@ func Test_UpdateReverseProxyWithSwarm(t *testing.T) {
 	helpers.InitCleanSwarmEnvironment(t)
 	port := 10080
 	server := helpers.CreateHttpServer("/test", port, func(writer http.ResponseWriter, request *http.Request) {
-		writer.Write([]byte("success"))
+		_, _ = writer.Write([]byte("success"))
 	})
 	server.Start()
 	defer server.Shutdown()
@@ -35,7 +35,8 @@ func Test_UpdateReverseProxyWithSwarm(t *testing.T) {
 	ip := helpers.LocalIP()
 
 	err = s.UpdateReverseProxy(context.Background(), &strelets.UpdateReverseProxyInput{
-		chains, ip, adapter.SSLOptions{},
+		Chains: chains,
+		IP:     ip,
 	})
 	require.NoError(t, err)
 
@@ -51,7 +52,7 @@ func Test_UpdateReverseProxyWithSwarm(t *testing.T) {
 			fmt.Println("ERROR: could not access", url, ":", err)
 			return false
 		}
-		defer res.Body.Close()
+		defer func() { _ = res.Body.Close() }()
 
 		body, err := ioutil.ReadAll(res.Body)
 		if err != nil {
@@ -70,7 +71,7 @@ func Test_CreateReverseProxyWithSSL(t *testing.T) {
 
 	port := 10099
 	server := helpers.CreateHttpServer("/test", port, func(writer http.ResponseWriter, request *http.Request) {
-		writer.Write([]byte("success"))
+		_, _ = writer.Write([]byte("success"))
 	})
 	server.Start()
 	defer server.Shutdown()
@@ -86,7 +87,12 @@ func Test_CreateReverseProxyWithSSL(t *testing.T) {
 	ip := helpers.LocalIP()
 
 	err = s.UpdateReverseProxy(context.Background(), &strelets.UpdateReverseProxyInput{
-		chains, ip, adapter.SSLOptions{"./fixtures/cert.pem", "./fixtures/key.pem"},
+		Chains: chains,
+		IP:     ip,
+		SSLOptions: adapter.SSLOptions{
+			SSLCertificatePath: "./fixtures/cert.pem",
+			SSLPrivateKeyPath:  "./fixtures/key.pem",
+		},
 	})
 	require.NoError(t, err)
 
@@ -98,7 +104,10 @@ func Test_CreateReverseProxyWithSSL(t *testing.T) {
 			Timeout: 2 * time.Second,
 		}
 		_, err := client.Get(url)
-		fmt.Println(err.Error())
-		return err.Error() == fmt.Sprintf("Get %s: x509: cannot validate certificate for %s because it doesn't contain any IP SANs", url, ip)
+		if err != nil {
+			fmt.Println(err.Error())
+			return err.Error() == fmt.Sprintf("Get %s: x509: cannot validate certificate for %s because it doesn't contain any IP SANs", url, ip)
+		}
+		return false
 	}))
 }

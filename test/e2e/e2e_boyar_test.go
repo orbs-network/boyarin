@@ -82,8 +82,8 @@ func provisionVchains(t *testing.T, s strelets.Strelets, i int, vchainIds ...int
 	vchains := getBoyarVchains(i, vchainIds...)
 	boyarConfig := getBoyarConfig(vchains)
 	cfg, err := config.NewStringConfigurationSource(string(boyarConfig), "")
-	cfg.SetKeyConfigPath(fmt.Sprintf("%s/node%d/keys.json", getConfigPath(), i))
 	require.NoError(t, err)
+	cfg.SetKeyConfigPath(fmt.Sprintf("%s/node%d/keys.json", getConfigPath(), i))
 
 	cache := config.NewCache()
 	b := boyar.NewBoyar(s, cfg, cache, helpers.DefaultTestLogger())
@@ -139,8 +139,8 @@ func TestE2EWithFullFlowAndDisabledSimilarVchainId(t *testing.T) {
 
 		boyarConfig := getBoyarConfig(vchains)
 		cfg, err := config.NewStringConfigurationSource(string(boyarConfig), "")
-		cfg.SetKeyConfigPath(fmt.Sprintf("%s/node%d/keys.json", getConfigPath(), i))
 		require.NoError(t, err)
+		cfg.SetKeyConfigPath(fmt.Sprintf("%s/node%d/keys.json", getConfigPath(), i))
 
 		logger := helpers.DefaultTestLogger()
 		cache := config.NewCache()
@@ -152,5 +152,6 @@ func TestE2EWithFullFlowAndDisabledSimilarVchainId(t *testing.T) {
 	helpers.WaitForBlock(t, helpers.GetMetricsForPort(getHttpPortForVChain(1, 92)), 0, WaitForBlockTimeout)
 
 	_, err := helpers.GetMetricsForPort(getHttpPortForVChain(1, 100))() // port for vcid 100
+	require.Error(t, err)
 	require.Regexp(t, ".*connection refused.*", err.Error())
 }

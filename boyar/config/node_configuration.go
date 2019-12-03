@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/orbs-network/boyarin/crypto"
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
@@ -133,6 +134,9 @@ func (c *nodeConfigurationContainer) SetSignerEndpoint() {
 }
 
 func (n *nodeConfigurationContainer) KeyConfig() KeyConfig {
-	cfg, _ := n.readKeysConfig()
+	cfg, err := n.readKeysConfig()
+	if err != nil {
+		fmt.Println("error reading KeysConfig", err)
+	}
 	return cfg
 }

@@ -113,4 +113,5 @@ func InitCleanSwarmEnvironment(t *testing.T) {
 
 	removeAllServices(t)
 	removeAllDockerVolumes(t)
+	fmt.Println("swarm cleared")
 }

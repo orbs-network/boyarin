@@ -108,10 +108,12 @@ func removeAllServices(t *testing.T) {
 	}), "failed to remove docker containers in time")
 }
 
-func InitCleanSwarmEnvironment(t *testing.T) {
+func InitSwarmEnvironment(t *testing.T, ctx context.Context) {
 	SkipUnlessSwarmIsEnabled(t)
 
 	removeAllServices(t)
 	removeAllDockerVolumes(t)
 	fmt.Println("swarm cleared")
+
+	LogSwarmServices(t, ctx)
 }

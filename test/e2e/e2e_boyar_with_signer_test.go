@@ -29,9 +29,9 @@ func TestE2ESingleVchainWithSignerWithSwarmAndBoyar(t *testing.T) {
 
 			cache := config.NewCache()
 			b := boyar.NewBoyar(s, cfg, cache, helpers.DefaultTestLogger())
-			err = b.ProvisionVirtualChains(context.Background())
-			require.NoError(t, err)
 			err = b.ProvisionServices(context.Background())
+			require.NoError(t, err)
+			err = b.ProvisionVirtualChains(context.Background())
 			require.NoError(t, err)
 		}
 

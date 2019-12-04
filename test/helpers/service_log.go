@@ -19,9 +19,9 @@ import (
 )
 
 func LogSwarmServices(t *testing.T, ctx context.Context) {
-	log, err := ReadAllServices(ctx)
+	log, err := ReadAllServicesLog(ctx)
 	require.NoError(t, err)
-	PrintLog(log, os.Stdout)
+	go PrintLog(log, os.Stdout)
 }
 
 type LogLine struct {
@@ -33,23 +33,21 @@ type LogLine struct {
 type Log = <-chan *LogLine
 
 func PrintLog(log Log, w io.Writer) {
-	go func() {
-		for {
-			l, ok := <-log
-			if ok {
-				prefix := ""
-				if l.IsError {
-					prefix = "ERROR"
-				}
-				_, err := fmt.Fprintln(w, l.ServiceName, ":", prefix, l.Text)
-				if err != nil {
-					fmt.Println("error printing log line", err)
-				}
-			} else {
-				return
+	for {
+		l, ok := <-log
+		if ok {
+			prefix := ""
+			if l.IsError {
+				prefix = "ERROR"
 			}
+			_, err := fmt.Fprintln(w, l.ServiceName, ":", prefix, l.Text)
+			if err != nil {
+				fmt.Println("error printing log line", err)
+			}
+		} else {
+			return
 		}
-	}()
+	}
 }
 
 func closeCloser(c io.Closer, name string) {
@@ -58,9 +56,56 @@ func closeCloser(c io.Closer, name string) {
 	}
 }
 
-func ReadAllServices(ctx context.Context) (Log, error) {
+func ReadAllServicesLog(ctx context.Context) (Log, error) {
 	logsLock := sync.Mutex{}
 	logs := make(map[string]Log)
+	multiLog := multiplexLogs(ctx, &logsLock, logs)
+	cli, err := client.NewClientWithOpts(client.FromEnv)
+	if err != nil {
+		return nil, err
+	}
+	go func() {
+		defer closeCloser(cli, "docker client")
+		services := getServicesTicker(ctx, cli)
+		for s := range services {
+			if _, ok := logs[s.ID]; !ok {
+				log, err := ReadServiceLog(ctx, cli, s)
+				if err == nil {
+					logsLock.Lock()
+					logs[s.ID] = log
+					logsLock.Unlock()
+				} else {
+					fmt.Println("error reading service log", err)
+				}
+			}
+		}
+	}()
+	return multiLog, nil
+}
+
+func getServicesTicker(ctx context.Context, cli *client.Client) <-chan swarm.Service {
+	servicesChan := make(chan swarm.Service)
+	go func() {
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
+		for range ticker.C {
+			if ctx.Err() != nil {
+				return
+			}
+			services, err := cli.ServiceList(ctx, types.ServiceListOptions{})
+			if err == nil {
+				for _, s := range services {
+					servicesChan <- s
+				}
+			} else {
+				fmt.Println("error getting service list", err)
+			}
+		}
+	}()
+	return servicesChan
+}
+
+func multiplexLogs(ctx context.Context, logsLock *sync.Mutex, logs map[string]Log) chan *LogLine {
 	multiLog := make(chan *LogLine)
 	go func() {
 		defer close(multiLog)
@@ -84,39 +129,7 @@ func ReadAllServices(ctx context.Context) (Log, error) {
 			logsLock.Unlock()
 		}
 	}()
-
-	cli, err := client.NewClientWithOpts(client.FromEnv)
-	if err != nil {
-		return nil, err
-	}
-	go func() {
-		defer closeCloser(cli, "docker client")
-		ticker := time.NewTicker(time.Second)
-		defer ticker.Stop()
-		for range ticker.C {
-			if ctx.Err() != nil {
-				return
-			}
-			services, err := cli.ServiceList(ctx, types.ServiceListOptions{})
-			if err == nil {
-				for _, s := range services {
-					if _, ok := logs[s.ID]; !ok {
-						log, err := ReadServiceLog(ctx, cli, s)
-						if err == nil {
-							logsLock.Lock()
-							logs[s.ID] = log
-							logsLock.Unlock()
-						} else {
-							fmt.Println("error reading service log", err)
-						}
-					}
-				}
-			} else {
-				fmt.Println("error getting service list", err)
-			}
-		}
-	}()
-	return multiLog, nil
+	return multiLog
 }
 
 func writerLogPipe(ctx context.Context, serviceName string, isError bool) (io.WriteCloser, Log) {

@@ -122,15 +122,8 @@ func overrideResource(resource *swarm.Resources, memory int64, cpu float64) *swa
 }
 
 func getResourceRequirements(limitMemory int64, limitCPU float64, reserveMemory int64, reserveCPU float64) *swarm.ResourceRequirements {
-	limits := overrideResource(&swarm.Resources{
-		MemoryBytes: 3000 * MEGABYTE,
-		NanoCPUs:    1 * CPU_SHARES,
-	}, limitMemory, limitCPU)
-
-	reservations := overrideResource(&swarm.Resources{
-		MemoryBytes: 300 * MEGABYTE,
-		NanoCPUs:    0.25 * CPU_SHARES,
-	}, reserveMemory, reserveCPU)
+	limits := overrideResource(&swarm.Resources{}, limitMemory, limitCPU)
+	reservations := overrideResource(&swarm.Resources{}, reserveMemory, reserveCPU)
 
 	return &swarm.ResourceRequirements{
 		Limits:       limits,

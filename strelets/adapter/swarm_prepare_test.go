@@ -54,14 +54,8 @@ func Test_getVirtualChainServiceSpec(t *testing.T) {
 			Delay:     &restartDelay,
 		},
 		Resources: &swarm.ResourceRequirements{
-			Limits: &swarm.Resources{
-				NanoCPUs:    1 * CPU_SHARES,
-				MemoryBytes: 3000 * MEGABYTE,
-			},
-			Reservations: &swarm.Resources{
-				NanoCPUs:    0.25 * CPU_SHARES,
-				MemoryBytes: 300 * MEGABYTE,
-			},
+			Limits:       &swarm.Resources{},
+			Reservations: &swarm.Resources{},
 		},
 	})
 
@@ -91,11 +85,11 @@ func Test_getVirtualChainServiceSpec(t *testing.T) {
 
 func Test_getResourceRequirements(t *testing.T) {
 	defaultResourceRequirements := getResourceRequirements(0, 0, 0, 0)
-	require.EqualValues(t, 3000*1024*1024, defaultResourceRequirements.Limits.MemoryBytes)
-	require.EqualValues(t, 300*1024*1024, defaultResourceRequirements.Reservations.MemoryBytes)
+	require.EqualValues(t, 0, defaultResourceRequirements.Limits.MemoryBytes)
+	require.EqualValues(t, 0, defaultResourceRequirements.Reservations.MemoryBytes)
 
-	require.EqualValues(t, 1*1000000000, defaultResourceRequirements.Limits.NanoCPUs)
-	require.EqualValues(t, int64(0.25*1000000000), defaultResourceRequirements.Reservations.NanoCPUs)
+	require.EqualValues(t, 0, defaultResourceRequirements.Limits.NanoCPUs)
+	require.EqualValues(t, 0, defaultResourceRequirements.Reservations.NanoCPUs)
 
 	limitMemory := getResourceRequirements(100, 0, 0, 0)
 	require.EqualValues(t, 100*1024*1024, limitMemory.Limits.MemoryBytes)

@@ -78,7 +78,7 @@ func TestE2EWithDockerSwarm(t *testing.T) {
 		require.NoError(t, err)
 		s := strelets.NewStrelets(swarm)
 
-		for i := 1; i <= 3; i++ {
+		for i := 1; i <= 4; i++ {
 			startChainWithStrelets(t, s, i)
 		}
 
@@ -93,7 +93,7 @@ func TestE2EKeepVolumesBetweenReloadsWithSwarm(t *testing.T) {
 		require.NoError(t, err)
 		s := strelets.NewStrelets(swarm)
 
-		for i := 1; i <= 3; i++ {
+		for i := 1; i <= 4; i++ {
 			startChainWithStrelets(t, s, i)
 		}
 

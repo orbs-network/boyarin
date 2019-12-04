@@ -19,7 +19,7 @@ func TestE2ESingleVchainWithSignerWithSwarmAndBoyar(t *testing.T) {
 		require.NoError(t, err)
 		s := strelets.NewStrelets(swarm)
 
-		for i := 1; i <= 3; i++ {
+		for i := 1; i <= 4; i++ {
 
 			vchains := getBoyarVchains(i, 42)
 			boyarConfig := getBoyarConfigWithSigner(i, vchains)

@@ -62,7 +62,7 @@ func getSecretReference(containerName string, secretId string, secretName string
 func getContainerSpec(imageName string, secrets []*swarm.SecretReference, mounts []mount.Mount) *swarm.ContainerSpec {
 	command := []string{
 		"/opt/orbs/orbs-node",
-		//"--silent", TODO enable in tests only?
+		"--silent",
 		"--log", "/opt/orbs/logs/node.log",
 	}
 

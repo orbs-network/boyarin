@@ -81,7 +81,7 @@ func getBoyarConfigWithSigner(i int, vchains []*strelets.VirtualChain) []byte {
 func provisionVchains(t *testing.T, s strelets.Strelets, i int, vchainIds ...int) (boyar.Boyar, []*strelets.VirtualChain) {
 	vchains := getBoyarVchains(i, vchainIds...)
 	boyarConfig := getBoyarConfig(vchains)
-	cfg, err := config.NewStringConfigurationSource(string(boyarConfig), helpers.EthEndpoint()) // ethereum endpoint is optional
+	cfg, err := config.NewStringConfigurationSource(string(boyarConfig), helpers.LocalEthEndpoint()) // ethereum endpoint is optional
 	require.NoError(t, err)
 	cfg.SetKeyConfigPath(fmt.Sprintf("%s/node%d/keys.json", getConfigPath(), i))
 
@@ -146,7 +146,7 @@ func TestE2EWithFullFlowAndDisabledSimilarVchainId(t *testing.T) {
 
 			boyarConfig := getBoyarConfig(vchains)
 			logger.Info(fmt.Sprintf("node %d config %s", i, string(boyarConfig)))
-			cfg, err := config.NewStringConfigurationSource(string(boyarConfig), helpers.EthEndpoint()) // ethereum endpoint is optional
+			cfg, err := config.NewStringConfigurationSource(string(boyarConfig), helpers.LocalEthEndpoint()) // ethereum endpoint is optional
 			require.NoError(t, err)
 			cfg.SetKeyConfigPath(fmt.Sprintf("%s/node%d/keys.json", getConfigPath(), i))
 

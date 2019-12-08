@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func EthEndpoint() string {
+func LocalEthEndpoint() string {
 	endpoint := os.Getenv("ETHEREUM_ENDPOINT")
 	endpoint = strings.Replace(endpoint, "localhost", LocalIP(), 1)
 	return endpoint

@@ -5,9 +5,16 @@ import (
 	"github.com/stretchr/testify/require"
 	"net"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
+
+func EthEndpoint() string {
+	endpoint := os.Getenv("ETHEREUM_ENDPOINT")
+	endpoint = strings.Replace(endpoint, "localhost", LocalIP(), 1)
+	return endpoint
+}
 
 func LocalIP() string {
 	if localIp := os.Getenv("LOCAL_IP"); localIp != "" {

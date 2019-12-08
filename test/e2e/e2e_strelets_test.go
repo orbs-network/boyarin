@@ -47,12 +47,12 @@ func dockerConfig(node string) strelets.DockerConfig {
 		ContainerNamePrefix: node,
 		Resources: strelets.DockerResources{
 			Limits: strelets.Resource{
-				Memory: 256,
-				CPUs:   0.25,
+				Memory: 2048,
+				CPUs:   1,
 			},
 			Reservations: strelets.Resource{
-				Memory: 128,
-				CPUs:   0.25,
+				Memory: 10,
+				CPUs:   0.01,
 			},
 		},
 	}

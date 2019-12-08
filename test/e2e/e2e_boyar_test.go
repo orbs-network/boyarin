@@ -94,6 +94,8 @@ func provisionVchains(t *testing.T, s strelets.Strelets, i int, vchainIds ...int
 }
 
 func TestE2EProvisionMultipleVchainsWithSwarmAndBoyar(t *testing.T) {
+	helpers.SkipOnCI(t)
+
 	helpers.WithContext(func(ctx context.Context) {
 		helpers.InitSwarmEnvironment(t, ctx)
 		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})

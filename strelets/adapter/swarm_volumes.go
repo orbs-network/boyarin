@@ -21,7 +21,7 @@ func getVolumeName(nodeAddress string, id uint32, postfix string) string {
 }
 
 func (d *dockerSwarmOrchestrator) provisionVolumes(ctx context.Context, nodeAddress string, id uint32, blocksVolumeSize int, logsVolumeSize int) (mounts []mount.Mount, err error) {
-	if logsMount, err := d.provisionVolume(ctx, getVolumeName(nodeAddress, id, "logs"), ORBS_LOGS_TARGET, logsVolumeSize); err != nil {
+	if logsMount, err := d.provisionLocalVolume(ctx, getVolumeName(nodeAddress, id, "logs"), ORBS_LOGS_TARGET, logsVolumeSize); err != nil {
 		return mounts, err
 	} else {
 		mounts = append(mounts, logsMount)
@@ -38,6 +38,35 @@ func (d *dockerSwarmOrchestrator) provisionVolumes(ctx context.Context, nodeAddr
 
 func (d *dockerSwarmOrchestrator) provisionVolume(ctx context.Context, volumeName string, target string, maxSizeInGb int) (mount.Mount, error) {
 	driverName, driverOptions := getVolumeDriverOptions(volumeName, d.options, maxSizeInGb)
+
+	_, err := d.client.VolumeCreate(ctx, volume.VolumeCreateBody{
+		Name:       volumeName,
+		Driver:     driverName,
+		DriverOpts: driverOptions,
+	})
+
+	if err != nil {
+		return mount.Mount{}, err
+	}
+
+	return mount.Mount{
+		Source:   volumeName,
+		Type:     "volume",
+		Target:   target,
+		ReadOnly: false,
+		VolumeOptions: &mount.VolumeOptions{
+			DriverConfig: &mount.Driver{
+				Name:    driverName,
+				Options: driverOptions,
+			},
+		},
+	}, nil
+}
+
+func (d *dockerSwarmOrchestrator) provisionLocalVolume(ctx context.Context, volumeName string, target string, maxSizeInGb int) (mount.Mount, error) {
+	driverName, driverOptions := getVolumeDriverOptions(volumeName, OrchestratorOptions{
+		StorageDriver: "local",
+	}, maxSizeInGb)
 
 	_, err := d.client.VolumeCreate(ctx, volume.VolumeCreateBody{
 		Name:       volumeName,

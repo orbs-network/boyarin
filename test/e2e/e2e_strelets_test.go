@@ -154,21 +154,23 @@ func TestCreateServiceSysctls(t *testing.T) {
 		// get all of the tasks of the service, so we can get the container
 		filter := filters.NewArgs()
 		filter.Add("service", "node1-chain-42-stack")
-		var tasks []swarmTypes.Task
-		for len(tasks) == 0 || tasks[0].Status.ContainerStatus == nil {
-			tasks, err = client.TaskList(ctx, types.TaskListOptions{
-				Filters: filter,
-			})
+		helpers.RequireEventually(t, 1*time.Minute, func(t helpers.TestingT) {
+			var tasks []swarmTypes.Task
+			for len(tasks) == 0 || tasks[0].Status.ContainerStatus == nil {
+				tasks, err = client.TaskList(ctx, types.TaskListOptions{
+					Filters: filter,
+				})
+				require.NoError(t, err)
+				require.Len(t, tasks, 1)
+			}
+			// verify that the container has the sysctl option set
+			ctnr, err := client.ContainerInspect(ctx, tasks[0].Status.ContainerStatus.ContainerID)
 			require.NoError(t, err)
-			require.Len(t, tasks, 1)
-		}
-		// verify that the container has the sysctl option set
-		ctnr, err := client.ContainerInspect(ctx, tasks[0].Status.ContainerStatus.ContainerID)
-		require.NoError(t, err)
-		require.EqualValuesf(t, adapter.GetSysctls(), ctnr.HostConfig.Sysctls, "failed to set container sysctls")
+			require.EqualValuesf(t, adapter.GetSysctls(), ctnr.HostConfig.Sysctls, "failed to set container sysctls")
 
-		// verify that the task has the sysctl option set in the task object
-		require.EqualValuesf(t, adapter.GetSysctls(), tasks[0].Spec.ContainerSpec.Sysctls, "failed to set container spec sysctls")
+			// verify that the task has the sysctl option set in the task object
+			require.EqualValuesf(t, adapter.GetSysctls(), tasks[0].Spec.ContainerSpec.Sysctls, "failed to set container spec sysctls")
+		})
 
 		// verify that the service also has the sysctl set in the spec.
 		service, _, err := client.ServiceInspectWithRaw(ctx, "node1-chain-42-stack", types.ServiceInspectOptions{})

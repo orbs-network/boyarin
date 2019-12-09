@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
+	swarmTypes "github.com/docker/docker/api/types/swarm"
 	dockerClient "github.com/docker/docker/client"
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
@@ -119,7 +120,6 @@ func TestE2EKeepVolumesBetweenReloadsWithSwarm(t *testing.T) {
 }
 
 func TestCreateServiceSysctls(t *testing.T) {
-	helpers.SkipOnCI(t)
 	helpers.WithContext(func(ctx context.Context) {
 		helpers.InitSwarmEnvironment(t, ctx)
 
@@ -154,12 +154,14 @@ func TestCreateServiceSysctls(t *testing.T) {
 		// get all of the tasks of the service, so we can get the container
 		filter := filters.NewArgs()
 		filter.Add("service", "node1-chain-42-stack")
-		tasks, err := client.TaskList(ctx, types.TaskListOptions{
-			Filters: filter,
-		})
-		require.NoError(t, err)
-		require.Len(t, tasks, 1)
-
+		var tasks []swarmTypes.Task
+		for len(tasks) == 0 || tasks[0].Status.ContainerStatus == nil {
+			tasks, err = client.TaskList(ctx, types.TaskListOptions{
+				Filters: filter,
+			})
+			require.NoError(t, err)
+			require.Len(t, tasks, 1)
+		}
 		// verify that the container has the sysctl option set
 		ctnr, err := client.ContainerInspect(ctx, tasks[0].Status.ContainerStatus.ContainerID)
 		require.NoError(t, err)

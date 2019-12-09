@@ -28,10 +28,17 @@ func (t *testingT) Errorf(format string, args ...interface{}) {
 	t.FailNow()
 }
 
-func RequireEventually(t *testing.T, timeout time.Duration, f func(t TestingT)) {
+/**
+run the test func with a testing.T -like reporter
+func will run eventuallyIterations times at most,  but will not start later than the specified duration
+expects the test func to succeed at least once, at which point this function returns immediately, Otherwise, the parent test will fail with the details of the last func failure.
+*/
+func RequireEventually(t *testing.T, duration time.Duration, f func(t TestingT)) {
 	var mock testingT
-
-	for i := 0; i < eventuallyIterations; i++ {
+	ticker := time.NewTicker(duration / eventuallyIterations) //maximum eventuallyIterations iterations
+	defer ticker.Stop()
+	timeout := time.Now().Add(duration)
+	exec := func() {
 		c := make(chan struct{})
 		go func() {
 			defer close(c)
@@ -39,11 +46,18 @@ func RequireEventually(t *testing.T, timeout time.Duration, f func(t TestingT)) 
 			f(&mock)
 		}()
 		<-c
+	}
+	exec()
+	for range ticker.C {
 		if !mock.Failed {
 			return
 		}
-		time.Sleep(timeout / eventuallyIterations)
+		if time.Now().After(timeout) {
+			break
+		}
+		exec()
 	}
+	t.Logf("failed after running for %v", duration)
 	if mock.format == "" {
 		t.Fatalf("test failed")
 	} else {

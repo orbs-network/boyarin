@@ -3,7 +3,7 @@ package test
 import (
 	"context"
 	"github.com/orbs-network/boyarin/boyar/topology/ethereum"
-	"github.com/orbs-network/boyarin/test"
+	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -11,7 +11,7 @@ import (
 func TestTopologyIntegrationWithGanache(t *testing.T) {
 	skipUnlessEthereumIsEnabled(t)
 
-	test.WithContext(func(ctx context.Context) {
+	helpers.WithContext(func(ctx context.Context) {
 		h := newRpcEthereumConnectorHarness(t, getConfig())
 
 		contractAddress, err := h.deployContract(ethereum.TopologyContractABI, TopologyContractBytecode)
@@ -31,7 +31,7 @@ func TestTopologyIntegrationWithGanache(t *testing.T) {
 func TestTopologyIntegrationWithGanacheUnhappyFlow(t *testing.T) {
 	skipUnlessEthereumIsEnabled(t)
 
-	test.WithContext(func(ctx context.Context) {
+	helpers.WithContext(func(ctx context.Context) {
 		badContractAddress := "0000000000000000000000000000000000000000"
 
 		topology, err := ethereum.GetEthereumTopology(ctx, "malformed ethereum endpoint", badContractAddress)

@@ -13,13 +13,15 @@ import (
 )
 
 func TestE2ESingleVchainWithSignerWithSwarmAndBoyar(t *testing.T) {
-	withCleanContext(t, func(t *testing.T) {
+	helpers.SkipOnCI(t)
 
-		for i := 1; i <= 3; i++ {
-			swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
-			require.NoError(t, err)
+	helpers.WithContext(func(ctx context.Context) {
+		helpers.InitSwarmEnvironment(t, ctx)
+		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
+		require.NoError(t, err)
+		s := strelets.NewStrelets(swarm)
 
-			s := strelets.NewStrelets(swarm)
+		for i := 1; i <= 4; i++ {
 
 			vchains := getBoyarVchains(i, 42)
 			boyarConfig := getBoyarConfigWithSigner(i, vchains)
@@ -29,9 +31,9 @@ func TestE2ESingleVchainWithSignerWithSwarmAndBoyar(t *testing.T) {
 
 			cache := config.NewCache()
 			b := boyar.NewBoyar(s, cfg, cache, helpers.DefaultTestLogger())
-			err = b.ProvisionVirtualChains(context.Background())
-			require.NoError(t, err)
 			err = b.ProvisionServices(context.Background())
+			require.NoError(t, err)
+			err = b.ProvisionVirtualChains(context.Background())
 			require.NoError(t, err)
 		}
 

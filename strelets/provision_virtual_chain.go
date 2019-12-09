@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/orbs-network/boyarin/strelets/adapter"
+	"github.com/orbs-network/boyarin/utils"
 	"time"
 )
 
@@ -46,7 +47,7 @@ func (s *strelets) ProvisionVirtualChain(ctx context.Context, input *ProvisionVi
 		}
 	}
 
-	return Try(ctx, PROVISION_VCHAIN_MAX_TRIES, PROVISION_VCHAIN_ATTEMPT_TIMEOUT, PROVISION_VCHAIN_RETRY_INTERVAL,
+	return utils.Try(ctx, PROVISION_VCHAIN_MAX_TRIES, PROVISION_VCHAIN_ATTEMPT_TIMEOUT, PROVISION_VCHAIN_RETRY_INTERVAL,
 		func(ctxWithTimeout context.Context) error {
 			serviceConfig := &adapter.ServiceConfig{
 				Id:            uint32(id),

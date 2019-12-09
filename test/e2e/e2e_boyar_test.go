@@ -81,9 +81,9 @@ func getBoyarConfigWithSigner(i int, vchains []*strelets.VirtualChain) []byte {
 func provisionVchains(t *testing.T, s strelets.Strelets, i int, vchainIds ...int) (boyar.Boyar, []*strelets.VirtualChain) {
 	vchains := getBoyarVchains(i, vchainIds...)
 	boyarConfig := getBoyarConfig(vchains)
-	cfg, err := config.NewStringConfigurationSource(string(boyarConfig), "")
-	cfg.SetKeyConfigPath(fmt.Sprintf("%s/node%d/keys.json", getConfigPath(), i))
+	cfg, err := config.NewStringConfigurationSource(string(boyarConfig), helpers.LocalEthEndpoint()) // ethereum endpoint is optional
 	require.NoError(t, err)
+	cfg.SetKeyConfigPath(fmt.Sprintf("%s/node%d/keys.json", getConfigPath(), i))
 
 	cache := config.NewCache()
 	b := boyar.NewBoyar(s, cfg, cache, helpers.DefaultTestLogger())
@@ -94,13 +94,16 @@ func provisionVchains(t *testing.T, s strelets.Strelets, i int, vchainIds ...int
 }
 
 func TestE2EProvisionMultipleVchainsWithSwarmAndBoyar(t *testing.T) {
-	withCleanContext(t, func(t *testing.T) {
+	helpers.SkipOnCI(t)
+
+	helpers.WithContext(func(ctx context.Context) {
+		helpers.InitSwarmEnvironment(t, ctx)
 		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
 		require.NoError(t, err)
 
 		s := strelets.NewStrelets(swarm)
 
-		for i := 1; i <= 3; i++ {
+		for i := 1; i <= 4; i++ {
 			provisionVchains(t, s, i, 42, 92)
 		}
 
@@ -110,20 +113,23 @@ func TestE2EProvisionMultipleVchainsWithSwarmAndBoyar(t *testing.T) {
 }
 
 func TestE2EAddNewVirtualChainWithSwarmAndBoyar(t *testing.T) {
-	withCleanContext(t, func(t *testing.T) {
+	helpers.SkipOnCI(t)
+
+	helpers.WithContext(func(ctx context.Context) {
+		helpers.InitSwarmEnvironment(t, ctx)
 
 		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
 		require.NoError(t, err)
 
 		s := strelets.NewStrelets(swarm)
 
-		for i := 1; i <= 3; i++ {
+		for i := 1; i <= 4; i++ {
 			provisionVchains(t, s, i, 42)
 		}
 
 		helpers.WaitForBlock(t, helpers.GetMetricsForPort(getHttpPortForVChain(1, 42)), 3, WaitForBlockTimeout)
 
-		for i := 1; i <= 3; i++ {
+		for i := 1; i <= 4; i++ {
 			provisionVchains(t, s, i, 42, 92)
 		}
 
@@ -134,17 +140,22 @@ func TestE2EAddNewVirtualChainWithSwarmAndBoyar(t *testing.T) {
 
 // Tests boyar.Flow as close as it gets to production starting up
 func TestE2EWithFullFlowAndDisabledSimilarVchainId(t *testing.T) {
-	withCleanContext(t, func(t *testing.T) {
-		for i := 1; i <= 3; i++ {
+	helpers.SkipOnCI(t)
+
+	logger := helpers.DefaultTestLogger()
+	helpers.WithContext(func(ctx context.Context) {
+		helpers.InitSwarmEnvironment(t, ctx)
+
+		for i := 1; i <= 4; i++ {
 			vchains := getBoyarVchains(i, 1000, 92, 100)
 			vchains[len(vchains)-1].Disabled = true // Check for namespace clashes: 100 will be removed but 1000 should be intact
 
 			boyarConfig := getBoyarConfig(vchains)
-			cfg, err := config.NewStringConfigurationSource(string(boyarConfig), "")
-			cfg.SetKeyConfigPath(fmt.Sprintf("%s/node%d/keys.json", getConfigPath(), i))
+			logger.Info(fmt.Sprintf("node %d config %s", i, string(boyarConfig)))
+			cfg, err := config.NewStringConfigurationSource(string(boyarConfig), helpers.LocalEthEndpoint()) // ethereum endpoint is optional
 			require.NoError(t, err)
+			cfg.SetKeyConfigPath(fmt.Sprintf("%s/node%d/keys.json", getConfigPath(), i))
 
-			logger := helpers.DefaultTestLogger()
 			cache := config.NewCache()
 			err = boyar.Flow(context.Background(), cfg, cache, logger)
 			require.NoError(t, err)
@@ -154,6 +165,7 @@ func TestE2EWithFullFlowAndDisabledSimilarVchainId(t *testing.T) {
 		helpers.WaitForBlock(t, helpers.GetMetricsForPort(getHttpPortForVChain(1, 92)), 0, WaitForBlockTimeout)
 
 		_, err := helpers.GetMetricsForPort(getHttpPortForVChain(1, 100))() // port for vcid 100
+		require.Error(t, err)
 		require.Regexp(t, ".*connection refused.*", err.Error())
 	})
 }

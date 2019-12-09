@@ -20,15 +20,15 @@ func Flow(ctx context.Context, cfg config.NodeConfiguration, configCache config.
 
 	var errors []error
 
+	if err := b.ProvisionServices(ctx); err != nil {
+		errors = append(errors, err)
+	}
+
 	if err := b.ProvisionVirtualChains(ctx); err != nil {
 		errors = append(errors, err)
 	}
 
 	if err := b.ProvisionHttpAPIEndpoint(ctx); err != nil {
-		errors = append(errors, err)
-	}
-
-	if err := b.ProvisionServices(ctx); err != nil {
 		errors = append(errors, err)
 	}
 

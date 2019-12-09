@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/client"
+	dockerClient "github.com/docker/docker/client"
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test/helpers"
@@ -47,12 +47,12 @@ func dockerConfig(node string) strelets.DockerConfig {
 		ContainerNamePrefix: node,
 		Resources: strelets.DockerResources{
 			Limits: strelets.Resource{
-				Memory: 256,
-				CPUs:   0.25,
+				Memory: 2048,
+				CPUs:   1,
 			},
 			Reservations: strelets.Resource{
-				Memory: 128,
-				CPUs:   0.25,
+				Memory: 10,
+				CPUs:   0.01,
 			},
 		},
 	}
@@ -72,12 +72,15 @@ func peers(ip string) *strelets.PeersMap {
 }
 
 func TestE2EWithDockerSwarm(t *testing.T) {
-	withCleanContext(t, func(t *testing.T) {
+	helpers.SkipOnCI(t)
+
+	helpers.WithContext(func(ctx context.Context) {
+		helpers.InitSwarmEnvironment(t, ctx)
 		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
 		require.NoError(t, err)
 		s := strelets.NewStrelets(swarm)
 
-		for i := 1; i <= 3; i++ {
+		for i := 1; i <= 4; i++ {
 			startChainWithStrelets(t, s, i)
 		}
 
@@ -86,12 +89,15 @@ func TestE2EWithDockerSwarm(t *testing.T) {
 }
 
 func TestE2EKeepVolumesBetweenReloadsWithSwarm(t *testing.T) {
-	withCleanContext(t, func(t *testing.T) {
+	helpers.SkipOnCI(t)
+
+	helpers.WithContext(func(ctx context.Context) {
+		helpers.InitSwarmEnvironment(t, ctx)
 		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
 		require.NoError(t, err)
 		s := strelets.NewStrelets(swarm)
 
-		for i := 1; i <= 3; i++ {
+		for i := 1; i <= 4; i++ {
 			startChainWithStrelets(t, s, i)
 		}
 
@@ -114,17 +120,15 @@ func TestE2EKeepVolumesBetweenReloadsWithSwarm(t *testing.T) {
 
 func TestCreateServiceSysctls(t *testing.T) {
 	helpers.SkipOnCI(t)
+	helpers.WithContext(func(ctx context.Context) {
+		helpers.InitSwarmEnvironment(t, ctx)
 
-	withCleanContext(t, func(t *testing.T) {
-
-		client, err := client.NewClientWithOpts(client.WithVersion(adapter.DOCKER_API_VERSION))
+		client, err := dockerClient.NewClientWithOpts(dockerClient.WithVersion(adapter.DOCKER_API_VERSION))
 		if err != nil {
 			t.Errorf("could not connect to docker: %s", err)
 			t.FailNow()
 		}
 		defer client.Close()
-
-		ctx := context.Background()
 
 		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
 		require.NoError(t, err)
@@ -175,15 +179,14 @@ func TestCreateServiceSysctls(t *testing.T) {
 }
 
 func TestCreateSignerService(t *testing.T) {
-	withCleanContext(t, func(t *testing.T) {
-		client, err := client.NewClientWithOpts(client.WithVersion(adapter.DOCKER_API_VERSION))
+	helpers.WithContext(func(ctx context.Context) {
+		helpers.InitSwarmEnvironment(t, ctx)
+		client, err := dockerClient.NewClientWithOpts(dockerClient.WithVersion(adapter.DOCKER_API_VERSION))
 		if err != nil {
 			t.Errorf("could not connect to docker: %s", err)
 			t.FailNow()
 		}
 		defer client.Close()
-
-		ctx := context.Background()
 
 		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
 		require.NoError(t, err)

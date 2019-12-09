@@ -7,7 +7,7 @@ import (
 
 func TestDockerSwarm_getVolumeDriverOptionsDefaults(t *testing.T) {
 	orchestratorOptions := OrchestratorOptions{}
-	driver, options := getVolumeDriverOptions("myVolume", orchestratorOptions, 1976)
+	source, driver, options := getVolumeDriverOptions("myVolume", orchestratorOptions, 1976)
 
 	require.Equal(t, "local", driver)
 	require.Empty(t, options)
@@ -46,6 +46,23 @@ func TestDockerSwarm_getVolumeDriverWithLocalNFS(t *testing.T) {
 
 	orchestratorOptions := OrchestratorOptions{
 		StorageOptions: storageOptions,
+	}
+	driver, options := getVolumeDriverOptions("myVolume", orchestratorOptions, 1976)
+
+	require.Equal(t, "local", driver)
+	require.NotEmpty(t, options)
+	require.Equal(t, "nfs", options["type"])
+	require.Equal(t, "/myVolume", options["device"])
+}
+
+// FIXME add test
+func TestDockerSwarm_getVolumeDriverWithBindMounts(t *testing.T) {
+	storageOptions := make(map[string]string)
+	storageOptions["type"] = "nfs"
+
+	orchestratorOptions := OrchestratorOptions{
+		StorageOptions: storageOptions,
+		StorageMountType: "bind",
 	}
 	driver, options := getVolumeDriverOptions("myVolume", orchestratorOptions, 1976)
 

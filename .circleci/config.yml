@@ -15,12 +15,14 @@ jobs:
       - checkout
       - run: mkdir -p $TEST_RESULTS # create the test results directory
       - run: .circleci/setup-machine.sh
+      - docker/install-docker
       - run: |
           cat $BASH_ENV
           go version
           node --version
           env
           go env
+          docker --version
       - run: ./setup-e2e.sh
       - run:
           name: spinning up ganache
@@ -41,6 +43,8 @@ jobs:
           no_output_timeout: 1h
       - store_test_results: # Upload test results for display in Test Summary: https://circleci.com/docs/2.0/collect-test-data/
           path: /tmp/test-results
+orbs:
+  docker: circleci/docker@0.5.19
 
 workflows:
   version: 2

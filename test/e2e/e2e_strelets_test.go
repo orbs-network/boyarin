@@ -136,11 +136,9 @@ func TestCreateServiceSysctls(t *testing.T) {
 
 		startChainWithStrelets(t, s, 1)
 
-		time.Sleep(5 * time.Second)
-
 		// Straight from Docker integration test:
 		// integration/service/create_test.go
-		// https://github.com/moby/moby/pull/37701/files#diff-204a9536b52c895f8a02e75d2e00dd16
+		// https://github.com/moby/moby/blob/b93f68ab4c5b82549691d1050e94d9b138eb9342/integration/service/create_test.go
 
 		// we're going to check 3 things:
 		//

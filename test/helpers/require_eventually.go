@@ -57,7 +57,7 @@ func RequireEventually(t *testing.T, duration time.Duration, f func(t TestingT))
 		}
 		exec()
 	}
-	t.Logf("failed after running for %v", duration)
+	t.Logf("failed after running for %v", time.Now().Sub(timeout)+duration)
 	if mock.format == "" {
 		t.Fatalf("test failed")
 	} else {

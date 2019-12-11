@@ -4,14 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/filters"
 )
 
 const SHARED_SIGNER_NETWORK = "signer-overlay"
 
 func (d *dockerSwarmOrchestrator) GetOverlayNetwork(ctx context.Context, name string) (string, error) {
 	networks, err := d.client.NetworkList(ctx, types.NetworkListOptions{
-		Filters: filters.NewArgs(filters.Arg("name", name)),
+		Filters: FilterByName(name),
 	})
 
 	if err != nil {

@@ -30,14 +30,13 @@ func Test_getServiceSpec(t *testing.T) {
 	require.EqualValues(t, spec.Name, containerName+"-stack")
 
 	require.EqualValues(t, spec.TaskTemplate, swarm.TaskSpec{
-		ContainerSpec: &swarm.ContainerSpec{
+		ContainerSpec: swarm.ContainerSpec{
 			Image: "orbs:signer",
 			Command: []string{
 				"/opt/orbs/orbs-signer",
 				"--config", "/run/secrets/some-secret.json",
 			},
 			Secrets: secrets,
-			Sysctls: GetSysctls(),
 		},
 		RestartPolicy: &swarm.RestartPolicy{
 			Condition: "",

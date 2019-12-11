@@ -20,7 +20,7 @@ func Test_getNginxServiceSpec(t *testing.T) {
 	require.EqualValues(t, spec.Name, PROXY_CONTAINER_NAME+"-stack")
 
 	require.EqualValues(t, spec.TaskTemplate, swarm.TaskSpec{
-		ContainerSpec: &swarm.ContainerSpec{
+		ContainerSpec: swarm.ContainerSpec{
 			Image: "nginx:latest",
 			Command: []string{
 				"nginx",
@@ -46,7 +46,6 @@ func Test_getNginxServiceSpec(t *testing.T) {
 					},
 				},
 			},
-			Sysctls: GetSysctls(),
 		},
 		RestartPolicy: &swarm.RestartPolicy{
 			Condition: "",

@@ -37,7 +37,7 @@ func Test_getVirtualChainServiceSpec(t *testing.T) {
 	require.EqualValues(t, spec.Name, containerName+"-stack")
 
 	require.EqualValues(t, spec.TaskTemplate, swarm.TaskSpec{
-		ContainerSpec: &swarm.ContainerSpec{
+		ContainerSpec: swarm.ContainerSpec{
 			Image: "orbs:export",
 			Command: []string{
 				"/opt/orbs/orbs-node",
@@ -46,7 +46,6 @@ func Test_getVirtualChainServiceSpec(t *testing.T) {
 				"--config", "/var/run/secrets/some-secret.json",
 			},
 			Secrets: secrets,
-			Sysctls: GetSysctls(),
 			Mounts:  mounts,
 		},
 		RestartPolicy: &swarm.RestartPolicy{

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
 	"os"
@@ -35,8 +34,12 @@ type dockerSwarmNginxSecretsConfig struct {
 	sslPrivateKeyId  string
 }
 
+func init() {
+	os.Setenv("DOCKER_API_VERSION", DOCKER_API_VERSION)
+}
+
 func NewDockerSwarm(options OrchestratorOptions) (Orchestrator, error) {
-	client, err := client.NewClientWithOpts(client.WithVersion(DOCKER_API_VERSION))
+	client, err := client.NewEnvClient()
 
 	if err != nil {
 		return nil, err
@@ -69,7 +72,6 @@ func (r *dockerSwarmRunner) Run(ctx context.Context) error {
 	}
 
 	_, err = r.client.ServiceCreate(ctx, spec, types.ServiceCreateOptions{
-		QueryRegistry:       true,
 		EncodedRegistryAuth: registryAuth,
 	})
 
@@ -78,7 +80,7 @@ func (r *dockerSwarmRunner) Run(ctx context.Context) error {
 
 func (d *dockerSwarmOrchestrator) RemoveContainer(ctx context.Context, containerName string) error {
 	if services, err := d.client.ServiceList(ctx, types.ServiceListOptions{
-		Filters: filters.NewArgs(filters.KeyValuePair{"name", containerName}),
+		Filters: FilterByName(containerName),
 	}); err != nil {
 		return fmt.Errorf("could not list swarm services: %s", err)
 	} else {

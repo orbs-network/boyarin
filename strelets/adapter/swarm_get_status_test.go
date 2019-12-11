@@ -67,12 +67,12 @@ func TestDockerSwarm_GetStatusIfExitsImmediately(t *testing.T) {
 const defunctName = "DefunctContainer"
 
 func startDefunctContainer(t *testing.T) (serviceId string) {
-	client, err := dockerClient.NewClientWithOpts(dockerClient.WithVersion(DOCKER_API_VERSION))
+	client, err := dockerClient.NewEnvClient()
 	require.NoError(t, err)
 
 	spec := dockerSwarm.ServiceSpec{
 		TaskTemplate: dockerSwarm.TaskSpec{
-			ContainerSpec: &dockerSwarm.ContainerSpec{
+			ContainerSpec: dockerSwarm.ContainerSpec{
 				Image:   "alpine",
 				Command: []string{"this-program-does-not-exist"},
 			},
@@ -89,12 +89,12 @@ func startDefunctContainer(t *testing.T) (serviceId string) {
 const reloadingName = "ReloadingContainer"
 
 func startReloadingContainer(t *testing.T) (serviceId string) {
-	client, err := dockerClient.NewClientWithOpts(dockerClient.WithVersion(DOCKER_API_VERSION))
+	client, err := dockerClient.NewEnvClient()
 	require.NoError(t, err)
 
 	spec := dockerSwarm.ServiceSpec{
 		TaskTemplate: dockerSwarm.TaskSpec{
-			ContainerSpec: &dockerSwarm.ContainerSpec{
+			ContainerSpec: dockerSwarm.ContainerSpec{
 				Image:   "alpine",
 				Command: []string{"sh", "-c", "echo I can not be contained && exit 999"},
 			},
@@ -109,7 +109,7 @@ func startReloadingContainer(t *testing.T) (serviceId string) {
 }
 
 func destroyDefunctBusybox(t *testing.T, serviceId string) {
-	client, err := dockerClient.NewClientWithOpts(dockerClient.WithVersion(DOCKER_API_VERSION))
+	client, err := dockerClient.NewEnvClient()
 	require.NoError(t, err)
 
 	_ = client.ServiceRemove(context.Background(), serviceId)

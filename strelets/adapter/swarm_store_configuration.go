@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
 	"strings"
 )
@@ -42,10 +41,7 @@ func (d *dockerSwarmOrchestrator) saveSwarmSecret(ctx context.Context, container
 	secretId := getSwarmSecretName(containerName, secretName)
 
 	if secrets, err := d.client.SecretList(ctx, types.SecretListOptions{
-		Filters: filters.NewArgs(filters.KeyValuePair{
-			"name",
-			secretId,
-		}),
+		Filters: FilterByName(secretId),
 	}); err != nil {
 		return "", fmt.Errorf("could not list swarm secrets: %s", err)
 	} else {

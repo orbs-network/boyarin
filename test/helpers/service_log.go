@@ -60,7 +60,7 @@ func ReadAllServicesLog(ctx context.Context) (Log, error) {
 	logsLock := sync.Mutex{}
 	logs := make(map[string]Log)
 	multiLog := multiplexLogs(ctx, &logsLock, logs)
-	cli, err := client.NewClientWithOpts(client.FromEnv)
+	cli, err := client.NewEnvClient()
 	if err != nil {
 		return nil, err
 	}

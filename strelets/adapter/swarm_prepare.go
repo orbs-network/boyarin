@@ -59,7 +59,7 @@ func getSecretReference(containerName string, secretId string, secretName string
 	}
 }
 
-func getContainerSpec(imageName string, secrets []*swarm.SecretReference, mounts []mount.Mount) *swarm.ContainerSpec {
+func getContainerSpec(imageName string, secrets []*swarm.SecretReference, mounts []mount.Mount) swarm.ContainerSpec {
 	command := []string{
 		"/opt/orbs/orbs-node",
 		"--silent",
@@ -70,11 +70,10 @@ func getContainerSpec(imageName string, secrets []*swarm.SecretReference, mounts
 		command = append(command, "--config", "/var/run/secrets/"+secret.File.Name)
 	}
 
-	return &swarm.ContainerSpec{
+	return swarm.ContainerSpec{
 		Image:   imageName,
 		Command: command,
 		Secrets: secrets,
-		Sysctls: GetSysctls(),
 		Mounts:  mounts,
 	}
 }

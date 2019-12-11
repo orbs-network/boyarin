@@ -39,7 +39,7 @@ func (d *dockerSwarmOrchestrator) provisionVolumes(ctx context.Context, nodeAddr
 func (d *dockerSwarmOrchestrator) provisionVolume(ctx context.Context, volumeName string, target string, maxSizeInGb int) (mount.Mount, error) {
 	driverName, driverOptions := getVolumeDriverOptions(volumeName, d.options, maxSizeInGb)
 
-	_, err := d.client.VolumeCreate(ctx, volume.VolumeCreateBody{
+	_, err := d.client.VolumeCreate(ctx, volume.VolumesCreateBody{
 		Name:       volumeName,
 		Driver:     driverName,
 		DriverOpts: driverOptions,

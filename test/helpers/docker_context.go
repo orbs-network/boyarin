@@ -12,13 +12,11 @@ import (
 	"time"
 )
 
-const DOCKER_API_VERSION = "1.40"
-
 func removeAllDockerVolumes(t *testing.T) {
 	fmt.Println("Removing all docker volumes")
 
 	ctx := context.Background()
-	client, err := dockerClient.NewClientWithOpts(dockerClient.WithVersion(DOCKER_API_VERSION))
+	client, err := dockerClient.NewEnvClient()
 	if err != nil {
 		t.Errorf("could not connect to docker: %s", err)
 		t.FailNow()
@@ -55,7 +53,7 @@ func removeAllServices(t *testing.T) {
 	fmt.Println("Removing all swarm services")
 
 	ctx := context.Background()
-	client, err := dockerClient.NewClientWithOpts(dockerClient.WithVersion(DOCKER_API_VERSION))
+	client, err := dockerClient.NewEnvClient()
 	if err != nil {
 		t.Errorf("could not connect to docker: %s", err)
 		t.FailNow()

@@ -78,7 +78,7 @@ func getServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.SecretReferen
 	return spec
 }
 
-func getServiceContainerSpec(imageName string, secrets []*swarm.SecretReference) *swarm.ContainerSpec {
+func getServiceContainerSpec(imageName string, secrets []*swarm.SecretReference) swarm.ContainerSpec {
 	command := []string{
 		"/opt/orbs/orbs-signer",
 	}
@@ -87,10 +87,9 @@ func getServiceContainerSpec(imageName string, secrets []*swarm.SecretReference)
 		command = append(command, "--config", "/run/secrets/"+secret.File.Name)
 	}
 
-	return &swarm.ContainerSpec{
+	return swarm.ContainerSpec{
 		Image:   imageName,
 		Command: command,
 		Secrets: secrets,
-		Sysctls: GetSysctls(),
 	}
 }

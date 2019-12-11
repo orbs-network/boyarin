@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/filters"
 	"io/ioutil"
 	"time"
 )
@@ -33,10 +32,7 @@ func (d *dockerSwarmOrchestrator) GetStatus(ctx context.Context, since time.Dura
 
 func (d *dockerSwarmOrchestrator) getServiceName(ctx context.Context, serviceID string) (string, error) {
 	if specs, err := d.client.ServiceList(ctx, types.ServiceListOptions{
-		Filters: filters.NewArgs(filters.KeyValuePair{
-			"id",
-			serviceID,
-		}),
+		Filters: FilterById(serviceID),
 	}); err != nil {
 		return "", err
 	} else if len(specs) == 0 {

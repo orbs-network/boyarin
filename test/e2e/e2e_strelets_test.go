@@ -119,6 +119,7 @@ func TestE2EKeepVolumesBetweenReloadsWithSwarm(t *testing.T) {
 }
 
 func TestCreateServiceSysctls(t *testing.T) {
+	helpers.SkipOnCI(t)
 	helpers.WithContext(func(ctx context.Context) {
 		helpers.InitSwarmEnvironment(t, ctx)
 

@@ -15,7 +15,7 @@ const SERVICE_STATUS_REPORT_PERIOD = 1 * time.Minute
 const SERVICE_STATUS_REPORT_TIMEOUT = 30 * time.Second
 
 func WatchAndReportServicesStatus(logger log.Logger) chan interface{} {
-	return supervized.GoForever(func() {
+	return supervized.GoForever(func(_ bool) {
 		for {
 			start := time.Now()
 			ctx, cancel := context.WithTimeout(context.Background(), SERVICE_STATUS_REPORT_TIMEOUT)

@@ -114,33 +114,49 @@ func execute(flags *config.Flags, logger log.Logger) error {
 		return fmt.Errorf("--keys is a required parameter for provisioning flow")
 	}
 
-	// Even if something crashed, things still were provisioned, meaning the cache should stay
-	configCache := config.NewCache()
-
 	services.WatchAndReportServicesStatus(logger)
 
-	<-supervized.GoForever(func() {
-		for first := true; ; first = false {
-			cfg, err := config.GetConfiguration(flags)
-			if err != nil {
-				logger.Error("invalid configuration", log.Error(err))
-			} else {
-				// skip delay when provisioning for the first time when the node goes up
-				if !first {
-					reloadTimeDelay := cfg.ReloadTimeDelay(flags.MaxReloadTimeDelay)
-					logger.Info("waiting to apply new configuration", log.String("delay", flags.MaxReloadTimeDelay.String()))
-					<-time.After(reloadTimeDelay)
-				}
-
-				ctx, cancel := context.WithTimeout(context.Background(), flags.Timeout)
-				defer cancel()
-
-				boyar.Flow(ctx, cfg, configCache, logger)
-			}
-
-			<-time.After(flags.PollingInterval)
-		}
-	})
+	runCoreBoyarService(flags, logger)
 
 	return nil
+}
+
+const BOYAR_CONFIG_HASH = "boyar config"
+
+func runCoreBoyarService(flags *config.Flags, logger log.Logger) {
+	// Even if something crashed, things still were provisioned, meaning the cache should stay
+	configCache := config.NewCache()
+	<-supervized.GoForever(func(first bool) {
+		defer func() {
+			<-time.After(flags.PollingInterval)
+		}()
+		cfg, err := config.GetConfiguration(flags)
+		if err != nil {
+			logger.Error("invalid configuration", log.Error(err))
+			return
+		}
+		hash := cfg.Hash()
+		if hash == configCache.Get(BOYAR_CONFIG_HASH) {
+			logger.Error("configuration has not changed")
+			return
+		}
+		// random delay when provisioning change (that is, not bootstrap flow)
+		if !first {
+			randomDelay(cfg, flags.MaxReloadTimeDelay, logger)
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), flags.Timeout)
+		defer cancel()
+
+		err = boyar.Flow(ctx, cfg, configCache, logger)
+		if err != nil {
+			logger.Error("error during execution", log.Error(err))
+		}
+		configCache.Put(BOYAR_CONFIG_HASH, hash)
+	})
+}
+
+func randomDelay(cfg config.NodeConfiguration, maxDelay time.Duration, logger log.Logger) {
+	reloadTimeDelay := cfg.ReloadTimeDelay(maxDelay)
+	logger.Info("waiting to apply new configuration", log.String("delay", maxDelay.String()))
+	<-time.After(reloadTimeDelay)
 }

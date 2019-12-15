@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar"
 	"github.com/orbs-network/boyarin/boyar/config"
+	"github.com/orbs-network/boyarin/services"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/supervized"
 	"github.com/orbs-network/boyarin/version"
@@ -14,9 +15,6 @@ import (
 	"os"
 	"time"
 )
-
-const SERVICE_STATUS_REPORT_PERIOD = 1 * time.Minute
-const SERVICE_STATUS_REPORT_TIMEOUT = 30 * time.Second
 
 func main() {
 	configUrlPtr := flag.String("config-url", "", "http://my-config/config.json")
@@ -119,17 +117,7 @@ func execute(flags *config.Flags, logger log.Logger) error {
 	// Even if something crashed, things still were provisioned, meaning the cache should stay
 	configCache := config.NewCache()
 
-	supervized.GoForever(func() {
-		for {
-			start := time.Now()
-			ctx, cancel := context.WithTimeout(context.Background(), SERVICE_STATUS_REPORT_TIMEOUT)
-			if err := boyar.ReportStatus(ctx, logger, SERVICE_STATUS_REPORT_PERIOD); err != nil {
-				logger.Error("status check failed", log.Error(err))
-			}
-			cancel()
-			<-time.After(SERVICE_STATUS_REPORT_PERIOD - time.Since(start)) // to report exactly every minute
-		}
-	})
+	services.WatchAndReportServicesStatus(logger)
 
 	<-supervized.GoForever(func() {
 		for first := true; ; first = false {

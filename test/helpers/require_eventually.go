@@ -1,9 +1,9 @@
 package helpers
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/require"
 	"runtime"
-	"testing"
 	"time"
 )
 
@@ -33,7 +33,7 @@ run the test func with a testing.T -like reporter
 func will run eventuallyIterations times at most,  but will not start later than the specified duration
 expects the test func to succeed at least once, at which point this function returns immediately, Otherwise, the parent test will fail with the details of the last func failure.
 */
-func RequireEventually(t *testing.T, duration time.Duration, f func(t TestingT)) {
+func RequireEventually(t TestingT, duration time.Duration, f func(t TestingT)) {
 	var mock testingT
 	ticker := time.NewTicker(duration / eventuallyIterations) //maximum eventuallyIterations iterations
 	defer ticker.Stop()
@@ -57,10 +57,9 @@ func RequireEventually(t *testing.T, duration time.Duration, f func(t TestingT))
 		}
 		exec()
 	}
-	t.Logf("failed after running for %v", duration+time.Since(timeout))
 	if mock.format == "" {
-		t.Fatalf("test failed")
+		t.Errorf("test failed after running for %v", duration+time.Since(timeout))
 	} else {
-		t.Fatalf(mock.format, mock.args...)
+		t.Errorf("test failed after running for %v :\n %s", duration+time.Since(timeout), fmt.Sprintf(mock.format, mock.args...))
 	}
 }

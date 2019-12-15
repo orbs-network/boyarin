@@ -1,15 +1,17 @@
 #!/bin/bash
 
-# setup a test machine (written for circleci) for e2e tests
-GO_VERSION=1.12.9
-NODE_VERSION=12.13
-
-trap terminate SIGINT # will execute the function terminate when CTRL-C is pressed
-terminate(){
+cleanup(){
     echo "cleaning up child processes"
     kill $(pgrep -P $$) # kill all processes whose parent PID is the current PID
     exit
 }
+
+# cleanup on ctr+C
+trap cleanup SIGINT # will execute the function cleanup when CTRL-C is pressed
+
+# assert/prepare this machine to run the test
+GO_VERSION=1.12.9
+NODE_VERSION=12.13
 
 if ! [ -x "$(command -v go)" ]; then
   echo "go not installed"
@@ -31,15 +33,6 @@ if ! [ -x "$(command -v aws)" ]; then
   exit 1
 fi
 
-if ! [ -x "$(command -v ganache-cli)" ]; then
-  echo "ganache-cli not installed"
-  if ! [ -x "$(command -v npm)" ]; then
-    echo "npm not installed"
-    exit 1
-  fi
-  echo "instaling ganache-cli"
-  npm install -g ganache-cli
-fi
 
 if ! [ -x "$(command -v gotestsum)" ]; then
   echo "gotestsum not installed. Installing"
@@ -48,11 +41,20 @@ fi
 
 nc -z 127.0.0.1 7545
 if [ "$?" -eq 0 ] ; then
-  echo "port 7545 (needed for ganache-cli) is open in local machine"
-  exit 1
+  echo "Assuming Ganache for this test is running at 127.0.0.1 7545 (port 7545 is open)"
+else
+  if ! [ -x "$(command -v ganache-cli)" ]; then
+    echo "ganache-cli not installed"
+    if ! [ -x "$(command -v npm)" ]; then
+      echo "npm not installed"
+      exit 1
+    fi
+    echo "instaling ganache-cli"
+    npm install -g ganache-cli
+  fi
+  echo "running ganache-cli for this test"
+  ganache-cli -m 'pet talent sugar must audit chief biology trash change wheat educate bone' -h 0.0.0.0  -i 5777 -p 7545 & # run ganache in the background
 fi
-
-ganache-cli -m 'pet talent sugar must audit chief biology trash change wheat educate bone' -h 0.0.0.0  -i 5777 -p 7545 & # run ganache in the background
 
 ./setup-e2e.sh
 
@@ -67,5 +69,5 @@ gotestsum ./... -- -p 1 &
 
 wait $! # wait for the last command launched in background
 
-terminate # cleanup
+cleanup
 

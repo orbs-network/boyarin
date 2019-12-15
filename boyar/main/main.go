@@ -22,7 +22,7 @@ func main() {
 	configUrlPtr := flag.String("config-url", "", "http://my-config/config.json")
 	keyPairConfigPathPtr := flag.String("keys", "", "path to public/private key pair in json format")
 
-	daemonizePtr := flag.Bool("daemonize", false, "do not exit the program and keep polling for changes")
+	_ = flag.Bool("daemonize", true, "DEPRECATED (always true)")
 	pollingIntervalPtr := flag.Duration("polling-interval", 1*time.Minute, "how often to poll for configuration in daemon mode (duration: 1s, 1m, 1h, etc)")
 	maxReloadTimePtr := flag.Duration("max-reload-time-delay", 15*time.Minute, "introduces jitter to reloading configuration to make network more stable, only works in daemon mode (duration: 1s, 1m, 1h, etc)")
 
@@ -55,7 +55,6 @@ func main() {
 		ConfigUrl:               *configUrlPtr,
 		KeyPairConfigPath:       *keyPairConfigPathPtr,
 		LogFilePath:             *logFilePath,
-		Daemonize:               *daemonizePtr,
 		PollingInterval:         *pollingIntervalPtr,
 		Timeout:                 *timeoutPtr,
 		MaxReloadTimeDelay:      *maxReloadTimePtr,
@@ -120,52 +119,40 @@ func execute(flags *config.Flags, logger log.Logger) error {
 	// Even if something crashed, things still were provisioned, meaning the cache should stay
 	configCache := config.NewCache()
 
-	if flags.Daemonize {
-		supervized.GoForever(func() {
-			for {
-				start := time.Now()
-				ctx, cancel := context.WithTimeout(context.Background(), SERVICE_STATUS_REPORT_TIMEOUT)
-				if err := boyar.ReportStatus(ctx, logger, SERVICE_STATUS_REPORT_PERIOD); err != nil {
-					logger.Error("status check failed", log.Error(err))
-				}
-				cancel()
-				<-time.After(SERVICE_STATUS_REPORT_PERIOD - time.Since(start)) // to report exactly every minute
+	supervized.GoForever(func() {
+		for {
+			start := time.Now()
+			ctx, cancel := context.WithTimeout(context.Background(), SERVICE_STATUS_REPORT_TIMEOUT)
+			if err := boyar.ReportStatus(ctx, logger, SERVICE_STATUS_REPORT_PERIOD); err != nil {
+				logger.Error("status check failed", log.Error(err))
 			}
-		})
-
-		<-supervized.GoForever(func() {
-			for first := true; ; first = false {
-				cfg, err := config.GetConfiguration(flags)
-				if err != nil {
-					logger.Error("invalid configuration", log.Error(err))
-				} else {
-					// skip delay when provisioning for the first time when the node goes up
-					if !first {
-						reloadTimeDelay := cfg.ReloadTimeDelay(flags.MaxReloadTimeDelay)
-						logger.Info("waiting to apply new configuration", log.String("delay", flags.MaxReloadTimeDelay.String()))
-						<-time.After(reloadTimeDelay)
-					}
-
-					ctx, cancel := context.WithTimeout(context.Background(), flags.Timeout)
-					defer cancel()
-
-					boyar.Flow(ctx, cfg, configCache, logger)
-				}
-
-				<-time.After(flags.PollingInterval)
-			}
-		})
-	} else {
-		cfg, err := config.GetConfiguration(flags)
-		if err != nil {
-			return fmt.Errorf("invalid configuration: %s", err)
+			cancel()
+			<-time.After(SERVICE_STATUS_REPORT_PERIOD - time.Since(start)) // to report exactly every minute
 		}
+	})
 
-		ctx, cancel := context.WithTimeout(context.Background(), flags.Timeout)
-		defer cancel()
+	<-supervized.GoForever(func() {
+		for first := true; ; first = false {
+			cfg, err := config.GetConfiguration(flags)
+			if err != nil {
+				logger.Error("invalid configuration", log.Error(err))
+			} else {
+				// skip delay when provisioning for the first time when the node goes up
+				if !first {
+					reloadTimeDelay := cfg.ReloadTimeDelay(flags.MaxReloadTimeDelay)
+					logger.Info("waiting to apply new configuration", log.String("delay", flags.MaxReloadTimeDelay.String()))
+					<-time.After(reloadTimeDelay)
+				}
 
-		return boyar.Flow(ctx, cfg, configCache, logger)
-	}
+				ctx, cancel := context.WithTimeout(context.Background(), flags.Timeout)
+				defer cancel()
+
+				boyar.Flow(ctx, cfg, configCache, logger)
+			}
+
+			<-time.After(flags.PollingInterval)
+		}
+	})
 
 	return nil
 }

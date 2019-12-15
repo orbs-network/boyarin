@@ -136,11 +136,9 @@ func TestCreateServiceSysctls(t *testing.T) {
 
 		startChainWithStrelets(t, s, 1)
 
-		time.Sleep(5 * time.Second)
-
 		// Straight from Docker integration test:
 		// integration/service/create_test.go
-		// https://github.com/moby/moby/pull/37701/files#diff-204a9536b52c895f8a02e75d2e00dd16
+		// https://github.com/moby/moby/blob/b93f68ab4c5b82549691d1050e94d9b138eb9342/integration/service/create_test.go
 
 		// we're going to check 3 things:
 		//
@@ -154,19 +152,21 @@ func TestCreateServiceSysctls(t *testing.T) {
 		// get all of the tasks of the service, so we can get the container
 		filter := filters.NewArgs()
 		filter.Add("service", "node1-chain-42-stack")
-		tasks, err := client.TaskList(ctx, types.TaskListOptions{
-			Filters: filter,
+		helpers.RequireEventually(t, 1*time.Minute, func(t helpers.TestingT) {
+			tasks, err := client.TaskList(ctx, types.TaskListOptions{
+				Filters: filter,
+			})
+			require.NoError(t, err)
+			require.Len(t, tasks, 1)
+
+			// verify that the container has the sysctl option set
+			ctnr, err := client.ContainerInspect(ctx, tasks[0].Status.ContainerStatus.ContainerID)
+			require.NoError(t, err)
+			require.EqualValuesf(t, adapter.GetSysctls(), ctnr.HostConfig.Sysctls, "failed to set container sysctls")
+
+			// verify that the task has the sysctl option set in the task object
+			require.EqualValuesf(t, adapter.GetSysctls(), tasks[0].Spec.ContainerSpec.Sysctls, "failed to set container spec sysctls")
 		})
-		require.NoError(t, err)
-		require.Len(t, tasks, 1)
-
-		// verify that the container has the sysctl option set
-		ctnr, err := client.ContainerInspect(ctx, tasks[0].Status.ContainerStatus.ContainerID)
-		require.NoError(t, err)
-		require.EqualValuesf(t, adapter.GetSysctls(), ctnr.HostConfig.Sysctls, "failed to set container sysctls")
-
-		// verify that the task has the sysctl option set in the task object
-		require.EqualValuesf(t, adapter.GetSysctls(), tasks[0].Spec.ContainerSpec.Sysctls, "failed to set container spec sysctls")
 
 		// verify that the service also has the sysctl set in the spec.
 		service, _, err := client.ServiceInspectWithRaw(ctx, "node1-chain-42-stack", types.ServiceInspectOptions{})

@@ -12,22 +12,21 @@ import (
 )
 
 type BoyarService struct {
-	configCache config.Cache
-	boyarObj    boyar.Boyar
-	logger      log.Logger
-	initialized bool
+	cache   *boyar.Cache
+	logger  log.Logger
+	healthy bool
 }
 
 func NewCoreBoyarService(logger log.Logger) *BoyarService {
 	return &BoyarService{
-		configCache: config.NewCache(),
-		logger:      logger,
+		cache:  boyar.NewCache(),
+		logger: logger,
 	}
 }
 
 func (coreBoyar *BoyarService) OnConfigChange(timeout time.Duration, cfg config.NodeConfiguration, maxDelay time.Duration) error {
-	// random delay when provisioning change (that is, not bootstrap flow)
-	if coreBoyar.initialized {
+	// random delay when provisioning change (that is, not bootstrap flow or repairing broken system)
+	if coreBoyar.healthy {
 		randomDelay(cfg, maxDelay, coreBoyar.logger)
 	}
 
@@ -41,7 +40,7 @@ func (coreBoyar *BoyarService) OnConfigChange(timeout time.Duration, cfg config.
 	defer orchestrator.Close()
 
 	s := strelets.NewStrelets(orchestrator)
-	b := boyar.NewBoyar(s, cfg, coreBoyar.configCache, coreBoyar.logger)
+	b := boyar.NewBoyar(s, cfg, coreBoyar.cache, coreBoyar.logger)
 
 	var errors []error
 
@@ -58,9 +57,11 @@ func (coreBoyar *BoyarService) OnConfigChange(timeout time.Duration, cfg config.
 	}
 
 	if len(errors) > 0 {
+		coreBoyar.healthy = false
 		return utils.AggregateErrors(errors)
 	}
 
+	coreBoyar.healthy = true
 	return nil
 }
 

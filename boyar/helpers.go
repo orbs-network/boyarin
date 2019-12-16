@@ -1,9 +1,7 @@
 package boyar
 
 import (
-	"fmt"
 	"github.com/orbs-network/boyarin/strelets"
-	"strings"
 )
 
 func buildPeersMap(nodes []*strelets.FederationNode, gossipPort int) *strelets.PeersMap {
@@ -22,18 +20,4 @@ func buildPeersMap(nodes []*strelets.FederationNode, gossipPort int) *strelets.P
 	}
 
 	return &peersMap
-}
-
-func aggregateErrors(errors []error) error {
-	if errors == nil {
-		return nil
-	}
-
-	var lines []string
-
-	for _, err := range errors {
-		lines = append(lines, err.Error())
-	}
-
-	return fmt.Errorf(strings.Join(lines, ", "))
 }

@@ -123,8 +123,7 @@ func execute(flags *config.Flags, logger log.Logger) error {
 		err := coreBoyar.OnConfigChange(flags.Timeout, cfg, flags.MaxReloadTimeDelay)
 		if err != nil {
 			logger.Error("error executing configuration", log.Error(err))
-		} else {
-			cfgFetcher.LastConfigCacheToken = cfg.Hash()
+			cfgFetcher.Resend()
 		}
 	})
 

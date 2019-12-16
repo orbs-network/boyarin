@@ -7,6 +7,7 @@ import (
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/services"
 	"github.com/orbs-network/boyarin/strelets/adapter"
+	"github.com/orbs-network/boyarin/supervized"
 	"github.com/orbs-network/boyarin/version"
 	"github.com/orbs-network/scribe/log"
 	"os"
@@ -113,7 +114,24 @@ func execute(flags *config.Flags, logger log.Logger) error {
 
 	services.WatchAndReportServicesStatus(logger)
 
-	services.RunCoreBoyarService(flags, logger)
+	cfgFetcher := services.NewConfigurationPollService(flags, logger)
+	coreBoyar := services.NewCoreBoyarService(logger)
+
+	// wire cfg and boyar
+	supervized.GoForever(func(first bool) {
+		cfg := <-cfgFetcher.Output
+		err := coreBoyar.OnConfigChange(flags.Timeout, cfg, flags.MaxReloadTimeDelay)
+		if err != nil {
+			logger.Error("error executing configuration", log.Error(err))
+		} else {
+			cfgFetcher.LastConfigCacheToken = cfg.Hash()
+		}
+	})
+
+	cfgFetcher.Start()
+
+	// block forever
+	<-make(chan interface{})
 
 	return nil
 }

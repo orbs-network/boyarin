@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar"
 	"github.com/orbs-network/boyarin/boyar/config"
+	"github.com/orbs-network/boyarin/services"
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/stretchr/testify/require"
 	"testing"
+	"time"
 )
 
 func getBoyarVchains(nodeIndex int, vchainIds ...int) []*strelets.VirtualChain {
@@ -85,8 +87,7 @@ func provisionVchains(t *testing.T, s strelets.Strelets, i int, vchainIds ...int
 	require.NoError(t, err)
 	cfg.SetKeyConfigPath(fmt.Sprintf("%s/node%d/keys.json", getConfigPath(), i))
 
-	cache := config.NewCache()
-	b := boyar.NewBoyar(s, cfg, cache, helpers.DefaultTestLogger())
+	b := boyar.NewBoyar(s, cfg, boyar.NewCache(), helpers.DefaultTestLogger())
 	err = b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
 
@@ -156,8 +157,7 @@ func TestE2EWithFullFlowAndDisabledSimilarVchainId(t *testing.T) {
 			require.NoError(t, err)
 			cfg.SetKeyConfigPath(fmt.Sprintf("%s/node%d/keys.json", getConfigPath(), i))
 
-			cache := config.NewCache()
-			err = boyar.Flow(context.Background(), cfg, cache, logger)
+			err = services.NewCoreBoyarService(logger).OnConfigChange(time.Minute, cfg, 0)
 			require.NoError(t, err)
 		}
 

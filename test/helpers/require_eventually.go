@@ -43,6 +43,11 @@ func RequireEventually(t TestingT, duration time.Duration, f func(t TestingT)) {
 		go func() {
 			defer close(c)
 			mock = testingT{}
+			defer func() {
+				if e := recover(); e != nil {
+					mock.Errorf("panicked : %v", e)
+				}
+			}()
 			f(&mock)
 		}()
 		<-c

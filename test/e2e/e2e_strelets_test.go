@@ -159,6 +159,7 @@ func TestCreateServiceSysctls(t *testing.T) {
 			require.NoError(t, err)
 			require.Len(t, tasks, 1)
 
+			require.NotNil(t, tasks[0].Status.ContainerStatus)
 			// verify that the container has the sysctl option set
 			ctnr, err := client.ContainerInspect(ctx, tasks[0].Status.ContainerStatus.ContainerID)
 			require.NoError(t, err)

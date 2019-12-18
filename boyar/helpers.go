@@ -1,11 +1,7 @@
 package boyar
 
 import (
-	"fmt"
 	"github.com/orbs-network/boyarin/strelets"
-	"strconv"
-	"strings"
-	"time"
 )
 
 func buildPeersMap(nodes []*strelets.FederationNode, gossipPort int) *strelets.PeersMap {
@@ -24,36 +20,4 @@ func buildPeersMap(nodes []*strelets.FederationNode, gossipPort int) *strelets.P
 	}
 
 	return &peersMap
-}
-
-func getVcidFromServiceName(serviceName string) int64 {
-	tokens := strings.Split(serviceName, "-")
-	if len(tokens) < 2 {
-		return -1
-	}
-
-	result, err := strconv.ParseInt(tokens[len(tokens)-2], 10, 0)
-	if err != nil {
-		return -1
-	}
-
-	return result
-}
-
-func formatAsISO6801(t time.Time) string {
-	return t.Format(time.RFC3339)
-}
-
-func aggregateErrors(errors []error) error {
-	if errors == nil {
-		return nil
-	}
-
-	var lines []string
-
-	for _, err := range errors {
-		lines = append(lines, err.Error())
-	}
-
-	return fmt.Errorf(strings.Join(lines, ", "))
 }

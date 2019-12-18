@@ -10,19 +10,20 @@ import (
 )
 
 // Runs f() in a goroutine; if it panics, logs the error and stack trace
-func GoOnce(f func()) {
+func GoOnce(f func(bool)) {
 	go func() {
-		tryOnce(f)
+		tryOnce(f, true)
 	}()
 }
 
 // Runs f() in a goroutine; if it panics, logs the error and stack trace
 // Returns a channel that is closed when the goroutine has quit due to context ending
-func GoForever(f func()) chan interface{} {
+func GoForever(f func(bool)) chan interface{} {
 	c := make(chan interface{})
 	go func() {
+		tryOnce(f, true)
 		for {
-			tryOnce(f)
+			tryOnce(f, false)
 		}
 	}()
 
@@ -30,9 +31,9 @@ func GoForever(f func()) chan interface{} {
 }
 
 // this function is needed so that we don't return out of the goroutine when it panics
-func tryOnce(f func()) {
+func tryOnce(f func(bool), first bool) {
 	defer recoverPanics()
-	f()
+	f(first)
 }
 
 func recoverPanics() {

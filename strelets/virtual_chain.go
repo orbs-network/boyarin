@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 type VirtualChainId uint32
@@ -15,6 +16,20 @@ type VirtualChain struct {
 	DockerConfig DockerConfig
 	Config       map[string]interface{}
 	Disabled     bool
+}
+
+func GetVcidFromServiceName(serviceName string) int64 {
+	tokens := strings.Split(serviceName, "-")
+	if len(tokens) < 2 {
+		return -1
+	}
+
+	result, err := strconv.ParseInt(tokens[len(tokens)-2], 10, 0)
+	if err != nil {
+		return -1
+	}
+
+	return result
 }
 
 func (v *VirtualChain) getContainerName() string {

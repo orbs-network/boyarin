@@ -5,14 +5,28 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar/config"
-	"github.com/orbs-network/boyarin/crypto"
 	"github.com/orbs-network/boyarin/log_types"
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test/helpers"
+	"github.com/orbs-network/boyarin/utils"
 	"github.com/orbs-network/scribe/log"
 	"strings"
 )
+
+type Cache struct {
+	vChains  *utils.CacheMap
+	nginx    *utils.CacheFilter
+	services *utils.CacheFilter
+}
+
+func NewCache() *Cache {
+	return &Cache{
+		vChains:  utils.NewCacheMap(),
+		nginx:    utils.NewCacheFilter(),
+		services: utils.NewCacheFilter(),
+	}
+}
 
 type Boyar interface {
 	ProvisionVirtualChains(ctx context.Context) error
@@ -21,10 +35,10 @@ type Boyar interface {
 }
 
 type boyar struct {
-	strelets    strelets.Strelets
-	config      config.NodeConfiguration
-	configCache config.Cache
-	logger      log.Logger
+	strelets strelets.Strelets
+	config   config.NodeConfiguration
+	cache    *Cache
+	logger   log.Logger
 }
 
 type errorContainer struct {
@@ -32,12 +46,12 @@ type errorContainer struct {
 	id    strelets.VirtualChainId
 }
 
-func NewBoyar(strelets strelets.Strelets, cfg config.NodeConfiguration, configCache config.Cache, logger log.Logger) Boyar {
+func NewBoyar(strelets strelets.Strelets, cfg config.NodeConfiguration, cache *Cache, logger log.Logger) Boyar {
 	return &boyar{
-		strelets:    strelets,
-		config:      cfg,
-		configCache: configCache,
-		logger:      logger,
+		strelets: strelets,
+		config:   cfg,
+		cache:    cache,
+		logger:   logger,
 	}
 }
 
@@ -78,40 +92,27 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 }
 
 func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
-	var keys []config.HttpReverseProxyCompositeKey
-
-	// TODO move key manipulation to config package
-	for _, chain := range b.config.Chains() {
-		keys = append(keys, config.HttpReverseProxyCompositeKey{
-			Id:         chain.Id,
-			HttpPort:   chain.HttpPort,
-			GossipPort: chain.HttpPort,
-			Disabled:   chain.Disabled,
-		})
-	}
-
-	data, _ := json.Marshal(keys)
-	hash := crypto.CalculateHash(data)
-
-	if hash == b.configCache.Get(config.HTTP_REVERSE_PROXY_HASH) {
-		return nil
-	}
-
 	// TODO is there a better way to get a loopback interface?
-	if err := b.strelets.UpdateReverseProxy(ctx, &strelets.UpdateReverseProxyInput{
-		Chains:     b.config.Chains(),
-		IP:         helpers.LocalIP(),
-		SSLOptions: b.config.SSLOptions(),
-	}); err != nil {
-		b.logger.Error("failed to apply http proxy configuration", log.Error(err))
-		b.configCache.Remove(config.HTTP_REVERSE_PROXY_HASH)
-		return err
+	nginxConfig := getNginxConfig(b.config)
+
+	if b.cache.nginx.CheckNewJsonValue(nginxConfig) {
+		if err := b.strelets.UpdateReverseProxy(ctx, nginxConfig); err != nil {
+			b.logger.Error("failed to apply http proxy configuration", log.Error(err))
+			b.cache.nginx.Clear()
+			return err
+		}
+
+		b.logger.Info("updated http proxy configuration")
 	}
-
-	b.logger.Info("updated http proxy configuration")
-
-	b.configCache.Put(config.HTTP_REVERSE_PROXY_HASH, hash)
 	return nil
+}
+
+func getNginxConfig(cfg config.NodeConfiguration) *strelets.UpdateReverseProxyInput {
+	return &strelets.UpdateReverseProxyInput{
+		Chains:     cfg.Chains(),
+		IP:         helpers.LocalIP(),
+		SSLOptions: cfg.SSLOptions(),
+	}
 }
 
 func (b *boyar) ProvisionServices(ctx context.Context) error {
@@ -121,95 +122,95 @@ func (b *boyar) ProvisionServices(ctx context.Context) error {
 		return err
 	}
 
-	input := &strelets.UpdateServiceInput{
-		Service: b.config.Services().Signer,
-	}
+	if b.cache.services.CheckNewJsonValue(b.config.Services()) {
 
-	data, _ := json.Marshal(input)
-	hash := crypto.CalculateHash(data)
+		input := &strelets.UpdateServiceInput{
+			Service:       b.config.Services().Signer,
+			KeyPairConfig: getKeyConfigJson(b.config, false),
+		}
 
-	input.KeyPairConfig = b.config.KeyConfig().JSON(false)
-
-	if hash != b.configCache.Get(config.SIGNER_SERVICE_HASH) {
 		if input.Service != nil {
 			err := b.strelets.UpdateService(ctx, input)
 			if err == nil {
-				b.configCache.Put(config.SIGNER_SERVICE_HASH, hash)
 				b.logger.Info("updated signer configuration")
 			} else {
-				b.configCache.Remove(config.SIGNER_SERVICE_HASH)
 				b.logger.Error("failed to update signer configuration", log.Error(err))
+				b.cache.services.Clear()
 				return err
 			}
 		}
 	}
-
 	return nil
 }
 
+var removed = &utils.HashedValue{Value: "foo"}
+
 func (b *boyar) removeVirtualChain(ctx context.Context, chain *strelets.VirtualChain, errChannel chan *errorContainer) {
 	go func() {
-		input := &strelets.RemoveVirtualChainInput{
-			VirtualChain: chain,
-		}
-
-		data, _ := json.Marshal(input)
-		hash := crypto.CalculateHash(data)
-
-		if hash == b.configCache.Get(chain.Id.String()) {
-			errChannel <- nil
-			return
-		}
-
-		if err := b.strelets.RemoveVirtualChain(ctx, input); err != nil {
-			b.logger.Error("failed to remove virtual chain",
-				log_types.VirtualChainId(int64(chain.Id)),
-				log.Error(err))
-			errChannel <- &errorContainer{err, chain.Id}
+		if b.cache.vChains.CheckNewValue(chain.Id.String(), removed) {
+			input := &strelets.RemoveVirtualChainInput{
+				VirtualChain: chain,
+			}
+			if err := b.strelets.RemoveVirtualChain(ctx, input); err != nil {
+				b.cache.vChains.Clear(chain.Id.String())
+				b.logger.Error("failed to remove virtual chain",
+					log_types.VirtualChainId(int64(chain.Id)),
+					log.Error(err))
+				errChannel <- &errorContainer{err, chain.Id}
+			} else {
+				b.logger.Info("removed virtual chain", log_types.VirtualChainId(int64(chain.Id)))
+				errChannel <- nil
+			}
 		} else {
-			b.logger.Info("removed virtual chain", log_types.VirtualChainId(int64(chain.Id)))
 			errChannel <- nil
 		}
-
-		b.configCache.Remove(chain.Id.String()) // clear cache
 	}()
 }
 
 func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.VirtualChain, errChannel chan *errorContainer) {
 	go func() {
-		peers := buildPeersMap(b.config.FederationNodes(), chain.GossipPort)
+		input := getVirtualChainConfig(b.config, chain)
 
-		signerOn := b.config.Services().SignerOn()
-		keyPairConfig := b.config.KeyConfig().JSON(signerOn)
-
-		input := &strelets.ProvisionVirtualChainInput{
-			VirtualChain: chain,
-			Peers:        peers,
-			NodeAddress:  b.config.NodeAddress(),
-		}
-
-		data, _ := json.Marshal(input)
-		hash := crypto.CalculateHash(data)
-
-		if hash == b.configCache.Get(chain.Id.String()) {
-			errChannel <- nil
-			return
-		}
-
-		input.KeyPairConfig = keyPairConfig // Prevents key leak via log
-
-		if err := b.strelets.ProvisionVirtualChain(ctx, input); err != nil {
-			b.configCache.Remove(chain.Id.String()) // clear cache
-			b.logger.Error("failed to apply virtual chain configuration",
-				log_types.VirtualChainId(int64(chain.Id)),
-				log.Error(err))
-			errChannel <- &errorContainer{err, chain.Id}
+		if b.cache.vChains.CheckNewJsonValue(chain.Id.String(), input) {
+			if err := b.strelets.ProvisionVirtualChain(ctx, input); err != nil {
+				b.cache.vChains.Clear(chain.Id.String())
+				b.logger.Error("failed to apply virtual chain configuration",
+					log_types.VirtualChainId(int64(chain.Id)),
+					log.Error(err))
+				errChannel <- &errorContainer{err, chain.Id}
+			} else {
+				input.KeyPairConfig = nil // Prevents key leak via log
+				data, _ := json.Marshal(input)
+				b.logger.Info("updated virtual chain configuration",
+					log_types.VirtualChainId(int64(chain.Id)),
+					log.String("configuration", string(data)))
+				errChannel <- nil
+			}
 		} else {
-			b.configCache.Put(chain.Id.String(), hash) // update cache
-			b.logger.Info("updated virtual chain configuration",
-				log_types.VirtualChainId(int64(chain.Id)),
-				log.String("configuration", string(data)))
 			errChannel <- nil
 		}
 	}()
+}
+
+func getVirtualChainConfig(config config.NodeConfiguration, chain *strelets.VirtualChain) *strelets.ProvisionVirtualChainInput {
+	peers := buildPeersMap(config.FederationNodes(), chain.GossipPort)
+
+	signerOn := config.Services().SignerOn()
+	keyPairConfig := getKeyConfigJson(config, signerOn)
+
+	input := &strelets.ProvisionVirtualChainInput{
+		VirtualChain:  chain,
+		Peers:         peers,
+		NodeAddress:   config.NodeAddress(),
+		KeyPairConfig: keyPairConfig,
+	}
+	return input
+}
+
+func getKeyConfigJson(config config.NodeConfiguration, addressOnly bool) []byte {
+	keyConfig := config.KeyConfig()
+	if keyConfig == nil {
+		return []byte{}
+	}
+	return keyConfig.JSON(addressOnly)
 }

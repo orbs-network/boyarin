@@ -15,21 +15,18 @@ const VChainId = 42
 
 func TestE2ESingleVchainConfigurationMetrics(t *testing.T) {
 	helpers.WithContext(func(ctx context.Context) {
-		helpers.WithLogging(t, func(h *helpers.LoggingHarness) {
-			//logger := h.Logger
-			logger := log.GetLogger()
-			helpers.InitSwarmEnvironment(t, ctx)
-			keys := KeyConfig{
-				NodeAddress:    PublickKey,
-				NodePrivateKey: PrivateKey,
-			}
+		logger := log.GetLogger()
+		helpers.InitSwarmEnvironment(t, ctx)
+		keys := KeyConfig{
+			NodeAddress:    PublickKey,
+			NodePrivateKey: PrivateKey,
+		}
 
-			go InProcessBoyar(t, logger, keys, VChainId)
+		go InProcessBoyar(t, logger, keys, VChainId)
 
-			helpers.RequireEventually(t, 20*time.Second, func(t helpers.TestingT) {
-				metrics := GetVChainMetrics(t, VChainId)
-				require.Equal(t, metrics.String("Node.Address"), PublickKey)
-			})
+		helpers.RequireEventually(t, 20*time.Second, func(t helpers.TestingT) {
+			metrics := GetVChainMetrics(t, VChainId)
+			require.Equal(t, metrics.String("Node.Address"), PublickKey)
 		})
 	})
 }

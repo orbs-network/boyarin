@@ -79,7 +79,7 @@ func (r *dockerSwarmRunner) Run(ctx context.Context) error {
 
 func (d *dockerSwarmOrchestrator) ServiceRemove(ctx context.Context, serviceName string) error {
 	services, err := d.client.ServiceList(ctx, types.ServiceListOptions{
-		Filters: filters.NewArgs(filters.KeyValuePair{"name", serviceName}),
+		Filters: filters.NewArgs(filters.KeyValuePair{Key: "name", Value: serviceName}),
 	})
 	if err != nil {
 		return fmt.Errorf("could not list swarm services: %s", err)

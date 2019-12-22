@@ -43,8 +43,8 @@ func (d *dockerSwarmOrchestrator) saveSwarmSecret(ctx context.Context, container
 
 	if secrets, err := d.client.SecretList(ctx, types.SecretListOptions{
 		Filters: filters.NewArgs(filters.KeyValuePair{
-			"name",
-			secretId,
+			Key:   "name",
+			Value: secretId,
 		}),
 	}); err != nil {
 		return "", fmt.Errorf("could not list swarm secrets: %s", err)

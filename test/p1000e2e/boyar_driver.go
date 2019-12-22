@@ -79,8 +79,7 @@ set up environment and run boyar
 func InProcessBoyar(t *testing.T, logger log.Logger, keyPair KeyConfig, vChainId int) {
 	keyPairJson, err := json.Marshal(keyPair)
 	require.NoError(t, err)
-
-	file, err := TempFile(err, t, keyPairJson)
+	file := TempFile(t, keyPairJson)
 	defer os.Remove(file.Name())
 	ts := serveConfig(t, vChainId)
 	defer ts.Close()
@@ -95,11 +94,12 @@ func InProcessBoyar(t *testing.T, logger log.Logger, keyPair KeyConfig, vChainId
 	require.NoError(t, err)
 }
 
-func TempFile(err error, t *testing.T, keyPairJson []byte) (*os.File, error) {
-	file, err := ioutil.TempFile("", "")
+func TempFile(t *testing.T, keyPairJson []byte) *os.File {
+	file, err := ioutil.TempFile("", "boyar")
 	require.NoError(t, err)
 	_, err = file.WriteString(string(keyPairJson))
-	return file, err
+	require.NoError(t, err) // temp file will not be cleaned
+	return file
 }
 
 type JsonMap struct {

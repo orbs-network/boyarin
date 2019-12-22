@@ -26,7 +26,7 @@ location @error502 { return 502 '{{DefaultResponse "Bad gateway"}}'; }
 {{ $ip := .Ip -}}
 	{{- range .Chains -}}
 		{{- if not .Disabled -}}
-location /vchains/{{.Id}}/ { proxy_pass http://{{$ip}}:{{.HttpPort}}/; error_page 502 = @error502; proxy_connect_timeout 75s;}
+location /vchains/{{.Id}}/ { proxy_pass http://{{$ip}}:{{.HttpPort}}/; error_page 502 = @error502; }
 		{{- end -}} {{- /* if not .Disabled */ -}}
 	{{- end -}} {{- /* range .Chains */ -}}
 {{- end -}} {{- /* define "locations" */ -}}

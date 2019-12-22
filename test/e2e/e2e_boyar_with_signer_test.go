@@ -10,6 +10,7 @@ import (
 	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/stretchr/testify/require"
 	"testing"
+	"time"
 )
 
 func TestE2ESingleVchainWithSignerWithSwarmAndBoyar(t *testing.T) {
@@ -30,8 +31,10 @@ func TestE2ESingleVchainWithSignerWithSwarmAndBoyar(t *testing.T) {
 			cfg.SetKeyConfigPath(fmt.Sprintf("%s/node%d/keys.json", getConfigPath(), i))
 
 			b := boyar.NewBoyar(s, cfg, boyar.NewCache(), helpers.DefaultTestLogger())
-			err = b.ProvisionServices(context.Background())
-			require.NoError(t, err)
+			helpers.RequireEventually(t, 10*time.Second, func(t helpers.TestingT) {
+				err = b.ProvisionServices(context.Background())
+				require.NoError(t, err)
+			})
 			err = b.ProvisionVirtualChains(context.Background())
 			require.NoError(t, err)
 		}

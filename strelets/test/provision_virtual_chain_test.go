@@ -30,7 +30,7 @@ func TestStrelets_ProvisionVirtualChain(t *testing.T) {
 	})
 
 	require.NoError(t, err)
-	orchestrator.AssertNumberOfCalls(t, "Prepare", 1)
+	orchestrator.AssertNumberOfCalls(t, "PrepareVirtualChain", 1)
 	runner.AssertNumberOfCalls(t, "Run", 1)
 }
 
@@ -50,7 +50,7 @@ func TestStrelets_ProvisionVirtualChainWithRetries(t *testing.T) {
 	})
 
 	require.NoError(t, err)
-	orchestrator.AssertNumberOfCalls(t, "Prepare", 3)
+	orchestrator.AssertNumberOfCalls(t, "PrepareVirtualChain", 3)
 	runner.AssertNumberOfCalls(t, "Run", 3)
 }
 
@@ -71,6 +71,6 @@ func TestStrelets_ProvisionVirtualChainWhenDisabled(t *testing.T) {
 	})
 
 	require.Error(t, err, "virtual chain 1972 is disabled")
-	orchestrator.AssertNumberOfCalls(t, "Prepare", 0)
+	orchestrator.AssertNumberOfCalls(t, "PrepareVirtualChain", 0)
 	runner.AssertNumberOfCalls(t, "Run", 0)
 }

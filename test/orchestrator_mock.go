@@ -16,13 +16,13 @@ func (a *OrchestratorMock) PullImage(ctx context.Context, imageName string) erro
 	return nil
 }
 
-func (a *OrchestratorMock) Prepare(ctx context.Context, serviceConfig *adapter.ServiceConfig, appConfig *adapter.AppConfig) (adapter.Runner, error) {
-	res := a.MethodCalled("Prepare", ctx, serviceConfig, appConfig)
+func (a *OrchestratorMock) PrepareVirtualChain(ctx context.Context, serviceConfig *adapter.ServiceConfig, appConfig *adapter.AppConfig) (adapter.Runner, error) {
+	res := a.MethodCalled("PrepareVirtualChain", ctx, serviceConfig, appConfig)
 	return res.Get(0).(adapter.Runner), res.Error(1)
 }
 
-func (a *OrchestratorMock) RemoveContainer(ctx context.Context, containerName string) error {
-	res := a.MethodCalled("RemoveContainer", ctx, containerName)
+func (a *OrchestratorMock) ServiceRemove(ctx context.Context, containerName string) error {
+	res := a.MethodCalled("ServiceRemove", ctx, containerName)
 	return res.Error(0)
 }
 
@@ -60,7 +60,7 @@ func NewOrchestratorAndRunnerMocks() (orchestrator *OrchestratorMock, virtualCha
 	reverseProxyRunner = &RunnerMock{}
 	reverseProxyRunner.On("Run", mock.Anything).Return(nil)
 
-	orchestrator.On("Prepare", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(virtualChainRunner, nil)
+	orchestrator.On("PrepareVirtualChain", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(virtualChainRunner, nil)
 	orchestrator.On("PrepareReverseProxy", mock.Anything, mock.Anything).Return(reverseProxyRunner, nil)
 
 	return

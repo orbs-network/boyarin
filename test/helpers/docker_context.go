@@ -14,6 +14,21 @@ import (
 
 const DOCKER_API_VERSION = "1.40"
 
+func removeAllDockerNetworks(t *testing.T) {
+	fmt.Println("Removing all docker networks")
+
+	ctx := context.Background()
+	client, err := dockerClient.NewClientWithOpts(dockerClient.WithVersion(DOCKER_API_VERSION))
+	if err != nil {
+		t.Errorf("could not connect to docker: %s", err)
+		t.FailNow()
+	}
+
+	prune, err := client.NetworksPrune(ctx, filters.NewArgs())
+	require.NoError(t, err)
+	fmt.Printf("pruned %d networks\n", len(prune.NetworksDeleted))
+}
+
 func removeAllDockerVolumes(t *testing.T) {
 	fmt.Println("Removing all docker volumes")
 
@@ -49,6 +64,10 @@ func removeAllDockerVolumes(t *testing.T) {
 			}
 		}
 	}
+
+	prune, err := client.VolumesPrune(ctx, filters.NewArgs())
+	require.NoError(t, err)
+	fmt.Printf("pruned %d volumes\n", len(prune.VolumesDeleted))
 }
 
 func removeAllServices(t *testing.T) {
@@ -92,7 +111,7 @@ func removeAllServices(t *testing.T) {
 			Force: true,
 		})
 		if err != nil {
-			fmt.Printf("error removing container '%s': %p", c.Names[0], err)
+			fmt.Printf("error removing container '%s': %v \n", c.Names[0], err)
 		}
 	}
 
@@ -106,6 +125,10 @@ func removeAllServices(t *testing.T) {
 
 		return len(containers) <= 0
 	}), "failed to remove docker containers in time")
+
+	prune, err := client.ContainersPrune(ctx, filters.NewArgs())
+	require.NoError(t, err)
+	fmt.Printf("pruned %d containers\n", len(prune.ContainersDeleted))
 }
 
 func InitSwarmEnvironment(t *testing.T, ctx context.Context) {
@@ -113,6 +136,7 @@ func InitSwarmEnvironment(t *testing.T, ctx context.Context) {
 
 	removeAllServices(t)
 	removeAllDockerVolumes(t)
+	removeAllDockerNetworks(t)
 	fmt.Println("swarm cleared")
 
 	LogSwarmServices(t, ctx)

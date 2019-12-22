@@ -3,7 +3,6 @@ module github.com/orbs-network/boyarin
 go 1.12
 
 require (
-	github.com/Flaque/filet v0.0.0-20190209224823-fc4d33cfcf93
 	github.com/Microsoft/go-winio v0.4.14 // indirect
 	github.com/allegro/bigcache v1.2.1 // indirect
 	github.com/aristanetworks/goarista v0.0.0-20191023202215-f096da5361bb // indirect

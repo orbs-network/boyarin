@@ -3,7 +3,6 @@ package p1000e2e
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Flaque/filet"
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/services"
 	"github.com/orbs-network/boyarin/test/helpers"
@@ -12,6 +11,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -79,8 +79,9 @@ set up environment and run boyar
 func InProcessBoyar(t *testing.T, logger log.Logger, keyPair KeyConfig, vChainId int) {
 	keyPairJson, err := json.Marshal(keyPair)
 	require.NoError(t, err)
-	file := filet.TmpFile(t, "", string(keyPairJson))
-	defer filet.CleanUp(t)
+
+	file, err := TempFile(err, t, keyPairJson)
+	defer os.Remove(file.Name())
 	ts := serveConfig(t, vChainId)
 	defer ts.Close()
 	flags := &config.Flags{
@@ -92,6 +93,13 @@ func InProcessBoyar(t *testing.T, logger log.Logger, keyPair KeyConfig, vChainId
 	logger.Info("starting in-process boyar")
 	err = services.Execute(flags, logger)
 	require.NoError(t, err)
+}
+
+func TempFile(err error, t *testing.T, keyPairJson []byte) (*os.File, error) {
+	file, err := ioutil.TempFile("", "")
+	require.NoError(t, err)
+	_, err = file.WriteString(string(keyPairJson))
+	return file, err
 }
 
 type JsonMap struct {

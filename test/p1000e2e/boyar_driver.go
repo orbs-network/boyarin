@@ -74,7 +74,7 @@ func serveConfig(t *testing.T, vChainId int) *httptest.Server {
 
 /**
 set up environment and run boyar
-
+(does not return by itself)
 */
 func InProcessBoyar(t *testing.T, logger log.Logger, keyPair KeyConfig, vChainId int) {
 	keyPairJson, err := json.Marshal(keyPair)
@@ -116,8 +116,8 @@ func GetVChainMetrics(t helpers.TestingT, vChainId int) JsonMap {
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	defer resp.Body.Close()
-	body, err2 := ioutil.ReadAll(resp.Body)
-	require.NoError(t, err2)
+	body, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
 	err = json.Unmarshal(body, &metrics)
 	require.NoError(t, err)
 	return JsonMap{value: metrics}

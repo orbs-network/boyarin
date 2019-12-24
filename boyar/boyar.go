@@ -11,6 +11,7 @@ import (
 	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/orbs-network/boyarin/utils"
 	"github.com/orbs-network/scribe/log"
+	"github.com/pkg/errors"
 	"strings"
 )
 
@@ -119,7 +120,7 @@ func (b *boyar) ProvisionServices(ctx context.Context) error {
 	if err := b.strelets.ProvisionSharedNetwork(ctx, &strelets.ProvisionSharedNetworkInput{
 		Name: adapter.SHARED_SIGNER_NETWORK,
 	}); err != nil {
-		return err
+		return errors.Wrap(err, "failed creating network")
 	}
 
 	if b.cache.services.CheckNewJsonValue(b.config.Services()) {

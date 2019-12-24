@@ -67,4 +67,5 @@ func RequireEventually(t TestingT, duration time.Duration, f func(t TestingT)) {
 	} else {
 		t.Errorf("test failed after running for %v :\n %s", duration+time.Since(timeout), fmt.Sprintf(mock.format, mock.args...))
 	}
+	t.FailNow()
 }

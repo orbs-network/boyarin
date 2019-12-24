@@ -15,7 +15,7 @@ func TestStrelets_RemoveVirtualChain(t *testing.T) {
 	s := strelets.NewStrelets(orchestrator)
 
 	ctx := context.Background()
-	orchestrator.On("RemoveContainer", ctx, "orbs-network-chain-1972-stack").Return(nil);
+	orchestrator.On("ServiceRemove", ctx, "orbs-network-chain-1972-stack").Return(nil)
 
 	err := s.RemoveVirtualChain(ctx, &strelets.RemoveVirtualChainInput{
 		VirtualChain: &strelets.VirtualChain{
@@ -27,6 +27,6 @@ func TestStrelets_RemoveVirtualChain(t *testing.T) {
 	})
 
 	require.NoError(t, err)
-	orchestrator.AssertNumberOfCalls(t, "RemoveContainer", 1)
+	orchestrator.AssertNumberOfCalls(t, "ServiceRemove", 1)
 
 }

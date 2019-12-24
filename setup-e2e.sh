@@ -24,3 +24,7 @@ fi
 if [ -n "${DOCKER_SECRETS}" ]; then
   docker secret rm ${DOCKER_SECRETS}
 fi
+
+docker container prune -f
+docker volume prune -f
+docker network prune -f

@@ -141,13 +141,13 @@ func TestBoyar_ProvisionVirtualChainsWithNoConfigChanges(t *testing.T) {
 
 	err := b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
-	orchestrator.AssertNumberOfCalls(t, "Prepare", 2)
+	orchestrator.AssertNumberOfCalls(t, "PrepareVirtualChain", 2)
 	virtualChainRunner.AssertNumberOfCalls(t, "Run", 2)
 	assertAllChainedCached(t, cfg, cache)
 
 	err = b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
-	orchestrator.AssertNumberOfCalls(t, "Prepare", 2)
+	orchestrator.AssertNumberOfCalls(t, "PrepareVirtualChain", 2)
 	virtualChainRunner.AssertNumberOfCalls(t, "Run", 2)
 }
 
@@ -163,7 +163,7 @@ func TestBoyar_ProvisionVirtualChainsReprovisionsIfConfigChanges(t *testing.T) {
 
 	err := b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
-	orchestrator.AssertNumberOfCalls(t, "Prepare", 2)
+	orchestrator.AssertNumberOfCalls(t, "PrepareVirtualChain", 2)
 	virtualChainRunner.AssertNumberOfCalls(t, "Run", 2)
 	assertAllChainedCached(t, cfg, cache)
 
@@ -171,7 +171,7 @@ func TestBoyar_ProvisionVirtualChainsReprovisionsIfConfigChanges(t *testing.T) {
 
 	err = b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
-	orchestrator.AssertNumberOfCalls(t, "Prepare", 3)
+	orchestrator.AssertNumberOfCalls(t, "PrepareVirtualChain", 3)
 	virtualChainRunner.AssertNumberOfCalls(t, "Run", 3)
 }
 
@@ -187,7 +187,7 @@ func TestBoyar_ProvisionVirtualChainsReprovisionsIfDockerConfigChanges(t *testin
 
 	err := b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
-	orchestrator.AssertNumberOfCalls(t, "Prepare", 2)
+	orchestrator.AssertNumberOfCalls(t, "PrepareVirtualChain", 2)
 	virtualChainRunner.AssertNumberOfCalls(t, "Run", 2)
 	assertAllChainedCached(t, cfg, cache)
 
@@ -195,7 +195,7 @@ func TestBoyar_ProvisionVirtualChainsReprovisionsIfDockerConfigChanges(t *testin
 
 	err = b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
-	orchestrator.AssertNumberOfCalls(t, "Prepare", 3)
+	orchestrator.AssertNumberOfCalls(t, "PrepareVirtualChain", 3)
 	virtualChainRunner.AssertNumberOfCalls(t, "Run", 3)
 }
 

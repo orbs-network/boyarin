@@ -3,6 +3,7 @@ package utils
 import (
 	"context"
 	"fmt"
+	"github.com/pkg/errors"
 	"time"
 )
 
@@ -24,8 +25,8 @@ func Try(parentContext context.Context, tries int, timeoutPerTry time.Duration, 
 				}
 				return
 			}
-
-			fmt.Println(fmt.Sprintf("attempt #%d, retry in %s: %s", i, retryAfter, err))
+			err = errors.WithStack(err)
+			fmt.Println(fmt.Sprintf("attempt #%d, retry in %s: %+v", i, retryAfter, err))
 			time.Sleep(retryAfter)
 			retryAfter = retryAfter * 2
 		}

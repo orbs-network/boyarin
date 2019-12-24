@@ -10,7 +10,7 @@ import (
 func (d *dockerSwarmOrchestrator) PrepareService(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) (Runner, error) {
 	serviceName := GetServiceId(serviceConfig.ContainerName)
 
-	if err := d.RemoveContainer(ctx, serviceName); err != nil {
+	if err := d.ServiceRemove(ctx, serviceName); err != nil {
 		return nil, err
 	}
 

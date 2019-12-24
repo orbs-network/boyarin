@@ -52,8 +52,8 @@ type ContainerStatus struct {
 
 type Orchestrator interface {
 	PullImage(ctx context.Context, imageName string) error
-	Prepare(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) (Runner, error)
-	RemoveContainer(ctx context.Context, containerName string) error
+	PrepareVirtualChain(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) (Runner, error)
+	ServiceRemove(ctx context.Context, containerName string) error
 
 	PrepareService(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) (Runner, error)
 	PrepareReverseProxy(ctx context.Context, config *ReverseProxyConfig) (Runner, error)

@@ -9,7 +9,7 @@ docker pull ${ORBS_NODE_DOCKER_IMAGE}:master
 docker pull ${SIGNER_DOCKER_IMAGE}:master
 docker tag ${ORBS_NODE_DOCKER_IMAGE}:master orbs:export
 docker tag ${SIGNER_DOCKER_IMAGE}:master orbs:signer
-docker swarm init
+# docker swarm init
 
 # clean docker state
 DOCKER_INSTANCES=$(docker ps -aq)
@@ -24,3 +24,7 @@ fi
 if [ -n "${DOCKER_SECRETS}" ]; then
   docker secret rm ${DOCKER_SECRETS}
 fi
+
+docker container prune -f
+docker volume prune -f
+docker network prune -f

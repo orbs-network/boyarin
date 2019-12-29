@@ -9,6 +9,7 @@ import (
 	"github.com/orbs-network/scribe/log"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -35,8 +36,8 @@ func configJson(t *testing.T, vChainIds []int) string {
 	for i, id := range vChainIds {
 		chains[i] = map[string]interface{}{
 			"Id":         id,
-			"HttpPort":   8080 + i,
-			"GossipPort": 4400 + i,
+			"HttpPort":   HttpPort(id),
+			"GossipPort": GossipPort(id),
 			"DockerConfig": map[string]interface{}{
 				"ContainerNamePrefix": "e2e",
 				"Image":               "orbs",
@@ -54,6 +55,16 @@ func configJson(t *testing.T, vChainIds []int) string {
 	jsonStr, err := json.MarshalIndent(model, "", "    ")
 	require.NoError(t, err)
 	return string(jsonStr)
+}
+
+const basePort = 6000
+
+func GossipPort(vChainId int) int {
+	return basePort + vChainId
+}
+
+func HttpPort(vChainId int) int {
+	return basePort - vChainId
 }
 
 type KeyConfig struct {
@@ -121,4 +132,14 @@ func GetVChainMetrics(t helpers.TestingT, vChainId int) JsonMap {
 	err = json.Unmarshal(body, &metrics)
 	require.NoError(t, err)
 	return JsonMap{value: metrics}
+}
+
+func AssertGossipServer(t helpers.TestingT, vChainId int) {
+	timeout := time.Second
+	port := strconv.Itoa(GossipPort(vChainId))
+	conn, err := net.DialTimeout("tcp", "127.0.0.1:"+port, timeout)
+	require.NoError(t, err, "error connecting to port %d vChainId %d", port, vChainId)
+	require.NotNil(t, conn, "nil connection to port %d vChainId %d", port, vChainId)
+	err = conn.Close()
+	require.NoError(t, err, "closing connection to port %d vChainId %d", port, vChainId)
 }

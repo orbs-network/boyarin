@@ -94,24 +94,6 @@ func provisionVchains(t *testing.T, s strelets.Strelets, i int, vchainIds ...int
 	return b, cfg.Chains()
 }
 
-func TestE2EProvisionMultipleVchainsWithSwarmAndBoyar(t *testing.T) {
-	// helpers.SkipOnCI(t)
-	helpers.WithContext(func(ctx context.Context) {
-		helpers.InitSwarmEnvironment(t, ctx)
-		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
-		require.NoError(t, err)
-
-		s := strelets.NewStrelets(swarm)
-
-		for i := 1; i <= 4; i++ {
-			provisionVchains(t, s, i, 42, 92)
-		}
-
-		helpers.WaitForBlock(t, helpers.GetMetricsForPort(getHttpPortForVChain(1, 42)), 3, WaitForBlockTimeout)
-		helpers.WaitForBlock(t, helpers.GetMetricsForPort(getHttpPortForVChain(1, 92)), 0, WaitForBlockTimeout)
-	})
-}
-
 func TestE2EAddNewVirtualChainWithSwarmAndBoyar(t *testing.T) {
 	helpers.SkipOnCI(t)
 	helpers.WithContext(func(ctx context.Context) {

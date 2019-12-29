@@ -30,6 +30,7 @@ func TestE2ESingleVchainRunsVirtualChainNodeWithCorrectIdAndKey(t *testing.T) {
 		helpers.RequireEventually(t, 20*time.Second, func(t helpers.TestingT) {
 			metrics := GetVChainMetrics(t, VChainId)
 			require.Equal(t, metrics.String("Node.Address"), PublickKey)
+			AssertGossipServer(t, VChainId)
 		})
 	})
 }
@@ -52,6 +53,8 @@ func TestE2EMultipleVchainRunsVirtualChainNodeWithCorrectIdAndKey(t *testing.T) 
 			require.Equal(t, metrics.String("Node.Address"), PublickKey)
 			metrics = GetVChainMetrics(t, VChain2Id)
 			require.Equal(t, metrics.String("Node.Address"), PublickKey)
+			AssertGossipServer(t, VChainId)
+			AssertGossipServer(t, VChain2Id)
 		})
 	})
 }

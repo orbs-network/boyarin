@@ -72,7 +72,7 @@ func peers(ip string) *strelets.PeersMap {
 }
 
 func TestE2EWithDockerSwarm(t *testing.T) {
-
+	// helpers.SkipOnCI(t)
 	helpers.WithContext(func(ctx context.Context) {
 		helpers.InitSwarmEnvironment(t, ctx)
 		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
@@ -88,6 +88,7 @@ func TestE2EWithDockerSwarm(t *testing.T) {
 }
 
 func TestE2EKeepVolumesBetweenReloadsWithSwarm(t *testing.T) {
+	helpers.SkipOnCI(t)
 	helpers.WithContext(func(ctx context.Context) {
 		helpers.InitSwarmEnvironment(t, ctx)
 		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})

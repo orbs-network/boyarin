@@ -14,7 +14,7 @@ import (
 )
 
 func Test_UpdateReverseProxyWithSwarm(t *testing.T) {
-
+	// helpers.SkipOnCI(t)
 	helpers.WithContext(func(ctx context.Context) {
 		helpers.InitSwarmEnvironment(t, ctx)
 		port := 10080
@@ -66,7 +66,7 @@ func Test_UpdateReverseProxyWithSwarm(t *testing.T) {
 }
 
 func Test_CreateReverseProxyWithSSL(t *testing.T) {
-
+	// helpers.SkipOnCI(t)
 	helpers.WithContext(func(ctx context.Context) {
 		helpers.InitSwarmEnvironment(t, ctx)
 

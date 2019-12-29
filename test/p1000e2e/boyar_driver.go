@@ -13,84 +13,84 @@ import (
 	"net/http/httptest"
 	"os"
 	"strconv"
-	"strings"
 	"testing"
-	"text/template"
 	"time"
 )
 
-const configJsonStr = `{
-  "network": [
-    {
-      "address":"dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173",
-      "ip":"127.0.0.1"
-    }
-  ],
-  "orchestrator": {
-    "max-reload-time-delay": "1s"
-  },
-  "chains": [
-    {
-      "Id":         {{.VChainId}},
-      "HttpPort":   8080,
-      "GossipPort": 4400,
-      "DockerConfig": {
-        "ContainerNamePrefix": "e2e",
-        "Image":  "orbs",
-        "Tag":    "export",
-        "Pull":   false
-      },
-      "Config": {
-        "active-consensus-algo": 2,
-        "genesis-validator-addresses" : [
-            "dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173"
-        ]
-      }
-    }
-  ],
-  "services": {}
-}`
-
-var configJsonTemplate = template.Must(template.New("").Parse(configJsonStr))
+func configJson(t *testing.T, vChainIds []int) string {
+	chains := make([]interface{}, len(vChainIds))
+	model := map[string]interface{}{
+		"network": []interface{}{
+			map[string]interface{}{
+				"address": "dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173",
+				"ip":      "127.0.0.1",
+			},
+		},
+		"orchestrator": map[string]interface{}{
+			"max-reload-time-delay": "1s",
+		},
+		"chains":   chains,
+		"services": map[string]interface{}{},
+	}
+	for i, id := range vChainIds {
+		chains[i] = map[string]interface{}{
+			"Id":         id,
+			"HttpPort":   8080 + i,
+			"GossipPort": 4400 + i,
+			"DockerConfig": map[string]interface{}{
+				"ContainerNamePrefix": "e2e",
+				"Image":               "orbs",
+				"Tag":                 "export",
+				"Pull":                false,
+			},
+			"Config": map[string]interface{}{
+				"active-consensus-algo": 2,
+				"genesis-validator-addresses": []interface{}{
+					"dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173",
+				},
+			},
+		}
+	}
+	jsonStr, err := json.MarshalIndent(model, "", "    ")
+	require.NoError(t, err)
+	return string(jsonStr)
+}
 
 type KeyConfig struct {
 	NodeAddress    string `json:"node-address"`
 	NodePrivateKey string `json:"node-private-key,omitempty"` // Very important to omit empty value to produce a valid config
 }
 
-func serveConfig(t *testing.T, vChainId int) *httptest.Server {
-	var sb strings.Builder
-	err := configJsonTemplate.Execute(&sb, struct {
-		VChainId int
-	}{
-		VChainId: vChainId,
-	})
-	require.NoError(t, err)
+func serveConfig(configStr string) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//logger.Info("configuration requested")
-		_, _ = fmt.Fprint(w, sb.String())
+		//fmt.Println("configuration requested")
+		_, _ = fmt.Fprint(w, configStr)
 	}))
 }
 
-/**
-set up environment and run boyar
-(does not return by itself)
-*/
-func InProcessBoyar(t *testing.T, logger log.Logger, keyPair KeyConfig, vChainId int) {
+func SetupBoyarDependencies(t *testing.T, keyPair KeyConfig, vChainIds ...int) (*config.Flags, func()) {
 	keyPairJson, err := json.Marshal(keyPair)
 	require.NoError(t, err)
 	file := TempFile(t, keyPairJson)
-	defer os.Remove(file.Name())
-	ts := serveConfig(t, vChainId)
-	defer ts.Close()
+	configStr := configJson(t, vChainIds)
+	// fmt.Println(configStr)
+	ts := serveConfig(configStr)
 	flags := &config.Flags{
 		Timeout:           time.Minute,
 		ConfigUrl:         ts.URL,
 		KeyPairConfigPath: file.Name(),
 		PollingInterval:   500 * time.Millisecond,
 	}
+	cleanup := func() {
+		defer os.Remove(file.Name())
+		defer ts.Close()
+	}
+	return flags, cleanup
+}
+
+func InProcessBoyar(t *testing.T, logger log.Logger, flags *config.Flags) {
 	logger.Info("starting in-process boyar")
-	err = services.Execute(flags, logger)
+	err := services.Execute(flags, logger)
 	require.NoError(t, err)
 }
 

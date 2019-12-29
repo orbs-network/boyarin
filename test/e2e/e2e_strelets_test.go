@@ -72,8 +72,7 @@ func peers(ip string) *strelets.PeersMap {
 }
 
 func TestE2EWithDockerSwarm(t *testing.T) {
-	helpers.SkipOnCI(t)
-
+	// helpers.SkipOnCI(t)
 	helpers.WithContext(func(ctx context.Context) {
 		helpers.InitSwarmEnvironment(t, ctx)
 		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
@@ -90,7 +89,6 @@ func TestE2EWithDockerSwarm(t *testing.T) {
 
 func TestE2EKeepVolumesBetweenReloadsWithSwarm(t *testing.T) {
 	helpers.SkipOnCI(t)
-
 	helpers.WithContext(func(ctx context.Context) {
 		helpers.InitSwarmEnvironment(t, ctx)
 		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
@@ -101,7 +99,7 @@ func TestE2EKeepVolumesBetweenReloadsWithSwarm(t *testing.T) {
 			startChainWithStrelets(t, s, i)
 		}
 
-		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8081), 10, WaitForBlockTimeout)
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8081), 3, WaitForBlockTimeout)
 
 		expectedBlockHeight, err := helpers.GetBlockHeight(helpers.GetMetricsForPort(8081))
 		require.NoError(t, err)
@@ -110,6 +108,11 @@ func TestE2EKeepVolumesBetweenReloadsWithSwarm(t *testing.T) {
 			VirtualChain: chain(1),
 		})
 		require.NoError(t, err)
+
+		helpers.RequireEventually(t, 1*time.Minute, func(t helpers.TestingT) {
+			_, err = helpers.GetMetricsForPort(8081)()
+			require.Error(t, err, "service should not respond")
+		})
 
 		time.Sleep(3 * time.Second)
 		startChainWithStrelets(t, s, 1)

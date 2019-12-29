@@ -95,8 +95,7 @@ func provisionVchains(t *testing.T, s strelets.Strelets, i int, vchainIds ...int
 }
 
 func TestE2EProvisionMultipleVchainsWithSwarmAndBoyar(t *testing.T) {
-	helpers.SkipOnCI(t)
-
+	// helpers.SkipOnCI(t)
 	helpers.WithContext(func(ctx context.Context) {
 		helpers.InitSwarmEnvironment(t, ctx)
 		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
@@ -115,7 +114,6 @@ func TestE2EProvisionMultipleVchainsWithSwarmAndBoyar(t *testing.T) {
 
 func TestE2EAddNewVirtualChainWithSwarmAndBoyar(t *testing.T) {
 	helpers.SkipOnCI(t)
-
 	helpers.WithContext(func(ctx context.Context) {
 		helpers.InitSwarmEnvironment(t, ctx)
 
@@ -141,8 +139,7 @@ func TestE2EAddNewVirtualChainWithSwarmAndBoyar(t *testing.T) {
 
 // Tests boyar.Flow as close as it gets to production starting up
 func TestE2EWithFullFlowAndDisabledSimilarVchainId(t *testing.T) {
-	helpers.SkipOnCI(t)
-
+	// helpers.SkipOnCI(t)
 	logger := helpers.DefaultTestLogger()
 	helpers.WithContext(func(ctx context.Context) {
 		helpers.InitSwarmEnvironment(t, ctx)

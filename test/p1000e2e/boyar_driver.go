@@ -80,20 +80,25 @@ type KeyConfig struct {
 	NodePrivateKey string `json:"node-private-key,omitempty"` // Very important to omit empty value to produce a valid config
 }
 
-func serveConfig(configStr string) *httptest.Server {
+func serveConfig(configStr *string) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		//fmt.Println("configuration requested")
-		_, _ = fmt.Fprint(w, configStr)
+		_, _ = fmt.Fprint(w, *configStr)
 	}))
 }
 
-func SetupBoyarDependencies(t *testing.T, keyPair KeyConfig, vChains ...VChainArgument) (*config.Flags, func()) {
+func SetupDynamicBoyarDependencies(t *testing.T, keyPair KeyConfig, vChains <-chan []VChainArgument) (*config.Flags, func()) {
 	keyPairJson, err := json.Marshal(keyPair)
 	require.NoError(t, err)
 	file := TempFile(t, keyPairJson)
-	configStr := configJson(t, vChains)
-	// fmt.Println(configStr)
-	ts := serveConfig(configStr)
+	configStr := configJson(t, []VChainArgument{})
+	go func() {
+		for currentChains := range vChains {
+			configStr = configJson(t, currentChains)
+			// fmt.Println(configStr)
+		}
+	}()
+	ts := serveConfig(&configStr)
 	flags := &config.Flags{
 		Timeout:           time.Minute,
 		ConfigUrl:         ts.URL,
@@ -105,6 +110,13 @@ func SetupBoyarDependencies(t *testing.T, keyPair KeyConfig, vChains ...VChainAr
 		defer ts.Close()
 	}
 	return flags, cleanup
+}
+
+func SetupBoyarDependencies(t *testing.T, keyPair KeyConfig, vChains ...VChainArgument) (*config.Flags, func()) {
+	vChainsChannel := make(chan []VChainArgument, 1)
+	vChainsChannel <- vChains
+	close(vChainsChannel)
+	return SetupDynamicBoyarDependencies(t, keyPair, vChainsChannel)
 }
 
 func InProcessBoyar(t *testing.T, logger log.Logger, flags *config.Flags) {
@@ -150,4 +162,10 @@ func AssertGossipServer(t helpers.TestingT, vc VChainArgument) {
 	require.NotNil(t, conn, "nil connection to port %d vChainId %d", port, vc.Id)
 	err = conn.Close()
 	require.NoError(t, err, "closing connection to port %d vChainId %d", port, vc.Id)
+}
+
+func AssertVchainUp(t helpers.TestingT, publickKey string, vc1 VChainArgument) {
+	metrics := GetVChainMetrics(t, vc1)
+	require.Equal(t, metrics.String("Node.Address"), publickKey)
+	AssertGossipServer(t, vc1)
 }

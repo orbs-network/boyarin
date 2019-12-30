@@ -4,11 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/orbs-network/boyarin/boyar"
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/services"
 	"github.com/orbs-network/boyarin/strelets"
-	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -78,45 +76,6 @@ func getBoyarConfigWithSigner(i int, vchains []*strelets.VirtualChain) []byte {
 
 	jsonConfig, _ := json.Marshal(configMap)
 	return jsonConfig
-}
-
-func provisionVchains(t *testing.T, s strelets.Strelets, i int, vchainIds ...int) (boyar.Boyar, []*strelets.VirtualChain) {
-	vchains := getBoyarVchains(i, vchainIds...)
-	boyarConfig := getBoyarConfig(vchains)
-	cfg, err := config.NewStringConfigurationSource(string(boyarConfig), helpers.LocalEthEndpoint()) // ethereum endpoint is optional
-	require.NoError(t, err)
-	cfg.SetKeyConfigPath(fmt.Sprintf("%s/node%d/keys.json", getConfigPath(), i))
-
-	b := boyar.NewBoyar(s, cfg, boyar.NewCache(), helpers.DefaultTestLogger())
-	err = b.ProvisionVirtualChains(context.Background())
-	require.NoError(t, err)
-
-	return b, cfg.Chains()
-}
-
-func TestE2EAddNewVirtualChainWithSwarmAndBoyar(t *testing.T) {
-	helpers.SkipOnCI(t)
-	helpers.WithContext(func(ctx context.Context) {
-		helpers.InitSwarmEnvironment(t, ctx)
-
-		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
-		require.NoError(t, err)
-
-		s := strelets.NewStrelets(swarm)
-
-		for i := 1; i <= 4; i++ {
-			provisionVchains(t, s, i, 42)
-		}
-
-		helpers.WaitForBlock(t, helpers.GetMetricsForPort(getHttpPortForVChain(1, 42)), 3, WaitForBlockTimeout)
-
-		for i := 1; i <= 4; i++ {
-			provisionVchains(t, s, i, 42, 92)
-		}
-
-		helpers.WaitForBlock(t, helpers.GetMetricsForPort(getHttpPortForVChain(1, 42)), 3, WaitForBlockTimeout)
-		helpers.WaitForBlock(t, helpers.GetMetricsForPort(getHttpPortForVChain(1, 92)), 0, WaitForBlockTimeout)
-	})
 }
 
 // Tests boyar.Flow as close as it gets to production starting up

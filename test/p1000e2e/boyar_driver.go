@@ -18,8 +18,22 @@ import (
 	"time"
 )
 
-func configJson(t *testing.T, vChainIds []int) string {
-	chains := make([]interface{}, len(vChainIds))
+type VChainArgument struct {
+	Id int
+}
+
+const basePort = 6000
+
+func (vc VChainArgument) GossipPort() int {
+	return basePort + vc.Id
+}
+
+func (vc VChainArgument) HttpPort() int {
+	return basePort - vc.Id
+}
+
+func configJson(t *testing.T, vChains []VChainArgument) string {
+	chains := make([]interface{}, len(vChains))
 	model := map[string]interface{}{
 		"network": []interface{}{
 			map[string]interface{}{
@@ -33,38 +47,32 @@ func configJson(t *testing.T, vChainIds []int) string {
 		"chains":   chains,
 		"services": map[string]interface{}{},
 	}
-	for i, id := range vChainIds {
-		chains[i] = map[string]interface{}{
-			"Id":         id,
-			"HttpPort":   HttpPort(id),
-			"GossipPort": GossipPort(id),
-			"DockerConfig": map[string]interface{}{
-				"ContainerNamePrefix": "e2e",
-				"Image":               "orbs",
-				"Tag":                 "export",
-				"Pull":                false,
-			},
-			"Config": map[string]interface{}{
-				"active-consensus-algo": 2,
-				"genesis-validator-addresses": []interface{}{
-					"dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173",
-				},
-			},
-		}
+	for i, id := range vChains {
+		chains[i] = VChainConfig(id)
 	}
 	jsonStr, err := json.MarshalIndent(model, "", "    ")
 	require.NoError(t, err)
 	return string(jsonStr)
 }
 
-const basePort = 6000
-
-func GossipPort(vChainId int) int {
-	return basePort + vChainId
-}
-
-func HttpPort(vChainId int) int {
-	return basePort - vChainId
+func VChainConfig(vc VChainArgument) map[string]interface{} {
+	return map[string]interface{}{
+		"Id":         vc.Id,
+		"HttpPort":   vc.HttpPort(),
+		"GossipPort": vc.GossipPort(),
+		"DockerConfig": map[string]interface{}{
+			"ContainerNamePrefix": "e2e",
+			"Image":               "orbs",
+			"Tag":                 "export",
+			"Pull":                false,
+		},
+		"Config": map[string]interface{}{
+			"active-consensus-algo": 2,
+			"genesis-validator-addresses": []interface{}{
+				"dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173",
+			},
+		},
+	}
 }
 
 type KeyConfig struct {
@@ -79,11 +87,11 @@ func serveConfig(configStr string) *httptest.Server {
 	}))
 }
 
-func SetupBoyarDependencies(t *testing.T, keyPair KeyConfig, vChainIds ...int) (*config.Flags, func()) {
+func SetupBoyarDependencies(t *testing.T, keyPair KeyConfig, vChains ...VChainArgument) (*config.Flags, func()) {
 	keyPairJson, err := json.Marshal(keyPair)
 	require.NoError(t, err)
 	file := TempFile(t, keyPairJson)
-	configStr := configJson(t, vChainIds)
+	configStr := configJson(t, vChains)
 	// fmt.Println(configStr)
 	ts := serveConfig(configStr)
 	flags := &config.Flags{
@@ -121,9 +129,9 @@ func (m *JsonMap) String(name string) string {
 	return m.value[name].(map[string]interface{})["Value"].(string)
 }
 
-func GetVChainMetrics(t helpers.TestingT, vChainId int) JsonMap {
+func GetVChainMetrics(t helpers.TestingT, vc VChainArgument) JsonMap {
 	metrics := make(map[string]interface{})
-	resp, err := http.Get("http://127.0.0.1/vchains/" + strconv.Itoa(vChainId) + "/metrics")
+	resp, err := http.Get(fmt.Sprintf("http://127.0.0.1/vchains/%d/metrics", vc.Id))
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	defer resp.Body.Close()
@@ -134,12 +142,12 @@ func GetVChainMetrics(t helpers.TestingT, vChainId int) JsonMap {
 	return JsonMap{value: metrics}
 }
 
-func AssertGossipServer(t helpers.TestingT, vChainId int) {
+func AssertGossipServer(t helpers.TestingT, vc VChainArgument) {
 	timeout := time.Second
-	port := strconv.Itoa(GossipPort(vChainId))
+	port := strconv.Itoa(vc.GossipPort())
 	conn, err := net.DialTimeout("tcp", "127.0.0.1:"+port, timeout)
-	require.NoError(t, err, "error connecting to port %d vChainId %d", port, vChainId)
-	require.NotNil(t, conn, "nil connection to port %d vChainId %d", port, vChainId)
+	require.NoError(t, err, "error connecting to port %d vChainId %d", port, vc.Id)
+	require.NotNil(t, conn, "nil connection to port %d vChainId %d", port, vc.Id)
 	err = conn.Close()
-	require.NoError(t, err, "closing connection to port %d vChainId %d", port, vChainId)
+	require.NoError(t, err, "closing connection to port %d vChainId %d", port, vc.Id)
 }

@@ -1,6 +1,7 @@
 package p1000e2e
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar/config"
@@ -119,9 +120,9 @@ func SetupBoyarDependencies(t *testing.T, keyPair KeyConfig, vChains ...VChainAr
 	return SetupDynamicBoyarDependencies(t, keyPair, vChainsChannel)
 }
 
-func InProcessBoyar(t *testing.T, logger log.Logger, flags *config.Flags) {
+func InProcessBoyar(t *testing.T, ctx context.Context, logger log.Logger, flags *config.Flags) {
 	logger.Info("starting in-process boyar")
-	err := services.Execute(flags, logger)
+	err := services.Execute(ctx, flags, logger)
 	require.NoError(t, err)
 }
 

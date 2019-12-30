@@ -6,7 +6,8 @@ import (
 	"github.com/orbs-network/boyarin/log_types"
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
-	"github.com/orbs-network/boyarin/supervized"
+	"github.com/orbs-network/boyarin/utils"
+	"github.com/orbs-network/govnr"
 	"github.com/orbs-network/scribe/log"
 	"time"
 )
@@ -14,17 +15,16 @@ import (
 const SERVICE_STATUS_REPORT_PERIOD = 1 * time.Minute
 const SERVICE_STATUS_REPORT_TIMEOUT = 30 * time.Second
 
-func WatchAndReportServicesStatus(logger log.Logger) {
-	supervized.GoForever(func(_ bool) {
-		for {
-			start := time.Now()
-			ctx, cancel := context.WithTimeout(context.Background(), SERVICE_STATUS_REPORT_TIMEOUT)
-			if err := reportStatus(ctx, logger, SERVICE_STATUS_REPORT_PERIOD); err != nil {
-				logger.Error("status check failed", log.Error(err))
-			}
-			cancel()
-			<-time.After(SERVICE_STATUS_REPORT_PERIOD - time.Since(start)) // to report exactly every minute
+func WatchAndReportServicesStatus(ctx context.Context, logger log.Logger) govnr.ShutdownWaiter {
+	errorHandler := utils.NewLogErrors(logger)
+	return govnr.Forever(ctx, "service status reporter", errorHandler, func() {
+		start := time.Now()
+		ctx, cancel := context.WithTimeout(ctx, SERVICE_STATUS_REPORT_TIMEOUT)
+		if err := reportStatus(ctx, logger, SERVICE_STATUS_REPORT_PERIOD); err != nil {
+			logger.Error("status check failed", log.Error(err))
 		}
+		cancel()
+		<-time.After(SERVICE_STATUS_REPORT_PERIOD - time.Since(start)) // to report exactly every minute
 	})
 }
 

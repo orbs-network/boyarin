@@ -24,7 +24,7 @@ func TestE2ERunSingleVirtualChain(t *testing.T) {
 
 		flags, cleanup := SetupBoyarDependencies(t, keys, vc1)
 		defer cleanup()
-		go InProcessBoyar(t, logger, flags)
+		go InProcessBoyar(t, ctx, logger, flags)
 
 		helpers.RequireEventually(t, 20*time.Second, func(t helpers.TestingT) {
 			AssertVchainUp(t, PublickKey, vc1)
@@ -45,7 +45,7 @@ func TestE2ERunMultipleVirtualChains(t *testing.T) {
 
 		flags, cleanup := SetupBoyarDependencies(t, keys, vc1, vc2)
 		defer cleanup()
-		go InProcessBoyar(t, logger, flags)
+		go InProcessBoyar(t, ctx, logger, flags)
 
 		helpers.RequireEventually(t, 20*time.Second, func(t helpers.TestingT) {
 			AssertVchainUp(t, PublickKey, vc1)
@@ -69,7 +69,7 @@ func TestE2EAddVirtualChain(t *testing.T) {
 
 		flags, cleanup := SetupDynamicBoyarDependencies(t, keys, vChainsChannel)
 		defer cleanup()
-		go InProcessBoyar(t, logger, flags)
+		go InProcessBoyar(t, ctx, logger, flags)
 
 		logger.Info(fmt.Sprintf("adding vchain %d", vc1.Id))
 		vChainsChannel <- []VChainArgument{vc1}

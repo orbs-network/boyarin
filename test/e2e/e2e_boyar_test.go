@@ -121,7 +121,7 @@ func TestE2EAddNewVirtualChainWithSwarmAndBoyar(t *testing.T) {
 
 // Tests boyar.Flow as close as it gets to production starting up
 func TestE2EWithFullFlowAndDisabledSimilarVchainId(t *testing.T) {
-	// helpers.SkipOnCI(t)
+	helpers.SkipOnCI(t)
 	logger := helpers.DefaultTestLogger()
 	helpers.WithContext(func(ctx context.Context) {
 		helpers.InitSwarmEnvironment(t, ctx)

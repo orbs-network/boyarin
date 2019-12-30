@@ -40,7 +40,8 @@ func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) error 
 
 	supervisor.Supervise(cfgFetcher.Start(ctx))
 
-	shutdownCtx, _ := context.WithTimeout(context.Background(), 1*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
 	supervisor.WaitUntilShutdown(shutdownCtx)
 	return nil
 }

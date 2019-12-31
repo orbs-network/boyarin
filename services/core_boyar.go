@@ -24,14 +24,7 @@ func NewCoreBoyarService(logger log.Logger) *BoyarService {
 	}
 }
 
-func (coreBoyar *BoyarService) OnConfigChange(timeout time.Duration, cfg config.NodeConfiguration, maxDelay time.Duration) error {
-	// random delay when provisioning change (that is, not bootstrap flow or repairing broken system)
-	if coreBoyar.healthy {
-		randomDelay(cfg, maxDelay, coreBoyar.logger)
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
+func (coreBoyar *BoyarService) OnConfigChange(ctx context.Context, cfg config.NodeConfiguration) error {
 
 	orchestrator, err := adapter.NewDockerSwarm(cfg.OrchestratorOptions())
 	if err != nil {
@@ -65,8 +58,11 @@ func (coreBoyar *BoyarService) OnConfigChange(timeout time.Duration, cfg config.
 	return nil
 }
 
-func randomDelay(cfg config.NodeConfiguration, maxDelay time.Duration, logger log.Logger) {
+func randomDelay(ctx context.Context, cfg config.NodeConfiguration, maxDelay time.Duration, logger log.Logger) {
 	reloadTimeDelay := cfg.ReloadTimeDelay(maxDelay)
 	logger.Info("waiting to apply new configuration", log.String("delay", maxDelay.String()))
-	<-time.After(reloadTimeDelay)
+	select {
+	case <-time.After(reloadTimeDelay):
+	case <-ctx.Done():
+	}
 }

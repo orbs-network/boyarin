@@ -26,14 +26,17 @@ func NewConfigurationPollService(flags *config.Flags, logger log.Logger) *Config
 		output:       output,
 		Output:       output,
 		configCache:  utils.NewCacheFilter(),
-		errorHandler: utils.NewLogErrors(logger),
+		errorHandler: utils.NewLogErrors("configuration polling", logger),
 	}
 }
 
 func (service *ConfigurationPollService) Start(ctx context.Context) govnr.ShutdownWaiter {
-	return govnr.Forever(ctx, "configuration polling service", service.errorHandler, func() {
+	handle := govnr.Forever(ctx, "configuration polling service", service.errorHandler, func() {
 		defer func() {
-			<-time.After(service.flags.PollingInterval)
+			select {
+			case <-ctx.Done():
+			case <-time.After(service.flags.PollingInterval):
+			}
 		}()
 		cfg, err := config.GetConfiguration(service.flags)
 		if err != nil {
@@ -47,6 +50,11 @@ func (service *ConfigurationPollService) Start(ctx context.Context) govnr.Shutdo
 			service.logger.Info("configuration has not changed")
 		}
 	})
+	go func() {
+		<-handle.Done()
+		close(service.output)
+	}()
+	return handle
 }
 
 func (service *ConfigurationPollService) Resend() {

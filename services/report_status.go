@@ -16,15 +16,19 @@ const SERVICE_STATUS_REPORT_PERIOD = 1 * time.Minute
 const SERVICE_STATUS_REPORT_TIMEOUT = 30 * time.Second
 
 func WatchAndReportServicesStatus(ctx context.Context, logger log.Logger) govnr.ShutdownWaiter {
-	errorHandler := utils.NewLogErrors(logger)
+	errorHandler := utils.NewLogErrors("service status reporter", logger)
 	return govnr.Forever(ctx, "service status reporter", errorHandler, func() {
 		start := time.Now()
-		ctx, cancel := context.WithTimeout(ctx, SERVICE_STATUS_REPORT_TIMEOUT)
-		if err := reportStatus(ctx, logger, SERVICE_STATUS_REPORT_PERIOD); err != nil {
+		ctx2, cancel := context.WithTimeout(ctx, SERVICE_STATUS_REPORT_TIMEOUT)
+		defer cancel()
+		if err := reportStatus(ctx2, logger, SERVICE_STATUS_REPORT_PERIOD); err != nil {
 			logger.Error("status check failed", log.Error(err))
 		}
-		cancel()
-		<-time.After(SERVICE_STATUS_REPORT_PERIOD - time.Since(start)) // to report exactly every minute
+
+		select {
+		case <-ctx.Done():
+		case <-time.After(SERVICE_STATUS_REPORT_PERIOD - time.Since(start)): // to report exactly every minute
+		}
 	})
 }
 

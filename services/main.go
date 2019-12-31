@@ -7,16 +7,15 @@ import (
 	"github.com/orbs-network/boyarin/utils"
 	"github.com/orbs-network/govnr"
 	"github.com/orbs-network/scribe/log"
-	"time"
 )
 
-func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) error {
+func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) (govnr.ShutdownWaiter, error) {
 	if flags.ConfigUrl == "" {
-		return fmt.Errorf("--config-url is a required parameter for provisioning flow")
+		return nil, fmt.Errorf("--config-url is a required parameter for provisioning flow")
 	}
 
 	if flags.KeyPairConfigPath == "" {
-		return fmt.Errorf("--keys is a required parameter for provisioning flow")
+		return nil, fmt.Errorf("--keys is a required parameter for provisioning flow")
 	}
 
 	supervisor := &govnr.TreeSupervisor{}
@@ -26,12 +25,20 @@ func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) error 
 	coreBoyar := NewCoreBoyarService(logger)
 
 	// wire cfg and boyar
-	supervisor.Supervise(govnr.Forever(ctx, "apply config changes", utils.NewLogErrors(logger), func() {
+	supervisor.Supervise(govnr.Forever(ctx, "apply config changes", utils.NewLogErrors("apply config changes", logger), func() {
 		cfg := <-cfgFetcher.Output
-		if ctx.Err() != nil { // this returns non-nil when context has been closed via cancellation or timeout or whatever
+
+		// random delay when provisioning change (that is, not bootstrap flow or repairing broken system)
+		if coreBoyar.healthy {
+			randomDelay(ctx, cfg, flags.MaxReloadTimeDelay, coreBoyar.logger)
+		}
+
+		ctx, cancel := context.WithTimeout(ctx, flags.Timeout)
+		defer cancel()
+		if ctx.Err() != nil {
 			return
 		}
-		err := coreBoyar.OnConfigChange(flags.Timeout, cfg, flags.MaxReloadTimeDelay)
+		err := coreBoyar.OnConfigChange(ctx, cfg)
 		if err != nil {
 			logger.Error("error executing configuration", log.Error(err))
 			cfgFetcher.Resend()
@@ -40,8 +47,5 @@ func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) error 
 
 	supervisor.Supervise(cfgFetcher.Start(ctx))
 
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
-	supervisor.WaitUntilShutdown(shutdownCtx)
-	return nil
+	return supervisor, nil
 }

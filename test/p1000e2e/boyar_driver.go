@@ -7,6 +7,7 @@ import (
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/services"
 	"github.com/orbs-network/boyarin/test/helpers"
+	"github.com/orbs-network/govnr"
 	"github.com/orbs-network/scribe/log"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
@@ -120,10 +121,11 @@ func SetupBoyarDependencies(t *testing.T, keyPair KeyConfig, vChains ...VChainAr
 	return SetupDynamicBoyarDependencies(t, keyPair, vChainsChannel)
 }
 
-func InProcessBoyar(t *testing.T, ctx context.Context, logger log.Logger, flags *config.Flags) {
+func InProcessBoyar(t *testing.T, ctx context.Context, logger log.Logger, flags *config.Flags) govnr.ShutdownWaiter {
 	logger.Info("starting in-process boyar")
-	err := services.Execute(ctx, flags, logger)
+	waiter, err := services.Execute(ctx, flags, logger)
 	require.NoError(t, err)
+	return waiter
 }
 
 func TempFile(t *testing.T, keyPairJson []byte) *os.File {

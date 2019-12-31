@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/orbs-network/boyarin/test/helpers"
+	"github.com/orbs-network/govnr"
 	"github.com/orbs-network/scribe/log"
 	"testing"
 	"time"
@@ -14,7 +15,7 @@ const PrivateKey = "c30bf9e301a19c319818b34a75901fd8f067b676a834eeb4169ec887dd03
 
 func TestE2ERunSingleVirtualChain(t *testing.T) {
 	vc1 := VChainArgument{Id: 42}
-	helpers.WithContext(func(ctx context.Context) {
+	helpers.WithContextAndShutdown(func(ctx context.Context) (waiter govnr.ShutdownWaiter) {
 		logger := log.GetLogger()
 		helpers.InitSwarmEnvironment(t, ctx)
 		keys := KeyConfig{
@@ -24,18 +25,19 @@ func TestE2ERunSingleVirtualChain(t *testing.T) {
 
 		flags, cleanup := SetupBoyarDependencies(t, keys, vc1)
 		defer cleanup()
-		go InProcessBoyar(t, ctx, logger, flags)
+		waiter = InProcessBoyar(t, ctx, logger, flags)
 
 		helpers.RequireEventually(t, 20*time.Second, func(t helpers.TestingT) {
 			AssertVchainUp(t, PublickKey, vc1)
 		})
+		return
 	})
 }
 
 func TestE2ERunMultipleVirtualChains(t *testing.T) {
 	vc1 := VChainArgument{Id: 42}
 	vc2 := VChainArgument{Id: 45}
-	helpers.WithContext(func(ctx context.Context) {
+	helpers.WithContextAndShutdown(func(ctx context.Context) (waiter govnr.ShutdownWaiter) {
 		logger := log.GetLogger()
 		helpers.InitSwarmEnvironment(t, ctx)
 		keys := KeyConfig{
@@ -45,19 +47,20 @@ func TestE2ERunMultipleVirtualChains(t *testing.T) {
 
 		flags, cleanup := SetupBoyarDependencies(t, keys, vc1, vc2)
 		defer cleanup()
-		go InProcessBoyar(t, ctx, logger, flags)
+		waiter = InProcessBoyar(t, ctx, logger, flags)
 
 		helpers.RequireEventually(t, 20*time.Second, func(t helpers.TestingT) {
 			AssertVchainUp(t, PublickKey, vc1)
 			AssertVchainUp(t, PublickKey, vc2)
 		})
+		return
 	})
 }
 
 func TestE2EAddVirtualChain(t *testing.T) {
 	vc1 := VChainArgument{Id: 42}
 	vc2 := VChainArgument{Id: 45}
-	helpers.WithContext(func(ctx context.Context) {
+	helpers.WithContextAndShutdown(func(ctx context.Context) (waiter govnr.ShutdownWaiter) {
 		logger := log.GetLogger()
 		helpers.InitSwarmEnvironment(t, ctx)
 		keys := KeyConfig{
@@ -69,7 +72,7 @@ func TestE2EAddVirtualChain(t *testing.T) {
 
 		flags, cleanup := SetupDynamicBoyarDependencies(t, keys, vChainsChannel)
 		defer cleanup()
-		go InProcessBoyar(t, ctx, logger, flags)
+		waiter = InProcessBoyar(t, ctx, logger, flags)
 
 		logger.Info(fmt.Sprintf("adding vchain %d", vc1.Id))
 		vChainsChannel <- []VChainArgument{vc1}
@@ -83,5 +86,6 @@ func TestE2EAddVirtualChain(t *testing.T) {
 			AssertVchainUp(t, PublickKey, vc1)
 			AssertVchainUp(t, PublickKey, vc2)
 		})
+		return
 	})
 }

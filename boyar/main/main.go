@@ -76,11 +76,13 @@ func main() {
 		printConfiguration(flags, logger)
 		return
 	}
-
-	if err := services.Execute(context.Background(), flags, logger); err != nil {
+	waiter, err := services.Execute(context.Background(), flags, logger)
+	if err != nil {
 		logger.Error("Startup failure", log.Error(err))
 		os.Exit(1)
 	}
+	// should block forever
+	waiter.WaitUntilShutdown(context.Background())
 }
 
 func printConfiguration(flags *config.Flags, logger log.Logger) {

@@ -8,15 +8,16 @@ import (
 )
 
 type logErrors struct {
+	name   string
 	logger log.Logger
 }
 
 func (le *logErrors) Error(err error) {
-	le.logger.Info("error in service status reporter", log.Error(err))
+	le.logger.Info(fmt.Sprintf("error in %s", le.name), log.Error(err))
 }
 
-func NewLogErrors(logger log.Logger) govnr.Errorer {
-	return &logErrors{logger: logger}
+func NewLogErrors(name string, logger log.Logger) govnr.Errorer {
+	return &logErrors{logger: logger, name: name}
 }
 
 func AggregateErrors(errors []error) error {

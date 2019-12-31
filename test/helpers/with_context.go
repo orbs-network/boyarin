@@ -21,7 +21,5 @@ func WithContextAndShutdown(f func(ctx context.Context) govnr.ShutdownWaiter) {
 		close(ch)
 	}()
 	cancel()
-	select {
-	case <-ch:
-	}
+	<-ch
 }

@@ -51,10 +51,8 @@ func (service *ConfigurationPollService) Start(ctx context.Context) govnr.Shutdo
 		}
 	})
 	go func() {
-		select {
-		case <-handle.Done():
-			close(service.output)
-		}
+		<-handle.Done()
+		close(service.output)
 	}()
 	return handle
 }

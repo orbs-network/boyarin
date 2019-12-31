@@ -10,7 +10,6 @@ import (
 	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/stretchr/testify/require"
 	"testing"
-	"time"
 )
 
 func getBoyarVchains(nodeIndex int, vchainIds ...int) []*strelets.VirtualChain {
@@ -95,7 +94,7 @@ func TestE2EWithFullFlowAndDisabledSimilarVchainId(t *testing.T) {
 			require.NoError(t, err)
 			cfg.SetKeyConfigPath(fmt.Sprintf("%s/node%d/keys.json", getConfigPath(), i))
 
-			err = services.NewCoreBoyarService(logger).OnConfigChange(time.Minute, cfg, 0)
+			err = services.NewCoreBoyarService(logger).OnConfigChange(ctx, cfg)
 			require.NoError(t, err)
 		}
 

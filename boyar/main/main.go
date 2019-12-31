@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -76,7 +77,7 @@ func main() {
 		return
 	}
 
-	if err := services.Execute(flags, logger); err != nil {
+	if err := services.Execute(context.Background(), flags, logger); err != nil {
 		logger.Error("Startup failure", log.Error(err))
 		os.Exit(1)
 	}

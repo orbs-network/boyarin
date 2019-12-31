@@ -27,6 +27,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.2 // indirect
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
+	github.com/orbs-network/govnr v0.2.0
 	github.com/orbs-network/scribe v0.2.3
 	github.com/pborman/uuid v1.2.0 // indirect
 	github.com/pkg/errors v0.8.1

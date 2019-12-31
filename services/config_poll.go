@@ -1,34 +1,37 @@
 package services
 
 import (
+	"context"
 	"github.com/orbs-network/boyarin/boyar/config"
-	"github.com/orbs-network/boyarin/supervized"
 	"github.com/orbs-network/boyarin/utils"
+	"github.com/orbs-network/govnr"
 	"github.com/orbs-network/scribe/log"
 	"time"
 )
 
 type ConfigurationPollService struct {
-	flags       *config.Flags
-	logger      log.Logger
-	output      chan config.NodeConfiguration
-	Output      <-chan config.NodeConfiguration
-	configCache *utils.CacheFilter
+	flags        *config.Flags
+	logger       log.Logger
+	output       chan config.NodeConfiguration
+	Output       <-chan config.NodeConfiguration
+	configCache  *utils.CacheFilter
+	errorHandler govnr.Errorer
 }
 
 func NewConfigurationPollService(flags *config.Flags, logger log.Logger) *ConfigurationPollService {
 	output := make(chan config.NodeConfiguration)
 	return &ConfigurationPollService{
-		flags:       flags,
-		logger:      logger,
-		output:      output,
-		Output:      output,
-		configCache: utils.NewCacheFilter(),
+		flags:        flags,
+		logger:       logger,
+		output:       output,
+		Output:       output,
+		configCache:  utils.NewCacheFilter(),
+		errorHandler: utils.NewLogErrors(logger),
 	}
 }
 
-func (service *ConfigurationPollService) Start() {
-	supervized.GoForever(func(first bool) {
+func (service *ConfigurationPollService) Start(ctx context.Context) govnr.ShutdownWaiter {
+	return govnr.Forever(ctx, "configuration polling service", service.errorHandler, func() {
 		defer func() {
 			<-time.After(service.flags.PollingInterval)
 		}()

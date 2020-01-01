@@ -22,13 +22,6 @@ type dockerSwarmSecretsConfig struct {
 	keysSecretId    string
 }
 
-type dockerSwarmRunner struct {
-	client      *client.Client
-	spec        func() (swarm.ServiceSpec, error)
-	serviceName string
-	imageName   string
-}
-
 type dockerSwarmNginxSecretsConfig struct {
 	nginxConfId      string
 	vchainConfId     string
@@ -50,9 +43,7 @@ func (d *dockerSwarmOrchestrator) PullImage(ctx context.Context, imageName strin
 	return pullImage(ctx, d.client, imageName)
 }
 
-func (r *dockerSwarmRunner) Run(ctx context.Context) error {
-	imageName := r.imageName
-
+func (d *dockerSwarmOrchestrator) create(ctx context.Context, spec swarm.ServiceSpec, imageName string) error {
 	var registryAuth string
 	if username, password, err := getAuthForRepository(os.Getenv("HOME"), imageName); err != nil {
 		// Ignore
@@ -63,13 +54,7 @@ func (r *dockerSwarmRunner) Run(ctx context.Context) error {
 			ServerAddress: getRepoName(imageName),
 		})
 	}
-
-	spec, err := r.spec()
-	if err != nil {
-		return errors.Wrap(err, "failed building spec for service")
-	}
-
-	_, err = r.client.ServiceCreate(ctx, spec, types.ServiceCreateOptions{
+	_, err := d.client.ServiceCreate(ctx, spec, types.ServiceCreateOptions{
 		QueryRegistry:       true,
 		EncodedRegistryAuth: registryAuth,
 	})

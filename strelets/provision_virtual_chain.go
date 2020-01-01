@@ -72,10 +72,6 @@ func (s *strelets) ProvisionVirtualChain(ctx context.Context, input *ProvisionVi
 				Config:  chain.getSerializedConfig(),
 			}
 
-			if runner, err := s.orchestrator.PrepareVirtualChain(ctx, serviceConfig, appConfig); err != nil {
-				return err
-			} else {
-				return runner.Run(ctx)
-			}
+			return s.orchestrator.RunVirtualChain(ctx, serviceConfig, appConfig)
 		})
 }

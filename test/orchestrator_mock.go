@@ -16,9 +16,9 @@ func (a *OrchestratorMock) PullImage(ctx context.Context, imageName string) erro
 	return nil
 }
 
-func (a *OrchestratorMock) PrepareVirtualChain(ctx context.Context, serviceConfig *adapter.ServiceConfig, appConfig *adapter.AppConfig) (adapter.Runner, error) {
-	res := a.MethodCalled("PrepareVirtualChain", ctx, serviceConfig, appConfig)
-	return res.Get(0).(adapter.Runner), res.Error(1)
+func (a *OrchestratorMock) RunVirtualChain(ctx context.Context, serviceConfig *adapter.ServiceConfig, appConfig *adapter.AppConfig) error {
+	res := a.MethodCalled("RunVirtualChain", ctx, serviceConfig, appConfig)
+	return res.Error(0)
 }
 
 func (a *OrchestratorMock) ServiceRemove(ctx context.Context, containerName string) error {
@@ -26,42 +26,27 @@ func (a *OrchestratorMock) ServiceRemove(ctx context.Context, containerName stri
 	return res.Error(0)
 }
 
-func (a *OrchestratorMock) PrepareReverseProxy(ctx context.Context, config *adapter.ReverseProxyConfig) (adapter.Runner, error) {
-	res := a.MethodCalled("PrepareReverseProxy", ctx, config)
-	return res.Get(0).(adapter.Runner), res.Error(1)
+func (a *OrchestratorMock) RunReverseProxy(ctx context.Context, config *adapter.ReverseProxyConfig) error {
+	res := a.MethodCalled("RunReverseProxy", ctx, config)
+	return res.Error(0)
 }
 
 func (a *OrchestratorMock) Close() error {
-	panic("not implemented")
-	return nil
+	res := a.MethodCalled("Close")
+	return res.Error(0)
 }
 
 func (a *OrchestratorMock) GetStatus(ctx context.Context, since time.Duration) (results []*adapter.ContainerStatus, err error) {
-	panic("not implemented")
-	return nil, nil
+	res := a.MethodCalled("GetStatus", ctx, since)
+	return res.Get(0).([]*adapter.ContainerStatus), res.Error(1)
 }
 
-func (a *OrchestratorMock) PrepareService(ctx context.Context, serviceConfig *adapter.ServiceConfig, appConfig *adapter.AppConfig) (adapter.Runner, error) {
-	panic("not implemented")
-	return nil, nil
+func (a *OrchestratorMock) RunService(ctx context.Context, serviceConfig *adapter.ServiceConfig, appConfig *adapter.AppConfig) error {
+	res := a.MethodCalled("RunService", ctx, serviceConfig, appConfig)
+	return res.Error(0)
 }
 
 func (a *OrchestratorMock) GetOverlayNetwork(ctx context.Context, name string) (string, error) {
-	panic("not implemented")
-	return "", nil
-}
-
-func NewOrchestratorAndRunnerMocks() (orchestrator *OrchestratorMock, virtualChainRunner *RunnerMock, reverseProxyRunner *RunnerMock) {
-	orchestrator = &OrchestratorMock{}
-
-	virtualChainRunner = &RunnerMock{}
-	virtualChainRunner.On("Run", mock.Anything).Return(nil)
-
-	reverseProxyRunner = &RunnerMock{}
-	reverseProxyRunner.On("Run", mock.Anything).Return(nil)
-
-	orchestrator.On("PrepareVirtualChain", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(virtualChainRunner, nil)
-	orchestrator.On("PrepareReverseProxy", mock.Anything, mock.Anything).Return(reverseProxyRunner, nil)
-
-	return
+	res := a.MethodCalled("GetOverlayNetwork", ctx, name)
+	return res.String(0), res.Error(1)
 }

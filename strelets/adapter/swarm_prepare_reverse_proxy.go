@@ -12,23 +12,18 @@ type ReverseProxyConfig struct {
 	SSLPrivateKey  []byte
 }
 
-func (d *dockerSwarmOrchestrator) PrepareReverseProxy(ctx context.Context, config *ReverseProxyConfig) (Runner, error) {
+func (d *dockerSwarmOrchestrator) RunReverseProxy(ctx context.Context, config *ReverseProxyConfig) error {
 	serviceName := GetServiceId(PROXY_CONTAINER_NAME)
 	if err := d.ServiceRemove(ctx, serviceName); err != nil {
-		return nil, err
+		return err
 	}
 
-	return &dockerSwarmRunner{
-		client: d.client,
-		spec: func() (swarm.ServiceSpec, error) {
-			storedSecrets, err := d.storeNginxConfiguration(ctx, config)
-			if err != nil {
-				return swarm.ServiceSpec{}, err
-			}
-			return getNginxServiceSpec(storedSecrets), nil
-		},
-		serviceName: serviceName,
-	}, nil
+	storedSecrets, err := d.storeNginxConfiguration(ctx, config)
+	if err != nil {
+		return err
+	}
+	spec := getNginxServiceSpec(storedSecrets)
+	return d.create(ctx, spec, "")
 }
 
 func getNginxServiceSpec(storedSecrets *dockerSwarmNginxSecretsConfig) swarm.ServiceSpec {

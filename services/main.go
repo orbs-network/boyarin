@@ -26,8 +26,15 @@ func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) (govnr
 
 	// wire cfg and boyar
 	supervisor.Supervise(govnr.Forever(ctx, "apply config changes", utils.NewLogErrors("apply config changes", logger), func() {
-		cfg := <-cfgFetcher.Output
-
+		var cfg config.NodeConfiguration = nil
+		select {
+		case <-ctx.Done():
+			return
+		case cfg = <-cfgFetcher.Output:
+		}
+		if cfg == nil {
+			return
+		}
 		// random delay when provisioning change (that is, not bootstrap flow or repairing broken system)
 		if coreBoyar.healthy {
 			randomDelay(ctx, cfg, flags.MaxReloadTimeDelay, coreBoyar.logger)

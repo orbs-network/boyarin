@@ -4,18 +4,18 @@ import (
 	"context"
 	"github.com/orbs-network/boyarin/strelets"
 	. "github.com/orbs-network/boyarin/test"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 func TestStrelets_RemoveVirtualChain(t *testing.T) {
-	orchestrator, runner, _ := NewOrchestratorAndRunnerMocks()
-	runner.FailedAttempts = 0
+	orchestrator := &OrchestratorMock{}
+	orchestrator.On("ServiceRemove", mock.Anything, mock.Anything).Return(nil).Once()
 
 	s := strelets.NewStrelets(orchestrator)
 
 	ctx := context.Background()
-	orchestrator.On("ServiceRemove", ctx, "orbs-network-chain-1972-stack").Return(nil)
 
 	err := s.RemoveVirtualChain(ctx, &strelets.RemoveVirtualChainInput{
 		VirtualChain: &strelets.VirtualChain{
@@ -27,6 +27,5 @@ func TestStrelets_RemoveVirtualChain(t *testing.T) {
 	})
 
 	require.NoError(t, err)
-	orchestrator.AssertNumberOfCalls(t, "ServiceRemove", 1)
-
+	orchestrator.AssertExpectations(t)
 }

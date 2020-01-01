@@ -35,9 +35,5 @@ func (s *strelets) UpdateReverseProxy(ctx context.Context, input *UpdateReverseP
 		}
 	}
 
-	if runner, err := s.orchestrator.PrepareReverseProxy(ctx, config); err != nil {
-		return err
-	} else {
-		return runner.Run(ctx)
-	}
+	return s.orchestrator.RunReverseProxy(ctx, config)
 }

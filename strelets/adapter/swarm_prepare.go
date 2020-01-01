@@ -8,43 +8,38 @@ import (
 	"time"
 )
 
-func (d *dockerSwarmOrchestrator) PrepareVirtualChain(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) (Runner, error) {
+func (d *dockerSwarmOrchestrator) RunVirtualChain(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) error {
 	serviceName := GetServiceId(serviceConfig.ContainerName)
 
 	if err := d.ServiceRemove(ctx, serviceName); err != nil {
-		return nil, err
+		return err
 	}
 
 	networks, err := d.getNetworks(ctx, SHARED_SIGNER_NETWORK)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &dockerSwarmRunner{
-		client: d.client,
-		spec: func() (swarm.ServiceSpec, error) {
-			config, err := d.storeVirtualChainConfiguration(ctx, serviceConfig.ContainerName, appConfig)
-			if err != nil {
-				return swarm.ServiceSpec{}, err
-			}
+	config, err := d.storeVirtualChainConfiguration(ctx, serviceConfig.ContainerName, appConfig)
+	if err != nil {
+		return err
+	}
 
-			secrets := []*swarm.SecretReference{
-				getSecretReference(serviceConfig.ContainerName, config.configSecretId, "config", "config.json"),
-				getSecretReference(serviceConfig.ContainerName, config.keysSecretId, "keyPair", "keys.json"),
-				getSecretReference(serviceConfig.ContainerName, config.networkSecretId, "network", "network.json"),
-			}
+	secrets := []*swarm.SecretReference{
+		getSecretReference(serviceConfig.ContainerName, config.configSecretId, "config", "config.json"),
+		getSecretReference(serviceConfig.ContainerName, config.keysSecretId, "keyPair", "keys.json"),
+		getSecretReference(serviceConfig.ContainerName, config.networkSecretId, "network", "network.json"),
+	}
 
-			mounts, err := d.provisionVolumes(ctx, serviceConfig.NodeAddress, serviceConfig.Id,
-				defaultValue(serviceConfig.BlocksVolumeSize, 100), defaultValue(serviceConfig.LogsVolumeSize, 2))
-			if err != nil {
-				return swarm.ServiceSpec{}, fmt.Errorf("failed to provision volumes: %s", err)
-			}
+	mounts, err := d.provisionVolumes(ctx, serviceConfig.NodeAddress, serviceConfig.Id,
+		defaultValue(serviceConfig.BlocksVolumeSize, 100), defaultValue(serviceConfig.LogsVolumeSize, 2))
+	if err != nil {
+		return fmt.Errorf("failed to provision volumes: %s", err)
+	}
 
-			return getVirtualChainServiceSpec(serviceConfig, secrets, mounts, networks), nil
-		},
-		serviceName: GetServiceId(serviceConfig.ContainerName),
-		imageName:   serviceConfig.ImageName,
-	}, nil
+	spec := getVirtualChainServiceSpec(serviceConfig, secrets, mounts, networks)
+
+	return d.create(ctx, spec, serviceConfig.ImageName)
 }
 
 func getSecretReference(containerName string, secretId string, secretName string, filename string) *swarm.SecretReference {

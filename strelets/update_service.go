@@ -66,9 +66,5 @@ func (s *strelets) UpdateService(ctx context.Context, input *UpdateServiceInput)
 		Config:  jsonConfig,
 	}
 
-	if runner, err := s.orchestrator.PrepareService(ctx, serviceConfig, appConfig); err != nil {
-		return err
-	} else {
-		return runner.Run(ctx)
-	}
+	return s.orchestrator.RunService(ctx, serviceConfig, appConfig)
 }

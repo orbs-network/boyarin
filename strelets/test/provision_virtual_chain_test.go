@@ -2,9 +2,11 @@ package test
 
 import (
 	"context"
+	"fmt"
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/strelets"
 	. "github.com/orbs-network/boyarin/test"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -15,8 +17,8 @@ func getKeyPairConfig() []byte {
 }
 
 func TestStrelets_ProvisionVirtualChain(t *testing.T) {
-	orchestrator, runner, _ := NewOrchestratorAndRunnerMocks()
-	runner.FailedAttempts = 0
+	orchestrator := &OrchestratorMock{}
+	orchestrator.On("RunVirtualChain", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 
 	s := strelets.NewStrelets(orchestrator)
 
@@ -30,13 +32,14 @@ func TestStrelets_ProvisionVirtualChain(t *testing.T) {
 	})
 
 	require.NoError(t, err)
-	orchestrator.AssertNumberOfCalls(t, "PrepareVirtualChain", 1)
-	runner.AssertNumberOfCalls(t, "Run", 1)
+	orchestrator.AssertExpectations(t)
 }
 
 func TestStrelets_ProvisionVirtualChainWithRetries(t *testing.T) {
-	orchestrator, runner, _ := NewOrchestratorAndRunnerMocks()
-	runner.FailedAttempts = 2
+	orchestrator := &OrchestratorMock{}
+	// two failures followed by a success
+	orchestrator.On("RunVirtualChain", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("some error")).Times(2)
+	orchestrator.On("RunVirtualChain", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 
 	s := strelets.NewStrelets(orchestrator)
 
@@ -50,13 +53,11 @@ func TestStrelets_ProvisionVirtualChainWithRetries(t *testing.T) {
 	})
 
 	require.NoError(t, err)
-	orchestrator.AssertNumberOfCalls(t, "PrepareVirtualChain", 3)
-	runner.AssertNumberOfCalls(t, "Run", 3)
+	orchestrator.AssertExpectations(t)
 }
 
 func TestStrelets_ProvisionVirtualChainWhenDisabled(t *testing.T) {
-	orchestrator, runner, _ := NewOrchestratorAndRunnerMocks()
-	runner.FailedAttempts = 0
+	orchestrator := &OrchestratorMock{}
 
 	s := strelets.NewStrelets(orchestrator)
 
@@ -71,6 +72,5 @@ func TestStrelets_ProvisionVirtualChainWhenDisabled(t *testing.T) {
 	})
 
 	require.Error(t, err, "virtual chain 1972 is disabled")
-	orchestrator.AssertNumberOfCalls(t, "PrepareVirtualChain", 0)
-	runner.AssertNumberOfCalls(t, "Run", 0)
+	orchestrator.AssertExpectations(t)
 }

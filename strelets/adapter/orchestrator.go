@@ -35,10 +35,6 @@ type ServiceConfig struct {
 	LogsVolumeSize   int
 }
 
-type Runner interface {
-	Run(ctx context.Context) error
-}
-
 type ContainerStatus struct {
 	Name   string
 	NodeID string
@@ -52,11 +48,11 @@ type ContainerStatus struct {
 
 type Orchestrator interface {
 	PullImage(ctx context.Context, imageName string) error
-	PrepareVirtualChain(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) (Runner, error)
+	RunVirtualChain(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) error
 	ServiceRemove(ctx context.Context, containerName string) error
 
-	PrepareService(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) (Runner, error)
-	PrepareReverseProxy(ctx context.Context, config *ReverseProxyConfig) (Runner, error)
+	RunService(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) error
+	RunReverseProxy(ctx context.Context, config *ReverseProxyConfig) error
 
 	GetOverlayNetwork(ctx context.Context, name string) (string, error)
 

@@ -60,9 +60,13 @@ func (coreBoyar *BoyarService) OnConfigChange(ctx context.Context, cfg config.No
 
 func randomDelay(ctx context.Context, cfg config.NodeConfiguration, maxDelay time.Duration, logger log.Logger) {
 	reloadTimeDelay := cfg.ReloadTimeDelay(maxDelay)
-	logger.Info("waiting to apply new configuration", log.String("delay", maxDelay.String()))
-	select {
-	case <-time.After(reloadTimeDelay):
-	case <-ctx.Done():
+	if reloadTimeDelay.Seconds() > 1 { // the delay is designed to break symmetry between nodes. less than a second is practically zero
+		logger.Info("waiting to apply new configuration", log.String("delay", maxDelay.String()))
+		select {
+		case <-time.After(reloadTimeDelay):
+		case <-ctx.Done():
+		}
+	} else {
+		logger.Info("applying new configuration immediately")
 	}
 }

@@ -37,7 +37,9 @@ func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) (govnr
 		}
 		// random delay when provisioning change (that is, not bootstrap flow or repairing broken system)
 		if coreBoyar.healthy {
-			randomDelay(ctx, cfg, flags.MaxReloadTimeDelay, coreBoyar.logger)
+			maybeDelayConfigUpdate(ctx, cfg, flags.MaxReloadTimeDelay, coreBoyar.logger)
+		} else {
+			logger.Info("applying new configuration immediately")
 		}
 
 		ctx, cancel := context.WithTimeout(ctx, flags.Timeout)

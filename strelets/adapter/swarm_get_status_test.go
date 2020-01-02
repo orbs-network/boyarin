@@ -6,6 +6,7 @@ import (
 	dockerSwarm "github.com/docker/docker/api/types/swarm"
 	dockerClient "github.com/docker/docker/client"
 	"github.com/orbs-network/boyarin/test/helpers"
+	"github.com/orbs-network/scribe/log"
 	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
@@ -20,7 +21,7 @@ func TestDockerSwarm_GetStatusIfUnableToStart(t *testing.T) {
 		serviceId := startDefunctContainer(t)
 		defer destroyDefunctBusybox(t, serviceId)
 
-		swarm, err := NewDockerSwarm(OrchestratorOptions{})
+		swarm, err := NewDockerSwarm(OrchestratorOptions{}, log.GetLogger())
 		require.NoError(t, err)
 
 		require.True(t, helpers.Eventually(30*time.Second, func() bool {
@@ -46,7 +47,7 @@ func TestDockerSwarm_GetStatusIfExitsImmediately(t *testing.T) {
 		serviceId := startReloadingContainer(t)
 		defer destroyDefunctBusybox(t, serviceId)
 
-		swarm, err := NewDockerSwarm(OrchestratorOptions{})
+		swarm, err := NewDockerSwarm(OrchestratorOptions{}, log.GetLogger())
 		require.NoError(t, err)
 
 		require.True(t, helpers.Eventually(30*time.Second, func() bool {

@@ -26,7 +26,7 @@ func NewCoreBoyarService(logger log.Logger) *BoyarService {
 
 func (coreBoyar *BoyarService) OnConfigChange(ctx context.Context, cfg config.NodeConfiguration) error {
 
-	orchestrator, err := adapter.NewDockerSwarm(cfg.OrchestratorOptions())
+	orchestrator, err := adapter.NewDockerSwarm(cfg.OrchestratorOptions(), coreBoyar.logger)
 	if err != nil {
 		return err
 	}
@@ -58,15 +58,15 @@ func (coreBoyar *BoyarService) OnConfigChange(ctx context.Context, cfg config.No
 	return nil
 }
 
-func randomDelay(ctx context.Context, cfg config.NodeConfiguration, maxDelay time.Duration, logger log.Logger) {
+func maybeDelayConfigUpdate(ctx context.Context, cfg config.NodeConfiguration, maxDelay time.Duration, logger log.Logger) {
 	reloadTimeDelay := cfg.ReloadTimeDelay(maxDelay)
 	if reloadTimeDelay.Seconds() > 1 { // the delay is designed to break symmetry between nodes. less than a second is practically zero
-		logger.Info("waiting to apply new configuration", log.String("delay", maxDelay.String()))
+		logger.Info("waiting to update configuration", log.String("delay", maxDelay.String()))
 		select {
 		case <-time.After(reloadTimeDelay):
 		case <-ctx.Done():
 		}
 	} else {
-		logger.Info("applying new configuration immediately")
+		logger.Info("updating configuration immediately")
 	}
 }

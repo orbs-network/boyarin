@@ -8,6 +8,7 @@ import (
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test/helpers"
+	"github.com/orbs-network/scribe/log"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -16,7 +17,7 @@ func TestE2ESingleVchainWithSignerWithSwarmAndBoyar(t *testing.T) {
 	// helpers.SkipOnCI(t)
 	helpers.WithContext(func(ctx context.Context) {
 		helpers.InitSwarmEnvironment(t, ctx)
-		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
+		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{}, log.GetLogger())
 		require.NoError(t, err)
 		s := strelets.NewStrelets(swarm)
 

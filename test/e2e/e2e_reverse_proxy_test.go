@@ -6,6 +6,7 @@ import (
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test/helpers"
+	"github.com/orbs-network/scribe/log"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"net/http"
@@ -24,7 +25,7 @@ func Test_UpdateReverseProxyWithSwarm(t *testing.T) {
 		server.Start()
 		defer server.Shutdown()
 
-		api, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
+		api, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{}, log.GetLogger())
 		require.NoError(t, err)
 
 		s := strelets.NewStrelets(api)
@@ -77,7 +78,7 @@ func Test_CreateReverseProxyWithSSL(t *testing.T) {
 		server.Start()
 		defer server.Shutdown()
 
-		api, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
+		api, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{}, log.GetLogger())
 		require.NoError(t, err)
 
 		s := strelets.NewStrelets(api)

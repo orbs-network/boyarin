@@ -25,9 +25,9 @@ func LogSwarmServices(t *testing.T, ctx context.Context) {
 }
 
 type LogLine struct {
-	ServiceName string
-	IsError     bool
-	Text        string
+	Prefix  string
+	IsError bool
+	Text    string
 }
 
 type Log = <-chan *LogLine
@@ -40,7 +40,7 @@ func PrintLog(log Log, w io.Writer) {
 			if l.IsError {
 				prefix = "ERROR"
 			}
-			_, err := fmt.Fprintln(w, l.ServiceName, ":", prefix, l.Text)
+			_, err := fmt.Fprintln(w, l.Prefix, ":", prefix, l.Text)
 			if err != nil {
 				fmt.Println("error printing log line", err)
 			}
@@ -132,7 +132,7 @@ func multiplexLogs(ctx context.Context, logsLock *sync.Mutex, logs map[string]Lo
 	return multiLog
 }
 
-func writerLogPipe(ctx context.Context, serviceName string, isError bool) (io.WriteCloser, Log) {
+func writerLogPipe(ctx context.Context, prefix string, isError bool) (io.WriteCloser, Log) {
 	src := ioutils.NewBytesPipe()
 	dst := make(chan *LogLine)
 	scanner := bufio.NewScanner(src)
@@ -143,9 +143,9 @@ func writerLogPipe(ctx context.Context, serviceName string, isError bool) (io.Wr
 				return
 			}
 			dst <- &LogLine{
-				ServiceName: serviceName,
-				IsError:     isError,
-				Text:        scanner.Text(),
+				Prefix:  prefix,
+				IsError: isError,
+				Text:    scanner.Text(),
 			}
 		}
 	}()
@@ -162,19 +162,20 @@ func ReadServiceLog(ctx context.Context, cli *client.Client, service swarm.Servi
 	if err != nil {
 		return nil, err
 	}
-	stdOut, stdOutLog := writerLogPipe(ctx, service.Spec.Name, false)
-	stdErr, stdErrLog := writerLogPipe(ctx, service.Spec.Name, true)
+	servicePrefix := service.Spec.Name + "|" + service.ID
+	stdOut, stdOutLog := writerLogPipe(ctx, servicePrefix, false)
+	stdErr, stdErrLog := writerLogPipe(ctx, servicePrefix, true)
 
 	go func() {
 		defer closeCloser(muxLogs, "muxLogs")
 		defer closeCloser(stdOut, "stdOut")
 		defer closeCloser(stdErr, "stdErr")
-		fmt.Println("started reading logs from", service.Spec.Name)
+		fmt.Println("started reading logs from", servicePrefix)
 		_, err = stdcopy.StdCopy(stdOut, stdErr, muxLogs)
 		if err != nil && ctx.Err() == nil {
-			fmt.Println("error reading", service.Spec.Name, err)
+			fmt.Println("error reading", servicePrefix, err)
 		} else {
-			fmt.Println("stopped reading logs from", service.Spec.Name)
+			fmt.Println("stopped reading logs from", servicePrefix)
 		}
 	}()
 	return merge(stdOutLog, stdErrLog), nil

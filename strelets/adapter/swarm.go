@@ -7,6 +7,7 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
+	"github.com/orbs-network/scribe/log"
 	"github.com/pkg/errors"
 	"os"
 )
@@ -14,6 +15,7 @@ import (
 type dockerSwarmOrchestrator struct {
 	client  *client.Client
 	options OrchestratorOptions
+	logger  log.Logger
 }
 
 type dockerSwarmSecretsConfig struct {
@@ -29,14 +31,14 @@ type dockerSwarmNginxSecretsConfig struct {
 	sslPrivateKeyId  string
 }
 
-func NewDockerSwarm(options OrchestratorOptions) (Orchestrator, error) {
+func NewDockerSwarm(options OrchestratorOptions, logger log.Logger) (Orchestrator, error) {
 	client, err := client.NewClientWithOpts(client.WithVersion(DOCKER_API_VERSION))
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &dockerSwarmOrchestrator{client: client, options: options}, nil
+	return &dockerSwarmOrchestrator{client: client, options: options, logger: logger}, nil
 }
 
 func (d *dockerSwarmOrchestrator) PullImage(ctx context.Context, imageName string) error {
@@ -67,12 +69,17 @@ func (d *dockerSwarmOrchestrator) ServiceRemove(ctx context.Context, serviceName
 		Filters: filters.NewArgs(filters.KeyValuePair{Key: "name", Value: serviceName}),
 	})
 	if err != nil {
-		return fmt.Errorf("could not list swarm services: %s", err)
+		return fmt.Errorf("could not list swarm services: %s \n %v", serviceName, err)
+	}
+	if len(services) == 0 {
+		d.logger.Info(fmt.Sprintf("no service found for removal: %s", serviceName))
+		return nil
 	}
 	for _, service := range services {
-
 		if err := d.client.ServiceRemove(ctx, service.ID); err != nil {
 			return fmt.Errorf("failed to remove service %s with id %s", serviceName, service.ID)
+		} else {
+			d.logger.Info(fmt.Sprintf("successfully removed service %s with id %s", serviceName, service.ID))
 		}
 	}
 	return nil

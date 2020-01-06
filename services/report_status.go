@@ -38,7 +38,7 @@ func formatAsISO6801(t time.Time) string {
 
 func reportStatus(ctx context.Context, logger log.Logger, since time.Duration) error {
 	// We really don't need any options here since we're just observing
-	orchestrator, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
+	orchestrator, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{}, logger)
 	if err != nil {
 		return err
 	}

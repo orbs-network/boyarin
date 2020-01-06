@@ -13,6 +13,7 @@ import (
 	"github.com/orbs-network/scribe/log"
 	"github.com/pkg/errors"
 	"strings"
+	"sync"
 )
 
 type Cache struct {
@@ -36,10 +37,11 @@ type Boyar interface {
 }
 
 type boyar struct {
-	strelets strelets.Strelets
-	config   config.NodeConfiguration
-	cache    *Cache
-	logger   log.Logger
+	nginxLock sync.Mutex
+	strelets  strelets.Strelets
+	config    config.NodeConfiguration
+	cache     *Cache
+	logger    log.Logger
 }
 
 type errorContainer struct {
@@ -93,6 +95,8 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 }
 
 func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
+	b.nginxLock.Lock()
+	defer b.nginxLock.Unlock()
 	// TODO is there a better way to get a loopback interface?
 	nginxConfig := getNginxConfig(b.config)
 

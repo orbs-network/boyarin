@@ -11,5 +11,5 @@ type RemoveVirtualChainInput struct {
 
 func (s *strelets) RemoveVirtualChain(ctx context.Context, input *RemoveVirtualChainInput) error {
 	serviceName := adapter.GetServiceId(input.VirtualChain.getContainerName())
-	return s.orchestrator.RemoveContainer(ctx, serviceName)
+	return s.orchestrator.ServiceRemove(ctx, serviceName)
 }

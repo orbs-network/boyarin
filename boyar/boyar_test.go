@@ -7,6 +7,7 @@ import (
 	"github.com/orbs-network/boyarin/strelets"
 	. "github.com/orbs-network/boyarin/test"
 	"github.com/orbs-network/boyarin/test/helpers"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
@@ -14,69 +15,76 @@ import (
 	"time"
 )
 
-func getJSONConfig() string {
-	contents, err := ioutil.ReadFile("./config/test/config.json")
-	if err != nil {
-		panic(err)
-	}
+const fakeKeyPairPath = "./test/fake-key-pair.json"
+const configPath = "./config/test"
 
-	return string(contents)
+type configFile int
+
+const (
+	Config configFile = iota
+	ConfigWithActiveVchains
+	ConfigWithSingleChain
+	ConfigWithSigner
+)
+
+func (conf configFile) String() string {
+	switch conf {
+	case Config:
+		return "config.json"
+	case ConfigWithActiveVchains:
+		return "configWithActiveVchains.json"
+	case ConfigWithSingleChain:
+		return "configWithSingleChain.json"
+	case ConfigWithSigner:
+		return "configWithSigner.json"
+	default:
+		panic(fmt.Sprintf("unknown config: %d", conf))
+	}
 }
 
-func getJSONConfigWithSigner() string {
-	contents, err := ioutil.ReadFile("./config/test/configWithSigner.json")
-	if err != nil {
-		panic(err)
-	}
-
-	return string(contents)
+func getJSONConfig(t *testing.T, conf configFile) config.MutableNodeConfiguration {
+	contents, err := ioutil.ReadFile(configPath + "/" + conf.String())
+	require.NoError(t, err)
+	source, err := config.NewStringConfigurationSource(string(contents), helpers.LocalEthEndpoint()) // ethereum endpoint is optional
+	require.NoError(t, err)
+	return source
 }
 
-func getJSONConfigWithSingleChain() string {
-	contents, err := ioutil.ReadFile("./config/test/configWithSingleChain.json")
-	if err != nil {
-		panic(err)
+func assertAllChainedCached(t *testing.T, cfg config.MutableNodeConfiguration, cache *Cache) {
+	for _, chain := range cfg.Chains() {
+		if chain.Disabled {
+			assert.False(t, cache.vChains.CheckNewValue(chain.Id.String(), removed), "cache should remember chain was removed")
+		} else {
+			assert.False(t, cache.vChains.CheckNewJsonValue(chain.Id.String(), getVirtualChainConfig(cfg, chain)), "cache should remember chain deployed with configuration")
+		}
 	}
-
-	return string(contents)
-}
-
-func getJSONConfigWithActiveVchains() string {
-	contents, err := ioutil.ReadFile("./config/test/configWithActiveVchains.json")
-	if err != nil {
-		panic(err)
-	}
-
-	return string(contents)
 }
 
 func Test_BoyarProvisionVirtualChains(t *testing.T) {
 	streletsMock := &StreletsMock{}
 
-	source, err := config.NewStringConfigurationSource(getJSONConfig(), "")
-	source.SetKeyConfigPath("./test/fake-key-pair.json")
-	require.NoError(t, err)
+	source := getJSONConfig(t, Config)
+	source.SetKeyConfigPath(fakeKeyPairPath)
 
-	cache := config.NewCache()
+	cache := NewCache()
 	b := NewBoyar(streletsMock, source, cache, helpers.DefaultTestLogger())
 
 	streletsMock.On("ProvisionVirtualChain", mock.Anything, mock.Anything).Twice().Return(nil)
 	streletsMock.On("RemoveVirtualChain", mock.Anything, mock.Anything).Return(nil)
 
-	err = b.ProvisionVirtualChains(context.Background())
+	err := b.ProvisionVirtualChains(context.Background())
 
 	require.NoError(t, err)
-	streletsMock.VerifyMocks(t)
+	streletsMock.AssertExpectations(t)
 }
 
 func Test_BoyarProvisionVirtualChainsWithErrors(t *testing.T) {
 	streletsMock := &StreletsMock{}
 
-	source, err := config.NewStringConfigurationSource(getJSONConfig(), "")
-	source.SetKeyConfigPath("./test/fake-key-pair.json")
-	require.NoError(t, err)
+	source := getJSONConfig(t, Config)
+	source.SetKeyConfigPath(fakeKeyPairPath)
 
-	cache := config.NewCache()
+	cache := NewCache()
 	b := NewBoyar(streletsMock, source, cache, helpers.DefaultTestLogger())
 
 	streletsMock.On("ProvisionVirtualChain", mock.Anything, mock.MatchedBy(func(input *strelets.ProvisionVirtualChainInput) bool {
@@ -89,20 +97,19 @@ func Test_BoyarProvisionVirtualChainsWithErrors(t *testing.T) {
 
 	streletsMock.On("RemoveVirtualChain", mock.Anything, mock.Anything).Return(nil)
 
-	err = b.ProvisionVirtualChains(context.Background())
+	err := b.ProvisionVirtualChains(context.Background())
 
 	require.EqualError(t, err, "failed to provision virtual chain 1991")
-	streletsMock.VerifyMocks(t)
+	streletsMock.AssertExpectations(t)
 }
 
 func Test_BoyarProvisionVirtualChainsWithTimeout(t *testing.T) {
 	streletsMock := &StreletsMock{}
 
-	source, err := config.NewStringConfigurationSource(getJSONConfigWithActiveVchains(), "")
-	source.SetKeyConfigPath("./test/fake-key-pair.json")
-	require.NoError(t, err)
+	source := getJSONConfig(t, ConfigWithActiveVchains)
+	source.SetKeyConfigPath(fakeKeyPairPath)
 
-	cache := config.NewCache()
+	cache := NewCache()
 	b := NewBoyar(streletsMock, source, cache, helpers.DefaultTestLogger())
 
 	streletsMock.On("ProvisionVirtualChain", mock.Anything, mock.MatchedBy(func(input *strelets.ProvisionVirtualChainInput) bool {
@@ -116,244 +123,239 @@ func Test_BoyarProvisionVirtualChainsWithTimeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 
-	err = b.ProvisionVirtualChains(ctx)
+	err := b.ProvisionVirtualChains(ctx)
 	require.EqualError(t, err, "failed to provision virtual chain context deadline exceeded")
-	streletsMock.VerifyMocks(t)
+	streletsMock.AssertExpectations(t)
 }
 
 func TestBoyar_ProvisionVirtualChainsWithNoConfigChanges(t *testing.T) {
-	cfg, err := config.NewStringConfigurationSource(getJSONConfigWithActiveVchains(), "")
-	cfg.SetKeyConfigPath("./test/fake-key-pair.json")
+	cfg := getJSONConfig(t, ConfigWithActiveVchains)
+	cfg.SetKeyConfigPath(fakeKeyPairPath)
 
-	orchestrator, virtualChainRunner, _ := NewOrchestratorAndRunnerMocks()
-
-	s := strelets.NewStrelets(orchestrator)
-	cache := config.NewCache()
-
-	b := NewBoyar(s, cfg, cache, helpers.DefaultTestLogger())
-
-	err = b.ProvisionVirtualChains(context.Background())
-	require.NoError(t, err)
-	orchestrator.AssertNumberOfCalls(t, "Prepare", 2)
-	virtualChainRunner.AssertNumberOfCalls(t, "Run", 2)
-	require.EqualValues(t, "dda31ee86b1842d0474d6f8c7f386b59fe58a4a507cfff977ddfaf3fc91fbe27", cache.Get("42"))
-
-	err = b.ProvisionVirtualChains(context.Background())
-	require.NoError(t, err)
-	orchestrator.AssertNumberOfCalls(t, "Prepare", 2)
-	virtualChainRunner.AssertNumberOfCalls(t, "Run", 2)
-}
-
-func TestBoyar_ProvisionVirtualChainsReprovisionsIfConfigChanges(t *testing.T) {
-	cfg, _ := config.NewStringConfigurationSource(getJSONConfigWithActiveVchains(), "")
-	cfg.SetKeyConfigPath("./test/fake-key-pair.json")
-
-	orchestrator, virtualChainRunner, _ := NewOrchestratorAndRunnerMocks()
+	orchestrator := &OrchestratorMock{}
+	orchestrator.On("RunVirtualChain", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Twice()
 
 	s := strelets.NewStrelets(orchestrator)
-	cache := config.NewCache()
+	cache := NewCache()
+
 	b := NewBoyar(s, cfg, cache, helpers.DefaultTestLogger())
 
 	err := b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
-	orchestrator.AssertNumberOfCalls(t, "Prepare", 2)
-	virtualChainRunner.AssertNumberOfCalls(t, "Run", 2)
-	require.EqualValues(t, "dda31ee86b1842d0474d6f8c7f386b59fe58a4a507cfff977ddfaf3fc91fbe27", cache.Get("42"))
+	orchestrator.AssertExpectations(t)
+	assertAllChainedCached(t, cfg, cache)
 
+	err = b.ProvisionVirtualChains(context.Background())
+	require.NoError(t, err)
+	orchestrator.AssertExpectations(t)
+}
+
+func TestBoyar_ProvisionVirtualChainsReprovisionsIfConfigChanges(t *testing.T) {
+	cfg := getJSONConfig(t, ConfigWithActiveVchains)
+	cfg.SetKeyConfigPath(fakeKeyPairPath)
+
+	orchestrator := &OrchestratorMock{}
+	orchestrator.On("RunVirtualChain", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Twice()
+
+	s := strelets.NewStrelets(orchestrator)
+	cache := NewCache()
+	b := NewBoyar(s, cfg, cache, helpers.DefaultTestLogger())
+
+	err := b.ProvisionVirtualChains(context.Background())
+	require.NoError(t, err)
+	orchestrator.AssertExpectations(t)
+	assertAllChainedCached(t, cfg, cache)
+
+	orchestrator.On("RunVirtualChain", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 	cfg.Chains()[0].Config["active-consensus-algo"] = 999
 
 	err = b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
-	orchestrator.AssertNumberOfCalls(t, "Prepare", 3)
-	virtualChainRunner.AssertNumberOfCalls(t, "Run", 3)
+	orchestrator.AssertExpectations(t)
 }
 
 func TestBoyar_ProvisionVirtualChainsReprovisionsIfDockerConfigChanges(t *testing.T) {
-	cfg, _ := config.NewStringConfigurationSource(getJSONConfigWithActiveVchains(), "")
-	cfg.SetKeyConfigPath("./test/fake-key-pair.json")
+	cfg := getJSONConfig(t, ConfigWithActiveVchains)
+	cfg.SetKeyConfigPath(fakeKeyPairPath)
 
-	orchestrator, virtualChainRunner, _ := NewOrchestratorAndRunnerMocks()
+	orchestrator := &OrchestratorMock{}
+	orchestrator.On("RunVirtualChain", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Twice()
 
 	s := strelets.NewStrelets(orchestrator)
-	cache := config.NewCache()
+	cache := NewCache()
 	b := NewBoyar(s, cfg, cache, helpers.DefaultTestLogger())
 
 	err := b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
-	orchestrator.AssertNumberOfCalls(t, "Prepare", 2)
-	virtualChainRunner.AssertNumberOfCalls(t, "Run", 2)
-	require.EqualValues(t, "dda31ee86b1842d0474d6f8c7f386b59fe58a4a507cfff977ddfaf3fc91fbe27", cache.Get("42"))
+	orchestrator.AssertExpectations(t)
+	assertAllChainedCached(t, cfg, cache)
 
+	orchestrator.On("RunVirtualChain", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 	cfg.Chains()[1].DockerConfig.Tag = "beta"
 
 	err = b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
-	orchestrator.AssertNumberOfCalls(t, "Prepare", 3)
-	virtualChainRunner.AssertNumberOfCalls(t, "Run", 3)
+	orchestrator.AssertExpectations(t)
 }
 
 func TestBoyar_ProvisionHttpAPIEndpointWithNoConfigChanges(t *testing.T) {
-	cfg, _ := config.NewStringConfigurationSource(getJSONConfigWithActiveVchains(), "")
+	cfg := getJSONConfig(t, ConfigWithActiveVchains)
 
-	orchestrator, _, httpProxyRunner := NewOrchestratorAndRunnerMocks()
+	orchestrator := &OrchestratorMock{}
+	orchestrator.On("RunReverseProxy", mock.Anything, mock.Anything).Return(nil).Once()
 
 	s := strelets.NewStrelets(orchestrator)
-	cache := config.NewCache()
+	cache := NewCache()
 	b := NewBoyar(s, cfg, cache, helpers.DefaultTestLogger())
 
 	err := b.ProvisionHttpAPIEndpoint(context.Background())
 	require.NoError(t, err)
-	orchestrator.AssertNumberOfCalls(t, "PrepareReverseProxy", 1)
-	httpProxyRunner.AssertNumberOfCalls(t, "Run", 1)
-	require.EqualValues(t, "67565611bd34568f0b3ca12a8b257015701b3740d5e61300f19c3caa945db04a", cache.Get(config.HTTP_REVERSE_PROXY_HASH))
+	orchestrator.AssertExpectations(t)
+
+	assert.False(t, cache.nginx.CheckNewJsonValue(getNginxConfig(cfg)))
 
 	err = b.ProvisionHttpAPIEndpoint(context.Background())
 	require.NoError(t, err)
-	orchestrator.AssertNumberOfCalls(t, "PrepareReverseProxy", 1)
-	httpProxyRunner.AssertNumberOfCalls(t, "Run", 1)
+	orchestrator.AssertExpectations(t)
 }
 
 func TestBoyar_ProvisionHttpAPIEndpointReprovisionsIfConfigChanges(t *testing.T) {
-	cfg, _ := config.NewStringConfigurationSource(getJSONConfigWithActiveVchains(), "")
+	cfg := getJSONConfig(t, ConfigWithActiveVchains)
 
-	orchestrator, _, httpProxyRunner := NewOrchestratorAndRunnerMocks()
+	orchestrator := &OrchestratorMock{}
+	orchestrator.On("RunReverseProxy", mock.Anything, mock.Anything).Return(nil).Once()
 
 	s := strelets.NewStrelets(orchestrator)
-	cache := config.NewCache()
+	cache := NewCache()
 	b := NewBoyar(s, cfg, cache, helpers.DefaultTestLogger())
 
 	err := b.ProvisionHttpAPIEndpoint(context.Background())
 	require.NoError(t, err)
-	orchestrator.AssertNumberOfCalls(t, "PrepareReverseProxy", 1)
-	httpProxyRunner.AssertNumberOfCalls(t, "Run", 1)
-	require.EqualValues(t, "67565611bd34568f0b3ca12a8b257015701b3740d5e61300f19c3caa945db04a", cache.Get(config.HTTP_REVERSE_PROXY_HASH))
+	orchestrator.AssertExpectations(t)
 
+	assert.False(t, cache.nginx.CheckNewJsonValue(getNginxConfig(cfg)))
+
+	orchestrator.On("RunReverseProxy", mock.Anything, mock.Anything).Return(nil).Once()
 	cfg.Chains()[0].HttpPort = 9125
 
 	err = b.ProvisionHttpAPIEndpoint(context.Background())
 	require.NoError(t, err)
-	orchestrator.AssertNumberOfCalls(t, "PrepareReverseProxy", 2)
-	httpProxyRunner.AssertNumberOfCalls(t, "Run", 2)
+	orchestrator.AssertExpectations(t)
 }
 
 func Test_BoyarProvisionVirtualChainsReprovisionsWithErrors(t *testing.T) {
 	streletsMock := &StreletsMock{}
 
-	source, err := config.NewStringConfigurationSource(getJSONConfigWithSingleChain(), "")
-	source.SetKeyConfigPath("./test/fake-key-pair.json")
-	require.NoError(t, err)
+	cfg := getJSONConfig(t, ConfigWithSingleChain)
+	cfg.SetKeyConfigPath(fakeKeyPairPath)
 
-	cache := config.NewCache()
-	b := NewBoyar(streletsMock, source, cache, helpers.DefaultTestLogger())
+	cache := NewCache()
+	b := NewBoyar(streletsMock, cfg, cache, helpers.DefaultTestLogger())
 
-	streletsMock.On("ProvisionVirtualChain", mock.Anything, mock.Anything).Return(fmt.Errorf("unbearable catastrophe"))
-	err = b.ProvisionVirtualChains(context.Background())
+	streletsMock.On("ProvisionVirtualChain", mock.Anything, mock.Anything).Return(fmt.Errorf("unbearable catastrophe")).Once()
+	err := b.ProvisionVirtualChains(context.Background())
 	require.EqualError(t, err, "failed to provision virtual chain 42")
-	require.Empty(t, cache.Get("1991"), "cache should be empty")
-	streletsMock.VerifyMocks(t)
+	streletsMock.AssertExpectations(t)
 
 	streletsMockWithNoErrors := &StreletsMock{}
-	streletsMockWithNoErrors.On("ProvisionVirtualChain", mock.Anything, mock.Anything).Return(nil)
+	streletsMockWithNoErrors.On("ProvisionVirtualChain", mock.Anything, mock.Anything).Return(nil).Once()
 
-	bWithNoErrors := NewBoyar(streletsMockWithNoErrors, source, cache, helpers.DefaultTestLogger())
+	bWithNoErrors := NewBoyar(streletsMockWithNoErrors, cfg, cache, helpers.DefaultTestLogger())
 	err = bWithNoErrors.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
-	require.Equal(t, "dda31ee86b1842d0474d6f8c7f386b59fe58a4a507cfff977ddfaf3fc91fbe27", cache.Get("42"))
-	streletsMockWithNoErrors.VerifyMocks(t)
+	assertAllChainedCached(t, cfg, cache)
+	streletsMockWithNoErrors.AssertExpectations(t)
 }
 
 func Test_BoyarProvisionVirtualChainsClearsCacheAfterFailedAttempts(t *testing.T) {
 	streletsMock := &StreletsMock{}
 
-	source, err := config.NewStringConfigurationSource(getJSONConfigWithSingleChain(), "")
-	source.SetKeyConfigPath("./test/fake-key-pair.json")
-	require.NoError(t, err)
+	cfg := getJSONConfig(t, ConfigWithSingleChain)
+	cfg.SetKeyConfigPath(fakeKeyPairPath)
 
-	cache := config.NewCache()
-	b := NewBoyar(streletsMock, source, cache, helpers.DefaultTestLogger())
+	cache := NewCache()
+	b := NewBoyar(streletsMock, cfg, cache, helpers.DefaultTestLogger())
 
 	streletsMock.On("ProvisionVirtualChain", mock.Anything, mock.Anything).Return(nil)
 
-	err = b.ProvisionVirtualChains(context.Background())
+	err := b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
-	streletsMock.VerifyMocks(t)
-	require.Equal(t, "dda31ee86b1842d0474d6f8c7f386b59fe58a4a507cfff977ddfaf3fc91fbe27", cache.Get("42"))
+	streletsMock.AssertExpectations(t)
+	assertAllChainedCached(t, cfg, cache)
 
 	streletsWithError := &StreletsMock{}
 	streletsWithError.On("ProvisionVirtualChain", mock.Anything, mock.Anything).Return(fmt.Errorf("unbearable catastrophe"))
-	source.Chains()[0].DockerConfig.Tag = "new-tag"
+	cfg.Chains()[0].DockerConfig.Tag = "new-tag"
 
-	bWithError := NewBoyar(streletsWithError, source, cache, helpers.DefaultTestLogger())
+	bWithError := NewBoyar(streletsWithError, cfg, cache, helpers.DefaultTestLogger())
 	err = bWithError.ProvisionVirtualChains(context.Background())
 	require.EqualError(t, err, "failed to provision virtual chain 42")
-	streletsWithError.VerifyMocks(t)
-	require.Empty(t, cache.Get("42"), "should clear cache after failed attempt")
+	streletsWithError.AssertExpectations(t)
+	assert.True(t, cache.vChains.CheckNewJsonValue(cfg.Chains()[0].Id.String(), getVirtualChainConfig(cfg, cfg.Chains()[0])), "cache should not remember chain deployed with configuration")
 }
 
-func Test_BoyarProvisionVirtualChainsClearsCacheAfterRemovingChain(t *testing.T) {
+func Test_BoyarProvisionVirtualChainsUpdatesCacheAfterRemovingChain(t *testing.T) {
 	streletsMock := &StreletsMock{}
 
-	source, err := config.NewStringConfigurationSource(getJSONConfigWithSingleChain(), "")
-	source.SetKeyConfigPath("./test/fake-key-pair.json")
-	require.NoError(t, err)
+	cfg := getJSONConfig(t, ConfigWithSingleChain)
+	cfg.SetKeyConfigPath(fakeKeyPairPath)
 
-	cache := config.NewCache()
-	b := NewBoyar(streletsMock, source, cache, helpers.DefaultTestLogger())
+	cache := NewCache()
+	b := NewBoyar(streletsMock, cfg, cache, helpers.DefaultTestLogger())
 
 	streletsMock.On("ProvisionVirtualChain", mock.Anything, mock.Anything).Return(nil)
 
-	err = b.ProvisionVirtualChains(context.Background())
+	err := b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
-	require.Equal(t, "dda31ee86b1842d0474d6f8c7f386b59fe58a4a507cfff977ddfaf3fc91fbe27", cache.Get("42"))
-	streletsMock.VerifyMocks(t)
+	assertAllChainedCached(t, cfg, cache)
+	streletsMock.AssertExpectations(t)
 
 	streletsMock.On("RemoveVirtualChain", mock.Anything, mock.Anything).Return(nil)
 
-	source.Chains()[0].Disabled = true
+	cfg.Chains()[0].Disabled = true
 	err = b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
-	require.Empty(t, cache.Get("42"), "should clear cache")
+	assertAllChainedCached(t, cfg, cache)
 
-	streletsMock.VerifyMocks(t)
+	streletsMock.AssertExpectations(t)
 }
 
 func Test_BoyarProvisionServices(t *testing.T) {
 	streletsMock := &StreletsMock{}
 
-	source, err := config.NewStringConfigurationSource(getJSONConfigWithSigner(), "")
-	source.SetKeyConfigPath("./test/fake-key-pair.json")
-	require.NoError(t, err)
+	source := getJSONConfig(t, ConfigWithSigner)
+	source.SetKeyConfigPath(fakeKeyPairPath)
 
-	cache := config.NewCache()
+	cache := NewCache()
 	b := NewBoyar(streletsMock, source, cache, helpers.DefaultTestLogger())
 
 	streletsMock.On("UpdateService", mock.Anything, mock.Anything).Return(nil)
 	streletsMock.On("ProvisionSharedNetwork", mock.Anything, mock.Anything).Return(nil)
 
-	err = b.ProvisionServices(context.Background())
+	err := b.ProvisionServices(context.Background())
 
 	require.NoError(t, err)
-	streletsMock.VerifyMocks(t)
+	streletsMock.AssertExpectations(t)
 }
 
 func Test_BoyarSignerOffOn(t *testing.T) {
 	streletsMock := &StreletsMock{}
 
-	cache := config.NewCache()
+	cache := NewCache()
 
-	sourceWithoutSigner, err := config.NewStringConfigurationSource(getJSONConfig(), "")
-	sourceWithoutSigner.SetKeyConfigPath("./test/fake-key-pair.json")
+	sourceWithoutSigner := getJSONConfig(t, Config)
+	sourceWithoutSigner.SetKeyConfigPath(fakeKeyPairPath)
 
 	boyarWithoutSigner := NewBoyar(streletsMock, sourceWithoutSigner, cache, helpers.DefaultTestLogger())
 
 	streletsMock.On("ProvisionSharedNetwork", mock.Anything, mock.Anything).Return(nil).Once()
 
-	err = boyarWithoutSigner.ProvisionServices(context.Background())
+	err := boyarWithoutSigner.ProvisionServices(context.Background())
 	require.NoError(t, err)
-	streletsMock.VerifyMocks(t) // nothing happens
+	streletsMock.AssertExpectations(t) // nothing happens
 
-	sourceWithSigner, err := config.NewStringConfigurationSource(getJSONConfigWithSigner(), "")
-	sourceWithSigner.SetKeyConfigPath("./test/fake-key-pair.json")
+	sourceWithSigner := getJSONConfig(t, ConfigWithSigner)
+	sourceWithSigner.SetKeyConfigPath(fakeKeyPairPath)
 	require.NoError(t, err)
 
 	streletsMock.On("ProvisionSharedNetwork", mock.Anything, mock.Anything).Return(nil).Once()
@@ -363,35 +365,34 @@ func Test_BoyarSignerOffOn(t *testing.T) {
 
 	err = boyarWithSigner.ProvisionServices(context.Background())
 	require.NoError(t, err)
-	streletsMock.VerifyMocks(t)
+	streletsMock.AssertExpectations(t)
 
 	streletsMock.On("ProvisionSharedNetwork", mock.Anything, mock.Anything).Return(nil).Once()
 
 	err = boyarWithSigner.ProvisionServices(context.Background())
 	require.NoError(t, err)
-	streletsMock.VerifyMocks(t)
+	streletsMock.AssertExpectations(t)
 }
 
 func Test_BoyarSignerOnOff(t *testing.T) {
 	streletsMock := &StreletsMock{}
 
-	cache := config.NewCache()
+	cache := NewCache()
 
-	sourceWithSigner, err := config.NewStringConfigurationSource(getJSONConfigWithSigner(), "")
-	sourceWithSigner.SetKeyConfigPath("./test/fake-key-pair.json")
-	require.NoError(t, err)
+	sourceWithSigner := getJSONConfig(t, ConfigWithSigner)
+	sourceWithSigner.SetKeyConfigPath(fakeKeyPairPath)
 
 	streletsMock.On("ProvisionSharedNetwork", mock.Anything, mock.Anything).Return(nil).Once()
 	streletsMock.On("UpdateService", mock.Anything, mock.Anything).Return(nil).Once()
 
 	boyarWithSigner := NewBoyar(streletsMock, sourceWithSigner, cache, helpers.DefaultTestLogger())
 
-	err = boyarWithSigner.ProvisionServices(context.Background())
+	err := boyarWithSigner.ProvisionServices(context.Background())
 	require.NoError(t, err)
-	streletsMock.VerifyMocks(t)
+	streletsMock.AssertExpectations(t)
 
-	sourceWithoutSigner, err := config.NewStringConfigurationSource(getJSONConfig(), "")
-	sourceWithoutSigner.SetKeyConfigPath("./test/fake-key-pair.json")
+	sourceWithoutSigner := getJSONConfig(t, Config)
+	sourceWithoutSigner.SetKeyConfigPath(fakeKeyPairPath)
 
 	boyarWithoutSigner := NewBoyar(streletsMock, sourceWithoutSigner, cache, helpers.DefaultTestLogger())
 
@@ -399,5 +400,5 @@ func Test_BoyarSignerOnOff(t *testing.T) {
 
 	err = boyarWithoutSigner.ProvisionServices(context.Background())
 	require.NoError(t, err)
-	streletsMock.VerifyMocks(t) // nothing happens
+	streletsMock.AssertExpectations(t) // nothing happens
 }

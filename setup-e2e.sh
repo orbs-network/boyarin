@@ -3,6 +3,7 @@
 SIGNER_DOCKER_IMAGE=${SIGNER_DOCKER_IMAGE:-"727534866935.dkr.ecr.us-west-2.amazonaws.com/orbs-network-signer"}
 ORBS_NODE_DOCKER_IMAGE=${ORBS_NODE_DOCKER_IMAGE:-"727534866935.dkr.ecr.us-west-2.amazonaws.com/orbs-network-v1"}
 
+echo "downloading latest images from AWS ECR"
 $(aws ecr get-login --no-include-email --region us-west-2)
 docker pull ${ORBS_NODE_DOCKER_IMAGE}:master
 docker pull ${SIGNER_DOCKER_IMAGE}:master
@@ -23,3 +24,7 @@ fi
 if [ -n "${DOCKER_SECRETS}" ]; then
   docker secret rm ${DOCKER_SECRETS}
 fi
+
+docker container prune -f
+docker volume prune -f
+docker network prune -f

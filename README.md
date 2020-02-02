@@ -24,8 +24,6 @@ To remove all containers: `docker rm -f $(docker ps -aq)`
 
 `--config-url` path to Boyar configuration
 
-`--daemonize` do not exit the program and keep polling for changes
-
 `--ethereum-endpoint` HTTP endpoint for the Ethereum node
 
 `--topology-contract-address` Ethereum address for topology contract

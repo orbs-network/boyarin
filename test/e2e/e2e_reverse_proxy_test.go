@@ -6,6 +6,7 @@ import (
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test/helpers"
+	"github.com/orbs-network/scribe/log"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"net/http"
@@ -14,17 +15,17 @@ import (
 )
 
 func Test_UpdateReverseProxyWithSwarm(t *testing.T) {
-	helpers.SkipOnCI(t)
-
-	withCleanContext(t, func(t *testing.T) {
+	// helpers.SkipOnCI(t)
+	helpers.WithContext(func(ctx context.Context) {
+		helpers.InitSwarmEnvironment(t, ctx)
 		port := 10080
 		server := helpers.CreateHttpServer("/test", port, func(writer http.ResponseWriter, request *http.Request) {
-			writer.Write([]byte("success"))
+			_, _ = writer.Write([]byte("success"))
 		})
 		server.Start()
 		defer server.Shutdown()
 
-		api, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
+		api, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{}, log.GetLogger())
 		require.NoError(t, err)
 
 		s := strelets.NewStrelets(api)
@@ -35,7 +36,8 @@ func Test_UpdateReverseProxyWithSwarm(t *testing.T) {
 		ip := helpers.LocalIP()
 
 		err = s.UpdateReverseProxy(context.Background(), &strelets.UpdateReverseProxyInput{
-			chains, ip, adapter.SSLOptions{},
+			Chains: chains,
+			IP:     ip,
 		})
 		require.NoError(t, err)
 
@@ -51,7 +53,7 @@ func Test_UpdateReverseProxyWithSwarm(t *testing.T) {
 				fmt.Println("ERROR: could not access", url, ":", err)
 				return false
 			}
-			defer res.Body.Close()
+			defer func() { _ = res.Body.Close() }()
 
 			body, err := ioutil.ReadAll(res.Body)
 			if err != nil {
@@ -65,18 +67,18 @@ func Test_UpdateReverseProxyWithSwarm(t *testing.T) {
 }
 
 func Test_CreateReverseProxyWithSSL(t *testing.T) {
-	helpers.SkipOnCI(t)
-
-	withCleanContext(t, func(t *testing.T) {
+	// helpers.SkipOnCI(t)
+	helpers.WithContext(func(ctx context.Context) {
+		helpers.InitSwarmEnvironment(t, ctx)
 
 		port := 10099
 		server := helpers.CreateHttpServer("/test", port, func(writer http.ResponseWriter, request *http.Request) {
-			writer.Write([]byte("success"))
+			_, _ = writer.Write([]byte("success"))
 		})
 		server.Start()
 		defer server.Shutdown()
 
-		api, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
+		api, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{}, log.GetLogger())
 		require.NoError(t, err)
 
 		s := strelets.NewStrelets(api)
@@ -87,7 +89,12 @@ func Test_CreateReverseProxyWithSSL(t *testing.T) {
 		ip := helpers.LocalIP()
 
 		err = s.UpdateReverseProxy(context.Background(), &strelets.UpdateReverseProxyInput{
-			chains, ip, adapter.SSLOptions{"./fixtures/cert.pem", "./fixtures/key.pem"},
+			Chains: chains,
+			IP:     ip,
+			SSLOptions: adapter.SSLOptions{
+				SSLCertificatePath: "./fixtures/cert.pem",
+				SSLPrivateKeyPath:  "./fixtures/key.pem",
+			},
 		})
 		require.NoError(t, err)
 
@@ -99,8 +106,11 @@ func Test_CreateReverseProxyWithSSL(t *testing.T) {
 				Timeout: 2 * time.Second,
 			}
 			_, err := client.Get(url)
-			fmt.Println(err.Error())
-			return err.Error() == fmt.Sprintf("Get %s: x509: cannot validate certificate for %s because it doesn't contain any IP SANs", url, ip)
+			if err != nil {
+				fmt.Println(err.Error())
+				return err.Error() == fmt.Sprintf("Get %s: x509: cannot validate certificate for %s because it doesn't contain any IP SANs", url, ip)
+			}
+			return false
 		}))
 	})
 }

@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/client"
+	dockerClient "github.com/docker/docker/client"
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test/helpers"
+	"github.com/orbs-network/scribe/log"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -47,12 +48,12 @@ func dockerConfig(node string) strelets.DockerConfig {
 		ContainerNamePrefix: node,
 		Resources: strelets.DockerResources{
 			Limits: strelets.Resource{
-				Memory: 256,
-				CPUs:   0.25,
+				Memory: 2048,
+				CPUs:   1,
 			},
 			Reservations: strelets.Resource{
-				Memory: 128,
-				CPUs:   0.25,
+				Memory: 10,
+				CPUs:   0.01,
 			},
 		},
 	}
@@ -72,12 +73,14 @@ func peers(ip string) *strelets.PeersMap {
 }
 
 func TestE2EWithDockerSwarm(t *testing.T) {
-	withCleanContext(t, func(t *testing.T) {
-		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
+	// helpers.SkipOnCI(t)
+	helpers.WithContext(func(ctx context.Context) {
+		helpers.InitSwarmEnvironment(t, ctx)
+		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{}, log.GetLogger())
 		require.NoError(t, err)
 		s := strelets.NewStrelets(swarm)
 
-		for i := 1; i <= 3; i++ {
+		for i := 1; i <= 4; i++ {
 			startChainWithStrelets(t, s, i)
 		}
 
@@ -86,16 +89,18 @@ func TestE2EWithDockerSwarm(t *testing.T) {
 }
 
 func TestE2EKeepVolumesBetweenReloadsWithSwarm(t *testing.T) {
-	withCleanContext(t, func(t *testing.T) {
-		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
+	helpers.SkipOnCI(t)
+	helpers.WithContext(func(ctx context.Context) {
+		helpers.InitSwarmEnvironment(t, ctx)
+		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{}, log.GetLogger())
 		require.NoError(t, err)
 		s := strelets.NewStrelets(swarm)
 
-		for i := 1; i <= 3; i++ {
+		for i := 1; i <= 4; i++ {
 			startChainWithStrelets(t, s, i)
 		}
 
-		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8081), 10, WaitForBlockTimeout)
+		helpers.WaitForBlock(t, helpers.GetMetricsForPort(8081), 3, WaitForBlockTimeout)
 
 		expectedBlockHeight, err := helpers.GetBlockHeight(helpers.GetMetricsForPort(8081))
 		require.NoError(t, err)
@@ -104,6 +109,11 @@ func TestE2EKeepVolumesBetweenReloadsWithSwarm(t *testing.T) {
 			VirtualChain: chain(1),
 		})
 		require.NoError(t, err)
+
+		helpers.RequireEventually(t, 1*time.Minute, func(t helpers.TestingT) {
+			_, err = helpers.GetMetricsForPort(8081)()
+			require.Error(t, err, "service should not respond")
+		})
 
 		time.Sleep(3 * time.Second)
 		startChainWithStrelets(t, s, 1)
@@ -114,29 +124,25 @@ func TestE2EKeepVolumesBetweenReloadsWithSwarm(t *testing.T) {
 
 func TestCreateServiceSysctls(t *testing.T) {
 	helpers.SkipOnCI(t)
+	helpers.WithContext(func(ctx context.Context) {
+		helpers.InitSwarmEnvironment(t, ctx)
 
-	withCleanContext(t, func(t *testing.T) {
-
-		client, err := client.NewClientWithOpts(client.WithVersion(adapter.DOCKER_API_VERSION))
+		client, err := dockerClient.NewClientWithOpts(dockerClient.WithVersion(adapter.DOCKER_API_VERSION))
 		if err != nil {
 			t.Errorf("could not connect to docker: %s", err)
 			t.FailNow()
 		}
 		defer client.Close()
 
-		ctx := context.Background()
-
-		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
+		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{}, log.GetLogger())
 		require.NoError(t, err)
 		s := strelets.NewStrelets(swarm)
 
 		startChainWithStrelets(t, s, 1)
 
-		time.Sleep(5 * time.Second)
-
 		// Straight from Docker integration test:
 		// integration/service/create_test.go
-		// https://github.com/moby/moby/pull/37701/files#diff-204a9536b52c895f8a02e75d2e00dd16
+		// https://github.com/moby/moby/blob/b93f68ab4c5b82549691d1050e94d9b138eb9342/integration/service/create_test.go
 
 		// we're going to check 3 things:
 		//
@@ -150,19 +156,22 @@ func TestCreateServiceSysctls(t *testing.T) {
 		// get all of the tasks of the service, so we can get the container
 		filter := filters.NewArgs()
 		filter.Add("service", "node1-chain-42-stack")
-		tasks, err := client.TaskList(ctx, types.TaskListOptions{
-			Filters: filter,
+		helpers.RequireEventually(t, 1*time.Minute, func(t helpers.TestingT) {
+			tasks, err := client.TaskList(ctx, types.TaskListOptions{
+				Filters: filter,
+			})
+			require.NoError(t, err)
+			require.Len(t, tasks, 1)
+
+			require.NotNil(t, tasks[0].Status.ContainerStatus)
+			// verify that the container has the sysctl option set
+			ctnr, err := client.ContainerInspect(ctx, tasks[0].Status.ContainerStatus.ContainerID)
+			require.NoError(t, err)
+			require.EqualValuesf(t, adapter.GetSysctls(), ctnr.HostConfig.Sysctls, "failed to set container sysctls")
+
+			// verify that the task has the sysctl option set in the task object
+			require.EqualValuesf(t, adapter.GetSysctls(), tasks[0].Spec.ContainerSpec.Sysctls, "failed to set container spec sysctls")
 		})
-		require.NoError(t, err)
-		require.Len(t, tasks, 1)
-
-		// verify that the container has the sysctl option set
-		ctnr, err := client.ContainerInspect(ctx, tasks[0].Status.ContainerStatus.ContainerID)
-		require.NoError(t, err)
-		require.EqualValuesf(t, adapter.GetSysctls(), ctnr.HostConfig.Sysctls, "failed to set container sysctls")
-
-		// verify that the task has the sysctl option set in the task object
-		require.EqualValuesf(t, adapter.GetSysctls(), tasks[0].Spec.ContainerSpec.Sysctls, "failed to set container spec sysctls")
 
 		// verify that the service also has the sysctl set in the spec.
 		service, _, err := client.ServiceInspectWithRaw(ctx, "node1-chain-42-stack", types.ServiceInspectOptions{})
@@ -175,17 +184,16 @@ func TestCreateServiceSysctls(t *testing.T) {
 }
 
 func TestCreateSignerService(t *testing.T) {
-	withCleanContext(t, func(t *testing.T) {
-		client, err := client.NewClientWithOpts(client.WithVersion(adapter.DOCKER_API_VERSION))
+	helpers.WithContext(func(ctx context.Context) {
+		helpers.InitSwarmEnvironment(t, ctx)
+		client, err := dockerClient.NewClientWithOpts(dockerClient.WithVersion(adapter.DOCKER_API_VERSION))
 		if err != nil {
 			t.Errorf("could not connect to docker: %s", err)
 			t.FailNow()
 		}
 		defer client.Close()
 
-		ctx := context.Background()
-
-		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{})
+		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{}, log.GetLogger())
 		require.NoError(t, err)
 		s := strelets.NewStrelets(swarm)
 

@@ -44,14 +44,8 @@ func Test_getServiceSpec(t *testing.T) {
 			Delay:     &restartDelay,
 		},
 		Resources: &swarm.ResourceRequirements{
-			Limits: &swarm.Resources{
-				NanoCPUs:    1 * CPU_SHARES,
-				MemoryBytes: 3000 * MEGABYTE,
-			},
-			Reservations: &swarm.Resources{
-				NanoCPUs:    0.25 * CPU_SHARES,
-				MemoryBytes: 300 * MEGABYTE,
-			},
+			Limits:       &swarm.Resources{},
+			Reservations: &swarm.Resources{},
 		},
 	})
 

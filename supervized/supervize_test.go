@@ -14,7 +14,7 @@ func TestGoForever(t *testing.T) {
 	maxIterations := 5
 	numOfIterationsBeforeCrash := 2
 
-	GoForever(func() {
+	GoForever(func(_ bool) {
 		if count > maxIterations {
 			return
 		} else if count > numOfIterationsBeforeCrash {

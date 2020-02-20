@@ -14,23 +14,44 @@ type Service struct {
 	Disabled     bool
 }
 
-func (s *Service) getContainerName() string {
-	return fmt.Sprintf("%s-signer-service", s.DockerConfig.ContainerNamePrefix)
+func (s *Service) getContainerName(serviceName string) string {
+	return fmt.Sprintf("%s-%s", s.DockerConfig.ContainerNamePrefix, serviceName)
 }
 
-func (s *Service) InternalEndpoint() string {
-	return fmt.Sprintf("%s:%d", adapter.GetServiceId(s.getContainerName()), s.Port)
+func (s *Service) SignerInternalEndpoint() string {
+	return fmt.Sprintf("%s:%d", adapter.GetServiceId(s.getContainerName(SIGNER)), s.Port)
 }
 
 type Services struct {
 	Signer *Service `json:"signer"`
+	Config *Service `json:"config"`
 }
 
 func (s Services) SignerOn() bool {
 	return s.Signer != nil && s.Signer.Disabled == false
 }
 
+const SIGNER = "signer-service"
+const CONFIG = "config-service"
+
+func (s Services) AsMap() map[string]*Service {
+	return map[string]*Service{
+		SIGNER: s.Signer,
+		CONFIG: s.Config,
+	}
+}
+
+func (s Services) NeedsKeys(serviceId string) bool {
+	switch serviceId {
+	case SIGNER:
+		return true
+	}
+
+	return false
+}
+
 type UpdateServiceInput struct {
+	Name          string
 	Service       *Service
 	KeyPairConfig []byte `json:"-"` // Prevents possible key leak via log
 }
@@ -51,7 +72,7 @@ func (s *strelets) UpdateService(ctx context.Context, input *UpdateServiceInput)
 
 	serviceConfig := &adapter.ServiceConfig{
 		ImageName:     imageName,
-		ContainerName: service.getContainerName(),
+		ContainerName: service.getContainerName(input.Name),
 
 		LimitedMemory:  service.DockerConfig.Resources.Limits.Memory,
 		LimitedCPU:     service.DockerConfig.Resources.Limits.CPUs,

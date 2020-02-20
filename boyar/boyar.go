@@ -19,14 +19,14 @@ import (
 type Cache struct {
 	vChains  *utils.CacheMap
 	nginx    *utils.CacheFilter
-	services *utils.CacheFilter
+	services *utils.CacheMap
 }
 
 func NewCache() *Cache {
 	return &Cache{
 		vChains:  utils.NewCacheMap(),
 		nginx:    utils.NewCacheFilter(),
-		services: utils.NewCacheFilter(),
+		services: utils.NewCacheMap(),
 	}
 }
 
@@ -127,25 +127,23 @@ func (b *boyar) ProvisionServices(ctx context.Context) error {
 		return errors.Wrap(err, "failed creating network")
 	}
 
-	if b.cache.services.CheckNewJsonValue(b.config.Services()) {
-
-		input := &strelets.UpdateServiceInput{
-			Service:       b.config.Services().Signer,
-			KeyPairConfig: getKeyConfigJson(b.config, false),
-		}
-
-		if input.Service != nil {
-			err := b.strelets.UpdateService(ctx, input)
-			if err == nil {
-				b.logger.Info("updated signer configuration")
-			} else {
-				b.logger.Error("failed to update signer configuration", log.Error(err))
-				b.cache.services.Clear()
-				return err
+	var errors []error
+	for serviceName, service := range b.config.Services().AsMap() {
+		if b.cache.services.CheckNewJsonValue(serviceName, service) {
+			if service != nil {
+				err := b.strelets.UpdateService(ctx, b.getServiceConfig(serviceName, service))
+				if err == nil {
+					b.logger.Info("updated service configuration", log.Service(serviceName))
+				} else {
+					b.logger.Error("failed to update service configuration", log.Service(serviceName), log.Error(err))
+					b.cache.services.Clear(serviceName)
+					errors = append(errors, err)
+				}
 			}
 		}
 	}
-	return nil
+
+	return utils.AggregateErrors(errors)
 }
 
 var removed = &utils.HashedValue{Value: "foo"}
@@ -195,6 +193,19 @@ func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.Virtu
 			errChannel <- nil
 		}
 	}()
+}
+
+func (b *boyar) getServiceConfig(serviceName string, service *strelets.Service) *strelets.UpdateServiceInput {
+	var keyPairConfigJSON []byte
+	if b.config.Services().NeedsKeys(serviceName) {
+		keyPairConfigJSON = getKeyConfigJson(b.config, false)
+	}
+
+	return &strelets.UpdateServiceInput{
+		Name:          serviceName,
+		Service:       service,
+		KeyPairConfig: keyPairConfigJSON,
+	}
 }
 
 func getVirtualChainConfig(config config.NodeConfiguration, chain *strelets.VirtualChain) *strelets.ProvisionVirtualChainInput {

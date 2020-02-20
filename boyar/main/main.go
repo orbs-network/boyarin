@@ -62,14 +62,14 @@ func main() {
 		SSLPrivateKeyPath:       *sslPrivateKeyPtr,
 	}
 
-	logger, err := config.GetLogger(flags)
-	if err != nil {
-		os.Exit(1)
-	}
-
 	if *help {
 		flag.Usage()
 		return
+	}
+
+	logger, err := config.GetLogger(flags)
+	if err != nil {
+		os.Exit(1)
 	}
 
 	if *showConfiguration {

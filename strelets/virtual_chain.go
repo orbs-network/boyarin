@@ -32,11 +32,11 @@ func GetVcidFromServiceName(serviceName string) int64 {
 	return result
 }
 
-func (v *VirtualChain) getContainerName() string {
+func (v *VirtualChain) GetContainerName() string {
 	return fmt.Sprintf("%s-chain-%d", v.DockerConfig.ContainerNamePrefix, v.Id)
 }
 
-func (c *VirtualChain) getSerializedConfig() []byte {
+func (c *VirtualChain) GetSerializedConfig() []byte {
 	m := make(map[string]interface{})
 	for k, v := range c.Config {
 		m[k] = v

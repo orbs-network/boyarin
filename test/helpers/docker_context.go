@@ -169,7 +169,7 @@ func removeAllServices(t *testing.T) {
 }
 
 func InitSwarmEnvironment(t *testing.T, ctx context.Context) {
-	SkipUnlessSwarmIsEnabled(t)
+	//SkipUnlessSwarmIsEnabled(t)
 
 	removeAllServices(t)
 	removeAllDockerVolumes(t)

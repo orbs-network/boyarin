@@ -12,8 +12,10 @@ import (
 	"github.com/orbs-network/boyarin/utils"
 	"github.com/orbs-network/scribe/log"
 	"github.com/pkg/errors"
+	"sort"
 	"strings"
 	"sync"
+	"time"
 )
 
 type Cache struct {
@@ -175,7 +177,8 @@ func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.Virtu
 		input := getVirtualChainConfig(b.config, chain)
 
 		if b.cache.vChains.CheckNewJsonValue(chain.Id.String(), input) {
-			if err := b.strelets.ProvisionVirtualChain(ctx, input); err != nil {
+			// skip keys
+			if err := b.provisionSingleVirtualChain(ctx, b.config.NodeAddress(), chain, b.config.KeyConfig().JSON(false)); err != nil {
 				b.cache.vChains.Clear(chain.Id.String())
 				b.logger.Error("failed to apply virtual chain configuration",
 					log_types.VirtualChainId(int64(chain.Id)),
@@ -193,6 +196,55 @@ func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.Virtu
 			errChannel <- nil
 		}
 	}()
+}
+
+const (
+	PROVISION_VCHAIN_MAX_TRIES       = 5
+	PROVISION_VCHAIN_ATTEMPT_TIMEOUT = 30 * time.Second
+	PROVISION_VCHAIN_RETRY_INTERVAL  = 3 * time.Second
+)
+
+func (s *boyar) provisionSingleVirtualChain(ctx context.Context, nodeAddress strelets.NodeAddress,
+	chain *strelets.VirtualChain, keyPairConfig []byte) error {
+	imageName := chain.DockerConfig.FullImageName()
+
+	if chain.Disabled {
+		return fmt.Errorf("virtual chain %d is disabled", chain.Id)
+	}
+
+	if chain.DockerConfig.Pull {
+		if err := s.strelets.Orchestrator().PullImage(ctx, imageName); err != nil {
+			return fmt.Errorf("could not pull docker image: %s", err)
+		}
+	}
+
+	return utils.Try(ctx, PROVISION_VCHAIN_MAX_TRIES, PROVISION_VCHAIN_ATTEMPT_TIMEOUT, PROVISION_VCHAIN_RETRY_INTERVAL,
+		func(ctxWithTimeout context.Context) error {
+			serviceConfig := &adapter.ServiceConfig{
+				Id:            uint32(chain.Id),
+				NodeAddress:   string(nodeAddress),
+				ImageName:     imageName,
+				ContainerName: chain.GetContainerName(),
+				HttpPort:      chain.HttpPort,
+				GossipPort:    chain.GossipPort,
+
+				LimitedMemory:  chain.DockerConfig.Resources.Limits.Memory,
+				LimitedCPU:     chain.DockerConfig.Resources.Limits.CPUs,
+				ReservedMemory: chain.DockerConfig.Resources.Reservations.Memory,
+				ReservedCPU:    chain.DockerConfig.Resources.Reservations.CPUs,
+
+				BlocksVolumeSize: chain.DockerConfig.Volumes.Blocks,
+				LogsVolumeSize:   chain.DockerConfig.Volumes.Logs,
+			}
+
+			appConfig := &adapter.AppConfig{
+				KeyPair: keyPairConfig,
+				Network: getNetworkConfigJSON(s.config.FederationNodes()),
+				Config:  chain.GetSerializedConfig(),
+			}
+
+			return s.strelets.Orchestrator().RunVirtualChain(ctx, serviceConfig, appConfig)
+		})
 }
 
 func (b *boyar) getServiceConfig(serviceName string, service *strelets.Service) *strelets.UpdateServiceInput {
@@ -229,4 +281,18 @@ func getKeyConfigJson(config config.NodeConfiguration, addressOnly bool) []byte 
 		return []byte{}
 	}
 	return keyConfig.JSON(addressOnly)
+}
+
+func getNetworkConfigJSON(nodes []*strelets.FederationNode) []byte {
+	jsonMap := make(map[string]interface{})
+
+	// A workaround for tests because range does not preserve key order over iteration
+	sort.Slice(nodes, func(i, j int) bool {
+		return nodes[i].Address > nodes[j].Address
+	})
+
+	jsonMap["federation-nodes"] = nodes
+	json, _ := json.Marshal(jsonMap)
+
+	return json
 }

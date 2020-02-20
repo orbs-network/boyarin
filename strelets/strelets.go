@@ -11,6 +11,7 @@ type Strelets interface {
 	UpdateReverseProxy(ctx context.Context, input *UpdateReverseProxyInput) error
 	UpdateService(ctx context.Context, input *UpdateServiceInput) error
 	ProvisionSharedNetwork(ctx context.Context, input *ProvisionSharedNetworkInput) error
+	Orchestrator() adapter.Orchestrator
 }
 
 type strelets struct {
@@ -21,4 +22,8 @@ func NewStrelets(docker adapter.Orchestrator) Strelets {
 	return &strelets{
 		orchestrator: docker,
 	}
+}
+
+func (s *strelets) Orchestrator() adapter.Orchestrator {
+	return s.orchestrator
 }

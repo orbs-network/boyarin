@@ -12,6 +12,7 @@ import (
 	"github.com/orbs-network/boyarin/utils"
 	"github.com/orbs-network/scribe/log"
 	"github.com/pkg/errors"
+	"io/ioutil"
 	"sort"
 	"strings"
 	"sync"
@@ -100,10 +101,30 @@ func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
 	b.nginxLock.Lock()
 	defer b.nginxLock.Unlock()
 	// TODO is there a better way to get a loopback interface?
-	nginxConfig := getNginxConfig(b.config)
+	nginxConfig := getNginxCompositeConfig(b.config)
 
 	if b.cache.nginx.CheckNewJsonValue(nginxConfig) {
-		if err := b.strelets.UpdateReverseProxy(ctx, nginxConfig); err != nil {
+		sslEnabled := nginxConfig.SSLOptions.SSLCertificatePath != "" && nginxConfig.SSLOptions.SSLPrivateKeyPath != ""
+
+		config := &adapter.ReverseProxyConfig{
+			NginxConfig: getNginxConfig(nginxConfig.Chains, nginxConfig.IP, sslEnabled),
+		}
+
+		if sslEnabled {
+			if sslCertificate, err := ioutil.ReadFile(nginxConfig.SSLOptions.SSLCertificatePath); err != nil {
+				return fmt.Errorf("could not read SSL certificate from %s: %s", nginxConfig.SSLOptions.SSLCertificatePath, err)
+			} else {
+				config.SSLCertificate = sslCertificate
+			}
+
+			if sslPrivateKey, err := ioutil.ReadFile(nginxConfig.SSLOptions.SSLPrivateKeyPath); err != nil {
+				return fmt.Errorf("could not read SSL private key from %s: %s", nginxConfig.SSLOptions.SSLCertificatePath, err)
+			} else {
+				config.SSLPrivateKey = sslPrivateKey
+			}
+		}
+
+		if err := b.strelets.Orchestrator().RunReverseProxy(ctx, config); err != nil {
 			b.logger.Error("failed to apply http proxy configuration", log.Error(err))
 			b.cache.nginx.Clear()
 			return err
@@ -114,7 +135,7 @@ func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
 	return nil
 }
 
-func getNginxConfig(cfg config.NodeConfiguration) *strelets.UpdateReverseProxyInput {
+func getNginxCompositeConfig(cfg config.NodeConfiguration) *strelets.UpdateReverseProxyInput {
 	return &strelets.UpdateReverseProxyInput{
 		Chains:     cfg.Chains(),
 		IP:         helpers.LocalIP(),
@@ -123,9 +144,7 @@ func getNginxConfig(cfg config.NodeConfiguration) *strelets.UpdateReverseProxyIn
 }
 
 func (b *boyar) ProvisionServices(ctx context.Context) error {
-	if err := b.strelets.ProvisionSharedNetwork(ctx, &strelets.ProvisionSharedNetworkInput{
-		Name: adapter.SHARED_SIGNER_NETWORK,
-	}); err != nil {
+	if _, err := b.strelets.Orchestrator().GetOverlayNetwork(ctx, adapter.SHARED_SIGNER_NETWORK); err != nil {
 		return errors.Wrap(err, "failed creating network")
 	}
 
@@ -153,10 +172,8 @@ var removed = &utils.HashedValue{Value: "foo"}
 func (b *boyar) removeVirtualChain(ctx context.Context, chain *strelets.VirtualChain, errChannel chan *errorContainer) {
 	go func() {
 		if b.cache.vChains.CheckNewValue(chain.Id.String(), removed) {
-			input := &strelets.RemoveVirtualChainInput{
-				VirtualChain: chain,
-			}
-			if err := b.strelets.RemoveVirtualChain(ctx, input); err != nil {
+			serviceName := adapter.GetServiceId(chain.GetContainerName())
+			if err := b.strelets.Orchestrator().ServiceRemove(ctx, serviceName); err != nil {
 				b.cache.vChains.Clear(chain.Id.String())
 				b.logger.Error("failed to remove virtual chain",
 					log_types.VirtualChainId(int64(chain.Id)),

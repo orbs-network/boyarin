@@ -1,4 +1,4 @@
-package strelets
+package boyar
 
 import (
 	"github.com/stretchr/testify/require"

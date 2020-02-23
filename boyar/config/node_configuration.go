@@ -17,7 +17,7 @@ type NodeConfiguration interface {
 	KeyConfig() KeyConfig
 	ReloadTimeDelay(maxDelay time.Duration) time.Duration
 	EthereumEndpoint() string
-	NodeAddress() strelets.NodeAddress
+	NodeAddress() NodeAddress
 	SSLOptions() adapter.SSLOptions
 	Services() strelets.Services
 

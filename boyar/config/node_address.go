@@ -1,12 +1,12 @@
 package config
 
-import "github.com/orbs-network/boyarin/strelets"
+type NodeAddress string
 
-func (n *nodeConfigurationContainer) NodeAddress() strelets.NodeAddress {
+func (n *nodeConfigurationContainer) NodeAddress() NodeAddress {
 	cfg, err := n.readKeysConfig()
 	if err != nil {
 		return "orbs-network"
 	}
 
-	return strelets.NodeAddress(cfg.Address())
+	return NodeAddress(cfg.Address())
 }

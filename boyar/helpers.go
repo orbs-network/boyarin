@@ -1,11 +1,12 @@
 package boyar
 
 import (
+	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/strelets"
 )
 
-func buildPeersMap(nodes []*strelets.FederationNode, gossipPort int) *strelets.PeersMap {
-	peersMap := make(strelets.PeersMap)
+func buildPeersMap(nodes []*strelets.FederationNode, gossipPort int) *PeersMap {
+	peersMap := make(PeersMap)
 
 	for _, node := range nodes {
 		// Need this override for more flexibility in network config and also for local testing
@@ -14,7 +15,7 @@ func buildPeersMap(nodes []*strelets.FederationNode, gossipPort int) *strelets.P
 			port = gossipPort
 		}
 
-		peersMap[strelets.NodeAddress(node.Address)] = &strelets.Peer{
+		peersMap[config.NodeAddress(node.Address)] = &Peer{
 			node.IP, port,
 		}
 	}

@@ -6,11 +6,7 @@ import (
 )
 
 type Strelets interface {
-	ProvisionVirtualChain(ctx context.Context, input *ProvisionVirtualChainInput) error
-	RemoveVirtualChain(ctx context.Context, input *RemoveVirtualChainInput) error
-	UpdateReverseProxy(ctx context.Context, input *UpdateReverseProxyInput) error
 	UpdateService(ctx context.Context, input *UpdateServiceInput) error
-	ProvisionSharedNetwork(ctx context.Context, input *ProvisionSharedNetworkInput) error
 	Orchestrator() adapter.Orchestrator
 }
 

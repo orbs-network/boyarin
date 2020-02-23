@@ -135,8 +135,15 @@ func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
 	return nil
 }
 
-func getNginxCompositeConfig(cfg config.NodeConfiguration) *strelets.UpdateReverseProxyInput {
-	return &strelets.UpdateReverseProxyInput{
+type UpdateReverseProxyInput struct {
+	Chains []*strelets.VirtualChain
+	IP     string
+
+	SSLOptions adapter.SSLOptions
+}
+
+func getNginxCompositeConfig(cfg config.NodeConfiguration) *UpdateReverseProxyInput {
+	return &UpdateReverseProxyInput{
 		Chains:     cfg.Chains(),
 		IP:         helpers.LocalIP(),
 		SSLOptions: cfg.SSLOptions(),
@@ -221,7 +228,7 @@ const (
 	PROVISION_VCHAIN_RETRY_INTERVAL  = 3 * time.Second
 )
 
-func (s *boyar) provisionSingleVirtualChain(ctx context.Context, nodeAddress strelets.NodeAddress,
+func (s *boyar) provisionSingleVirtualChain(ctx context.Context, nodeAddress config.NodeAddress,
 	chain *strelets.VirtualChain, keyPairConfig []byte) error {
 	imageName := chain.DockerConfig.FullImageName()
 
@@ -277,13 +284,13 @@ func (b *boyar) getServiceConfig(serviceName string, service *strelets.Service) 
 	}
 }
 
-func getVirtualChainConfig(config config.NodeConfiguration, chain *strelets.VirtualChain) *strelets.ProvisionVirtualChainInput {
+func getVirtualChainConfig(config config.NodeConfiguration, chain *strelets.VirtualChain) *ProvisionVirtualChainInput {
 	peers := buildPeersMap(config.FederationNodes(), chain.GossipPort)
 
 	signerOn := config.Services().SignerOn()
 	keyPairConfig := getKeyConfigJson(config, signerOn)
 
-	input := &strelets.ProvisionVirtualChainInput{
+	input := &ProvisionVirtualChainInput{
 		VirtualChain:  chain,
 		Peers:         peers,
 		NodeAddress:   config.NodeAddress(),
@@ -313,3 +320,18 @@ func getNetworkConfigJSON(nodes []*strelets.FederationNode) []byte {
 
 	return json
 }
+
+type ProvisionVirtualChainInput struct {
+	VirtualChain *strelets.VirtualChain
+	Peers        *PeersMap
+	NodeAddress  config.NodeAddress
+
+	KeyPairConfig []byte `json:"-"` // Prevents key leak via log
+}
+
+type Peer struct {
+	IP   string
+	Port int
+}
+
+type PeersMap map[config.NodeAddress]*Peer

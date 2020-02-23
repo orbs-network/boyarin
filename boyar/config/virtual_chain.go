@@ -18,7 +18,7 @@ type VirtualChain struct {
 	Disabled     bool
 }
 
-type ProvisionVirtualChainInput struct {
+type VirtualChainCompositeKey struct {
 	VirtualChain *VirtualChain
 	Peers        *PeersMap
 	NodeAddress  NodeAddress

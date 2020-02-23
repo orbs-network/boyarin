@@ -6,15 +6,11 @@ import (
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/boyar/topology"
-	"github.com/orbs-network/boyarin/log_types"
 	"github.com/orbs-network/boyarin/strelets/adapter"
-	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/orbs-network/boyarin/utils"
 	"github.com/orbs-network/scribe/log"
 	"github.com/pkg/errors"
-	"io/ioutil"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 )
@@ -58,95 +54,6 @@ func NewBoyar(orchestrator adapter.Orchestrator, cfg config.NodeConfiguration, c
 		config:       cfg,
 		cache:        cache,
 		logger:       logger,
-	}
-}
-
-func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
-	chains := b.config.Chains()
-
-	var errors []error
-	errorChannel := make(chan *errorContainer, len(chains))
-
-	for _, chain := range chains {
-		if chain.Disabled {
-			b.removeVirtualChain(ctx, chain, errorChannel)
-		} else {
-			b.provisionVirtualChain(ctx, chain, errorChannel)
-		}
-	}
-
-	var messages []string
-
-	for i := 0; i < len(chains); i++ {
-		select {
-		case err := <-errorChannel:
-			if err != nil {
-				errors = append(errors, err.error)
-				messages = append(messages, err.id.String())
-			}
-		case <-ctx.Done():
-			errors = append(errors, ctx.Err())
-			messages = append(messages, ctx.Err().Error())
-		}
-	}
-
-	if len(errors) > 0 {
-		return fmt.Errorf("failed to provision virtual chain %v", strings.Join(messages, ", "))
-	}
-
-	return nil
-}
-
-func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
-	b.nginxLock.Lock()
-	defer b.nginxLock.Unlock()
-	// TODO is there a better way to get a loopback interface?
-	nginxConfig := getNginxCompositeConfig(b.config)
-
-	if b.cache.nginx.CheckNewJsonValue(nginxConfig) {
-		sslEnabled := nginxConfig.SSLOptions.SSLCertificatePath != "" && nginxConfig.SSLOptions.SSLPrivateKeyPath != ""
-
-		config := &adapter.ReverseProxyConfig{
-			NginxConfig: getNginxConfig(nginxConfig.Chains, nginxConfig.IP, sslEnabled),
-		}
-
-		if sslEnabled {
-			if sslCertificate, err := ioutil.ReadFile(nginxConfig.SSLOptions.SSLCertificatePath); err != nil {
-				return fmt.Errorf("could not read SSL certificate from %s: %s", nginxConfig.SSLOptions.SSLCertificatePath, err)
-			} else {
-				config.SSLCertificate = sslCertificate
-			}
-
-			if sslPrivateKey, err := ioutil.ReadFile(nginxConfig.SSLOptions.SSLPrivateKeyPath); err != nil {
-				return fmt.Errorf("could not read SSL private key from %s: %s", nginxConfig.SSLOptions.SSLCertificatePath, err)
-			} else {
-				config.SSLPrivateKey = sslPrivateKey
-			}
-		}
-
-		if err := b.orchestrator.RunReverseProxy(ctx, config); err != nil {
-			b.logger.Error("failed to apply http proxy configuration", log.Error(err))
-			b.cache.nginx.Clear()
-			return err
-		}
-
-		b.logger.Info("updated http proxy configuration")
-	}
-	return nil
-}
-
-type UpdateReverseProxyInput struct {
-	Chains []*config.VirtualChain
-	IP     string
-
-	SSLOptions adapter.SSLOptions
-}
-
-func getNginxCompositeConfig(cfg config.NodeConfiguration) *UpdateReverseProxyInput {
-	return &UpdateReverseProxyInput{
-		Chains:     cfg.Chains(),
-		IP:         helpers.LocalIP(),
-		SSLOptions: cfg.SSLOptions(),
 	}
 }
 
@@ -209,102 +116,11 @@ func (b *boyar) ProvisionServices(ctx context.Context) error {
 	return utils.AggregateErrors(errors)
 }
 
-var removed = &utils.HashedValue{Value: "foo"}
-
-func (b *boyar) removeVirtualChain(ctx context.Context, chain *config.VirtualChain, errChannel chan *errorContainer) {
-	go func() {
-		if b.cache.vChains.CheckNewValue(chain.Id.String(), removed) {
-			serviceName := adapter.GetServiceId(chain.GetContainerName())
-			if err := b.orchestrator.ServiceRemove(ctx, serviceName); err != nil {
-				b.cache.vChains.Clear(chain.Id.String())
-				b.logger.Error("failed to remove virtual chain",
-					log_types.VirtualChainId(int64(chain.Id)),
-					log.Error(err))
-				errChannel <- &errorContainer{err, chain.Id}
-			} else {
-				b.logger.Info("removed virtual chain", log_types.VirtualChainId(int64(chain.Id)))
-				errChannel <- nil
-			}
-		} else {
-			errChannel <- nil
-		}
-	}()
-}
-
-func (b *boyar) provisionVirtualChain(ctx context.Context, chain *config.VirtualChain, errChannel chan *errorContainer) {
-	go func() {
-		input := getVirtualChainConfig(b.config, chain)
-
-		if b.cache.vChains.CheckNewJsonValue(chain.Id.String(), input) {
-			// skip keys
-			if err := b.provisionSingleVirtualChain(ctx, b.config.NodeAddress(), chain, b.config.KeyConfig().JSON(false)); err != nil {
-				b.cache.vChains.Clear(chain.Id.String())
-				b.logger.Error("failed to apply virtual chain configuration",
-					log_types.VirtualChainId(int64(chain.Id)),
-					log.Error(err))
-				errChannel <- &errorContainer{err, chain.Id}
-			} else {
-				input.KeyPairConfig = nil // Prevents key leak via log
-				data, _ := json.Marshal(input)
-				b.logger.Info("updated virtual chain configuration",
-					log_types.VirtualChainId(int64(chain.Id)),
-					log.String("configuration", string(data)))
-				errChannel <- nil
-			}
-		} else {
-			errChannel <- nil
-		}
-	}()
-}
-
 const (
 	PROVISION_VCHAIN_MAX_TRIES       = 5
 	PROVISION_VCHAIN_ATTEMPT_TIMEOUT = 30 * time.Second
 	PROVISION_VCHAIN_RETRY_INTERVAL  = 3 * time.Second
 )
-
-func (b *boyar) provisionSingleVirtualChain(ctx context.Context, nodeAddress config.NodeAddress,
-	chain *config.VirtualChain, keyPairConfig []byte) error {
-	imageName := chain.DockerConfig.FullImageName()
-
-	if chain.Disabled {
-		return fmt.Errorf("virtual chain %d is disabled", chain.Id)
-	}
-
-	if chain.DockerConfig.Pull {
-		if err := b.orchestrator.PullImage(ctx, imageName); err != nil {
-			return fmt.Errorf("could not pull docker image: %b", err)
-		}
-	}
-
-	return utils.Try(ctx, PROVISION_VCHAIN_MAX_TRIES, PROVISION_VCHAIN_ATTEMPT_TIMEOUT, PROVISION_VCHAIN_RETRY_INTERVAL,
-		func(ctxWithTimeout context.Context) error {
-			serviceConfig := &adapter.ServiceConfig{
-				Id:            uint32(chain.Id),
-				NodeAddress:   string(nodeAddress),
-				ImageName:     imageName,
-				ContainerName: chain.GetContainerName(),
-				HttpPort:      chain.HttpPort,
-				GossipPort:    chain.GossipPort,
-
-				LimitedMemory:  chain.DockerConfig.Resources.Limits.Memory,
-				LimitedCPU:     chain.DockerConfig.Resources.Limits.CPUs,
-				ReservedMemory: chain.DockerConfig.Resources.Reservations.Memory,
-				ReservedCPU:    chain.DockerConfig.Resources.Reservations.CPUs,
-
-				BlocksVolumeSize: chain.DockerConfig.Volumes.Blocks,
-				LogsVolumeSize:   chain.DockerConfig.Volumes.Logs,
-			}
-
-			appConfig := &adapter.AppConfig{
-				KeyPair: keyPairConfig,
-				Network: getNetworkConfigJSON(b.config.FederationNodes()),
-				Config:  chain.GetSerializedConfig(),
-			}
-
-			return b.orchestrator.RunVirtualChain(ctx, serviceConfig, appConfig)
-		})
-}
 
 func (b *boyar) getServiceConfig(serviceName string, service *config.Service) *config.UpdateServiceInput {
 	var keyPairConfigJSON []byte
@@ -319,13 +135,13 @@ func (b *boyar) getServiceConfig(serviceName string, service *config.Service) *c
 	}
 }
 
-func getVirtualChainConfig(cfg config.NodeConfiguration, chain *config.VirtualChain) *config.ProvisionVirtualChainInput {
+func getVirtualChainConfig(cfg config.NodeConfiguration, chain *config.VirtualChain) *config.VirtualChainCompositeKey {
 	peers := buildPeersMap(cfg.FederationNodes(), chain.GossipPort)
 
 	signerOn := cfg.Services().SignerOn()
 	keyPairConfig := getKeyConfigJson(cfg, signerOn)
 
-	input := &config.ProvisionVirtualChainInput{
+	input := &config.VirtualChainCompositeKey{
 		VirtualChain:  chain,
 		Peers:         peers,
 		NodeAddress:   cfg.NodeAddress(),

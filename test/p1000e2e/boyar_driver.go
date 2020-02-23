@@ -21,7 +21,8 @@ import (
 )
 
 type VChainArgument struct {
-	Id int
+	Id       int
+	Disabled bool
 }
 
 const basePort = 6000
@@ -62,6 +63,7 @@ func VChainConfig(vc VChainArgument) map[string]interface{} {
 		"Id":         vc.Id,
 		"HttpPort":   vc.HttpPort(),
 		"GossipPort": vc.GossipPort(),
+		"Disabled":   vc.Disabled,
 		"DockerConfig": map[string]interface{}{
 			"ContainerNamePrefix": "e2e",
 			"Image":               "orbs",
@@ -97,7 +99,7 @@ func SetupDynamicBoyarDependencies(t *testing.T, keyPair KeyConfig, vChains <-ch
 	go func() {
 		for currentChains := range vChains {
 			configStr = configJson(t, currentChains)
-			// fmt.Println(configStr)
+			fmt.Println(configStr)
 		}
 	}()
 	ts := serveConfig(&configStr)
@@ -171,4 +173,10 @@ func AssertVchainUp(t helpers.TestingT, publickKey string, vc1 VChainArgument) {
 	metrics := GetVChainMetrics(t, vc1)
 	require.Equal(t, metrics.String("Node.Address"), publickKey)
 	AssertGossipServer(t, vc1)
+}
+
+func AssertVchainDown(t helpers.TestingT, vc1 VChainArgument) {
+	res, err := http.Get(fmt.Sprintf("http://127.0.0.1/vchains/%d/metrics", vc1.Id))
+	require.NoError(t, err)
+	require.EqualValues(t, http.StatusNotFound, res.StatusCode)
 }

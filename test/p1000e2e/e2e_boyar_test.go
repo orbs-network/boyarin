@@ -89,3 +89,44 @@ func TestE2EAddVirtualChain(t *testing.T) {
 		return
 	})
 }
+
+func TestE2EAddAndRemoveVirtualChain(t *testing.T) {
+	vc1 := VChainArgument{Id: 42}
+	vc2 := VChainArgument{Id: 45}
+	helpers.WithContextAndShutdown(func(ctx context.Context) (waiter govnr.ShutdownWaiter) {
+		logger := log.GetLogger()
+		helpers.InitSwarmEnvironment(t, ctx)
+		keys := KeyConfig{
+			NodeAddress:    PublickKey,
+			NodePrivateKey: PrivateKey,
+		}
+		vChainsChannel := make(chan []VChainArgument)
+		defer close(vChainsChannel)
+
+		flags, cleanup := SetupDynamicBoyarDependencies(t, keys, vChainsChannel)
+		defer cleanup()
+		waiter = InProcessBoyar(t, ctx, logger, flags)
+
+		logger.Info(fmt.Sprintf("adding vchain %d", vc1.Id))
+		vChainsChannel <- []VChainArgument{vc1}
+		helpers.RequireEventually(t, 20*time.Second, func(t helpers.TestingT) {
+			AssertVchainUp(t, PublickKey, vc1)
+		})
+
+		logger.Info(fmt.Sprintf("adding vchain %d", vc2.Id))
+		vChainsChannel <- []VChainArgument{vc1, vc2}
+		helpers.RequireEventually(t, 20*time.Second, func(t helpers.TestingT) {
+			AssertVchainUp(t, PublickKey, vc1)
+			AssertVchainUp(t, PublickKey, vc2)
+		})
+
+		vc2.Disabled = true
+		logger.Info(fmt.Sprintf("adding vchain %d", vc2.Id))
+		vChainsChannel <- []VChainArgument{vc1, vc2}
+		helpers.RequireEventually(t, 20*time.Second, func(t helpers.TestingT) {
+			AssertVchainUp(t, PublickKey, vc1)
+			AssertVchainDown(t, vc2)
+		})
+		return
+	})
+}

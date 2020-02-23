@@ -22,3 +22,11 @@ func buildPeersMap(nodes []*topology.FederationNode, gossipPort int) *config.Pee
 
 	return &peersMap
 }
+
+func getKeyConfigJson(config config.NodeConfiguration, addressOnly bool) []byte {
+	keyConfig := config.KeyConfig()
+	if keyConfig == nil {
+		return []byte{}
+	}
+	return keyConfig.JSON(addressOnly)
+}

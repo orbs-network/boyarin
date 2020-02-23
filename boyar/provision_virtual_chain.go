@@ -5,12 +5,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar/config"
+	"github.com/orbs-network/boyarin/boyar/topology"
 	"github.com/orbs-network/boyarin/log_types"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/utils"
 	"github.com/orbs-network/scribe/log"
 	"github.com/pkg/errors"
+	"sort"
 	"strings"
+	"time"
+)
+
+const (
+	PROVISION_VCHAIN_MAX_TRIES       = 5
+	PROVISION_VCHAIN_ATTEMPT_TIMEOUT = 30 * time.Second
+	PROVISION_VCHAIN_RETRY_INTERVAL  = 3 * time.Second
 )
 
 var removed = &utils.HashedValue{Value: "foo"}
@@ -147,4 +156,18 @@ func (b *boyar) removeVirtualChain(ctx context.Context, chain *config.VirtualCha
 			errChannel <- nil
 		}
 	}()
+}
+
+func getNetworkConfigJSON(nodes []*topology.FederationNode) []byte {
+	jsonMap := make(map[string]interface{})
+
+	// A workaround for tests because range does not preserve key order over iteration
+	sort.Slice(nodes, func(i, j int) bool {
+		return nodes[i].Address > nodes[j].Address
+	})
+
+	jsonMap["federation-nodes"] = nodes
+	json, _ := json.Marshal(jsonMap)
+
+	return json
 }

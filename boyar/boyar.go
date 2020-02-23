@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar/config"
+	"github.com/orbs-network/boyarin/boyar/topology"
 	"github.com/orbs-network/boyarin/log_types"
 	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
@@ -49,7 +50,7 @@ type boyar struct {
 
 type errorContainer struct {
 	error error
-	id    strelets.VirtualChainId
+	id    config.VirtualChainId
 }
 
 func NewBoyar(strelets strelets.Strelets, cfg config.NodeConfiguration, cache *Cache, logger log.Logger) Boyar {
@@ -136,7 +137,7 @@ func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
 }
 
 type UpdateReverseProxyInput struct {
-	Chains []*strelets.VirtualChain
+	Chains []*config.VirtualChain
 	IP     string
 
 	SSLOptions adapter.SSLOptions
@@ -211,7 +212,7 @@ func (b *boyar) ProvisionServices(ctx context.Context) error {
 
 var removed = &utils.HashedValue{Value: "foo"}
 
-func (b *boyar) removeVirtualChain(ctx context.Context, chain *strelets.VirtualChain, errChannel chan *errorContainer) {
+func (b *boyar) removeVirtualChain(ctx context.Context, chain *config.VirtualChain, errChannel chan *errorContainer) {
 	go func() {
 		if b.cache.vChains.CheckNewValue(chain.Id.String(), removed) {
 			serviceName := adapter.GetServiceId(chain.GetContainerName())
@@ -231,7 +232,7 @@ func (b *boyar) removeVirtualChain(ctx context.Context, chain *strelets.VirtualC
 	}()
 }
 
-func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.VirtualChain, errChannel chan *errorContainer) {
+func (b *boyar) provisionVirtualChain(ctx context.Context, chain *config.VirtualChain, errChannel chan *errorContainer) {
 	go func() {
 		input := getVirtualChainConfig(b.config, chain)
 
@@ -264,7 +265,7 @@ const (
 )
 
 func (s *boyar) provisionSingleVirtualChain(ctx context.Context, nodeAddress config.NodeAddress,
-	chain *strelets.VirtualChain, keyPairConfig []byte) error {
+	chain *config.VirtualChain, keyPairConfig []byte) error {
 	imageName := chain.DockerConfig.FullImageName()
 
 	if chain.Disabled {
@@ -319,16 +320,16 @@ func (b *boyar) getServiceConfig(serviceName string, service *config.Service) *c
 	}
 }
 
-func getVirtualChainConfig(config config.NodeConfiguration, chain *strelets.VirtualChain) *ProvisionVirtualChainInput {
-	peers := buildPeersMap(config.FederationNodes(), chain.GossipPort)
+func getVirtualChainConfig(cfg config.NodeConfiguration, chain *config.VirtualChain) *config.ProvisionVirtualChainInput {
+	peers := buildPeersMap(cfg.FederationNodes(), chain.GossipPort)
 
-	signerOn := config.Services().SignerOn()
-	keyPairConfig := getKeyConfigJson(config, signerOn)
+	signerOn := cfg.Services().SignerOn()
+	keyPairConfig := getKeyConfigJson(cfg, signerOn)
 
-	input := &ProvisionVirtualChainInput{
+	input := &config.ProvisionVirtualChainInput{
 		VirtualChain:  chain,
 		Peers:         peers,
-		NodeAddress:   config.NodeAddress(),
+		NodeAddress:   cfg.NodeAddress(),
 		KeyPairConfig: keyPairConfig,
 	}
 	return input
@@ -342,7 +343,7 @@ func getKeyConfigJson(config config.NodeConfiguration, addressOnly bool) []byte 
 	return keyConfig.JSON(addressOnly)
 }
 
-func getNetworkConfigJSON(nodes []*strelets.FederationNode) []byte {
+func getNetworkConfigJSON(nodes []*topology.FederationNode) []byte {
 	jsonMap := make(map[string]interface{})
 
 	// A workaround for tests because range does not preserve key order over iteration
@@ -355,18 +356,3 @@ func getNetworkConfigJSON(nodes []*strelets.FederationNode) []byte {
 
 	return json
 }
-
-type ProvisionVirtualChainInput struct {
-	VirtualChain *strelets.VirtualChain
-	Peers        *PeersMap
-	NodeAddress  config.NodeAddress
-
-	KeyPairConfig []byte `json:"-"` // Prevents key leak via log
-}
-
-type Peer struct {
-	IP   string
-	Port int
-}
-
-type PeersMap map[config.NodeAddress]*Peer

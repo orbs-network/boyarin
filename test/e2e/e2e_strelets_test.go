@@ -15,8 +15,8 @@ import (
 	"time"
 )
 
-func chain(i int) *strelets.VirtualChain {
-	return &strelets.VirtualChain{
+func chain(i int) *config.VirtualChain {
+	return &config.VirtualChain{
 		Id:           42,
 		HttpPort:     HttpPort + i,
 		GossipPort:   GossipPort + i,

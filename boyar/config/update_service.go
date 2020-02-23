@@ -2,13 +2,12 @@ package config
 
 import (
 	"fmt"
-	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 )
 
 type Service struct {
 	Port         int
-	DockerConfig strelets.DockerConfig
+	DockerConfig DockerConfig
 	Config       map[string]interface{}
 	Disabled     bool
 }

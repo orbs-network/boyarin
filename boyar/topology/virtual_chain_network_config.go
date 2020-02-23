@@ -1,4 +1,4 @@
-package strelets
+package topology
 
 type FederationNode struct {
 	Address string `json:"address"`

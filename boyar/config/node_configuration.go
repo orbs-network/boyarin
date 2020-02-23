@@ -3,15 +3,15 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/orbs-network/boyarin/boyar/topology"
 	"github.com/orbs-network/boyarin/crypto"
-	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"time"
 )
 
 type NodeConfiguration interface {
-	FederationNodes() []*strelets.FederationNode
-	Chains() []*strelets.VirtualChain
+	FederationNodes() []*topology.FederationNode
+	Chains() []*VirtualChain
 	OrchestratorOptions() adapter.OrchestratorOptions
 	KeyConfigPath() string
 	KeyConfig() KeyConfig
@@ -28,7 +28,7 @@ type NodeConfiguration interface {
 type MutableNodeConfiguration interface {
 	NodeConfiguration
 
-	SetFederationNodes(federationNodes []*strelets.FederationNode) MutableNodeConfiguration
+	SetFederationNodes(federationNodes []*topology.FederationNode) MutableNodeConfiguration
 	SetKeyConfigPath(keyConfigPath string) MutableNodeConfiguration
 	SetEthereumEndpoint(ethereumEndpoint string) MutableNodeConfiguration
 	SetOrchestratorOptions(options adapter.OrchestratorOptions) MutableNodeConfiguration
@@ -36,8 +36,8 @@ type MutableNodeConfiguration interface {
 }
 
 type nodeConfiguration struct {
-	Chains              []*strelets.VirtualChain    `json:"chains"`
-	FederationNodes     []*strelets.FederationNode  `json:"network"`
+	Chains              []*VirtualChain             `json:"chains"`
+	FederationNodes     []*topology.FederationNode  `json:"network"`
 	OrchestratorOptions adapter.OrchestratorOptions `json:"orchestrator"`
 	Services            Services                    `json:"services"`
 }
@@ -49,11 +49,11 @@ type nodeConfigurationContainer struct {
 	sslOptions       adapter.SSLOptions
 }
 
-func (c *nodeConfigurationContainer) Chains() []*strelets.VirtualChain {
+func (c *nodeConfigurationContainer) Chains() []*VirtualChain {
 	return c.value.Chains
 }
 
-func (c *nodeConfigurationContainer) FederationNodes() []*strelets.FederationNode {
+func (c *nodeConfigurationContainer) FederationNodes() []*topology.FederationNode {
 	return c.value.FederationNodes
 }
 
@@ -78,7 +78,7 @@ func (c *nodeConfigurationContainer) SSLOptions() adapter.SSLOptions {
 	return c.sslOptions
 }
 
-func (c *nodeConfigurationContainer) SetFederationNodes(federationNodes []*strelets.FederationNode) MutableNodeConfiguration {
+func (c *nodeConfigurationContainer) SetFederationNodes(federationNodes []*topology.FederationNode) MutableNodeConfiguration {
 	c.value.FederationNodes = federationNodes
 	return c
 }

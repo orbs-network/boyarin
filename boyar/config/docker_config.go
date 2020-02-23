@@ -1,4 +1,4 @@
-package strelets
+package config
 
 type Resource struct {
 	Memory int64

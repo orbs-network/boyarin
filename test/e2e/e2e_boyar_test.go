@@ -12,12 +12,12 @@ import (
 	"testing"
 )
 
-func getBoyarVchains(nodeIndex int, vchainIds ...int) []*strelets.VirtualChain {
-	var chains []*strelets.VirtualChain
+func getBoyarVchains(nodeIndex int, vchainIds ...int) []*config.VirtualChain {
+	var chains []*config.VirtualChain
 
 	for _, vchainId := range vchainIds {
-		chain := &strelets.VirtualChain{
-			Id:         strelets.VirtualChainId(vchainId),
+		chain := &config.VirtualChain{
+			Id:         config.VirtualChainId(vchainId),
 			HttpPort:   getHttpPortForVChain(nodeIndex, vchainId),
 			GossipPort: getGossipPortForVChain(nodeIndex, vchainId),
 			DockerConfig: strelets.DockerConfig{
@@ -35,7 +35,7 @@ func getBoyarVchains(nodeIndex int, vchainIds ...int) []*strelets.VirtualChain {
 	return chains
 }
 
-func getConfigMap(vchains []*strelets.VirtualChain) map[string]interface{} {
+func getConfigMap(vchains []*config.VirtualChain) map[string]interface{} {
 	ip := helpers.LocalIP()
 
 	configMap := make(map[string]interface{})
@@ -54,13 +54,13 @@ func getConfigMap(vchains []*strelets.VirtualChain) map[string]interface{} {
 	return configMap
 }
 
-func getBoyarConfig(vchains []*strelets.VirtualChain) []byte {
+func getBoyarConfig(vchains []*config.VirtualChain) []byte {
 	configMap := getConfigMap(vchains)
 	jsonConfig, _ := json.Marshal(configMap)
 	return jsonConfig
 }
 
-func getBoyarConfigWithSigner(i int, vchains []*strelets.VirtualChain) []byte {
+func getBoyarConfigWithSigner(i int, vchains []*config.VirtualChain) []byte {
 	configMap := getConfigMap(vchains)
 	configMap["services"] = strelets.Services{
 		Signer: &strelets.Service{

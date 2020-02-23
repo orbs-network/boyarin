@@ -1,4 +1,4 @@
-package strelets
+package config
 
 import (
 	"encoding/json"
@@ -17,6 +17,21 @@ type VirtualChain struct {
 	Config       map[string]interface{}
 	Disabled     bool
 }
+
+type ProvisionVirtualChainInput struct {
+	VirtualChain *VirtualChain
+	Peers        *PeersMap
+	NodeAddress  NodeAddress
+
+	KeyPairConfig []byte `json:"-"` // Prevents key leak via log
+}
+
+type Peer struct {
+	IP   string
+	Port int
+}
+
+type PeersMap map[NodeAddress]*Peer
 
 func GetVcidFromServiceName(serviceName string) int64 {
 	tokens := strings.Split(serviceName, "-")

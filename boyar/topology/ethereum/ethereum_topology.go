@@ -3,10 +3,10 @@ package ethereum
 import (
 	"context"
 	"fmt"
-	"github.com/orbs-network/boyarin/strelets"
+	"github.com/orbs-network/boyarin/boyar/topology"
 )
 
-func GetEthereumTopology(ctx context.Context, ethereumEndpoint string, topologyContractAddress string) ([]*strelets.FederationNode, error) {
+func GetEthereumTopology(ctx context.Context, ethereumEndpoint string, topologyContractAddress string) ([]*topology.FederationNode, error) {
 	connection := NewEthereumRpcConnection(&ethereumConnectorConfig{
 		endpoint: ethereumEndpoint,
 	})

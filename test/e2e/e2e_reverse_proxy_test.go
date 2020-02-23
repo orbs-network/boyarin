@@ -32,7 +32,7 @@ func Test_UpdateReverseProxyWithSwarm(t *testing.T) {
 		chain := chain(1)
 		chain.HttpPort = server.Port()
 
-		chains := []*strelets.VirtualChain{chain}
+		chains := []*config.VirtualChain{chain}
 		ip := helpers.LocalIP()
 
 		err = s.UpdateReverseProxy(context.Background(), &strelets.UpdateReverseProxyInput{
@@ -85,7 +85,7 @@ func Test_CreateReverseProxyWithSSL(t *testing.T) {
 		chain := chain(1)
 		chain.HttpPort = server.Port()
 
-		chains := []*strelets.VirtualChain{chain}
+		chains := []*config.VirtualChain{chain}
 		ip := helpers.LocalIP()
 
 		err = s.UpdateReverseProxy(context.Background(), &strelets.UpdateReverseProxyInput{

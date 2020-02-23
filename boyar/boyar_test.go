@@ -88,11 +88,11 @@ func Test_BoyarProvisionVirtualChainsWithErrors(t *testing.T) {
 	b := NewBoyar(streletsMock, source, cache, helpers.DefaultTestLogger())
 
 	streletsMock.On("ProvisionVirtualChain", mock.Anything, mock.MatchedBy(func(input *strelets.ProvisionVirtualChainInput) bool {
-		return input.VirtualChain.Id == strelets.VirtualChainId(1991)
+		return input.VirtualChain.Id == config.VirtualChainId(1991)
 	})).Return(fmt.Errorf("unbearable catastrophe"))
 
 	streletsMock.On("ProvisionVirtualChain", mock.Anything, mock.MatchedBy(func(input *strelets.ProvisionVirtualChainInput) bool {
-		return input.VirtualChain.Id == strelets.VirtualChainId(42)
+		return input.VirtualChain.Id == config.VirtualChainId(42)
 	})).Once().Return(nil)
 
 	streletsMock.On("RemoveVirtualChain", mock.Anything, mock.Anything).Return(nil)
@@ -113,11 +113,11 @@ func Test_BoyarProvisionVirtualChainsWithTimeout(t *testing.T) {
 	b := NewBoyar(streletsMock, source, cache, helpers.DefaultTestLogger())
 
 	streletsMock.On("ProvisionVirtualChain", mock.Anything, mock.MatchedBy(func(input *strelets.ProvisionVirtualChainInput) bool {
-		return input.VirtualChain.Id == strelets.VirtualChainId(1991)
+		return input.VirtualChain.Id == config.VirtualChainId(1991)
 	})).After(1 * time.Hour)
 
 	streletsMock.On("ProvisionVirtualChain", mock.Anything, mock.MatchedBy(func(input *strelets.ProvisionVirtualChainInput) bool {
-		return input.VirtualChain.Id == strelets.VirtualChainId(42)
+		return input.VirtualChain.Id == config.VirtualChainId(42)
 	})).Once().Return(nil)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)

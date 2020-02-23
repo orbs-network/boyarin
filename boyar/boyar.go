@@ -7,7 +7,6 @@ import (
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/boyar/topology"
 	"github.com/orbs-network/boyarin/log_types"
-	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/orbs-network/boyarin/utils"
@@ -41,11 +40,11 @@ type Boyar interface {
 }
 
 type boyar struct {
-	nginxLock sync.Mutex
-	strelets  strelets.Strelets
-	config    config.NodeConfiguration
-	cache     *Cache
-	logger    log.Logger
+	nginxLock    sync.Mutex
+	orchestrator adapter.Orchestrator
+	config       config.NodeConfiguration
+	cache        *Cache
+	logger       log.Logger
 }
 
 type errorContainer struct {
@@ -53,12 +52,12 @@ type errorContainer struct {
 	id    config.VirtualChainId
 }
 
-func NewBoyar(strelets strelets.Strelets, cfg config.NodeConfiguration, cache *Cache, logger log.Logger) Boyar {
+func NewBoyar(orchestrator adapter.Orchestrator, cfg config.NodeConfiguration, cache *Cache, logger log.Logger) Boyar {
 	return &boyar{
-		strelets: strelets,
-		config:   cfg,
-		cache:    cache,
-		logger:   logger,
+		orchestrator: orchestrator,
+		config:       cfg,
+		cache:        cache,
+		logger:       logger,
 	}
 }
 
@@ -125,7 +124,7 @@ func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
 			}
 		}
 
-		if err := b.strelets.Orchestrator().RunReverseProxy(ctx, config); err != nil {
+		if err := b.orchestrator.RunReverseProxy(ctx, config); err != nil {
 			b.logger.Error("failed to apply http proxy configuration", log.Error(err))
 			b.cache.nginx.Clear()
 			return err
@@ -152,7 +151,7 @@ func getNginxCompositeConfig(cfg config.NodeConfiguration) *UpdateReverseProxyIn
 }
 
 func (b *boyar) ProvisionServices(ctx context.Context) error {
-	if _, err := b.strelets.Orchestrator().GetOverlayNetwork(ctx, adapter.SHARED_SIGNER_NETWORK); err != nil {
+	if _, err := b.orchestrator.GetOverlayNetwork(ctx, adapter.SHARED_SIGNER_NETWORK); err != nil {
 		return errors.Wrap(err, "failed creating network")
 	}
 
@@ -169,7 +168,7 @@ func (b *boyar) ProvisionServices(ctx context.Context) error {
 				}
 
 				if service.DockerConfig.Pull {
-					if err := b.strelets.Orchestrator().PullImage(ctx, imageName); err != nil {
+					if err := b.orchestrator.PullImage(ctx, imageName); err != nil {
 						return fmt.Errorf("could not pull docker image: %s", err)
 					}
 				}
@@ -196,7 +195,7 @@ func (b *boyar) ProvisionServices(ctx context.Context) error {
 					Config:  jsonConfig,
 				}
 
-				if err := b.strelets.Orchestrator().RunService(ctx, serviceConfig, appConfig); err == nil {
+				if err := b.orchestrator.RunService(ctx, serviceConfig, appConfig); err == nil {
 					b.logger.Info("updated service configuration", log.Service(serviceName))
 				} else {
 					b.logger.Error("failed to update service configuration", log.Service(serviceName), log.Error(err))
@@ -216,7 +215,7 @@ func (b *boyar) removeVirtualChain(ctx context.Context, chain *config.VirtualCha
 	go func() {
 		if b.cache.vChains.CheckNewValue(chain.Id.String(), removed) {
 			serviceName := adapter.GetServiceId(chain.GetContainerName())
-			if err := b.strelets.Orchestrator().ServiceRemove(ctx, serviceName); err != nil {
+			if err := b.orchestrator.ServiceRemove(ctx, serviceName); err != nil {
 				b.cache.vChains.Clear(chain.Id.String())
 				b.logger.Error("failed to remove virtual chain",
 					log_types.VirtualChainId(int64(chain.Id)),
@@ -264,7 +263,7 @@ const (
 	PROVISION_VCHAIN_RETRY_INTERVAL  = 3 * time.Second
 )
 
-func (s *boyar) provisionSingleVirtualChain(ctx context.Context, nodeAddress config.NodeAddress,
+func (b *boyar) provisionSingleVirtualChain(ctx context.Context, nodeAddress config.NodeAddress,
 	chain *config.VirtualChain, keyPairConfig []byte) error {
 	imageName := chain.DockerConfig.FullImageName()
 
@@ -273,8 +272,8 @@ func (s *boyar) provisionSingleVirtualChain(ctx context.Context, nodeAddress con
 	}
 
 	if chain.DockerConfig.Pull {
-		if err := s.strelets.Orchestrator().PullImage(ctx, imageName); err != nil {
-			return fmt.Errorf("could not pull docker image: %s", err)
+		if err := b.orchestrator.PullImage(ctx, imageName); err != nil {
+			return fmt.Errorf("could not pull docker image: %b", err)
 		}
 	}
 
@@ -299,11 +298,11 @@ func (s *boyar) provisionSingleVirtualChain(ctx context.Context, nodeAddress con
 
 			appConfig := &adapter.AppConfig{
 				KeyPair: keyPairConfig,
-				Network: getNetworkConfigJSON(s.config.FederationNodes()),
+				Network: getNetworkConfigJSON(b.config.FederationNodes()),
 				Config:  chain.GetSerializedConfig(),
 			}
 
-			return s.strelets.Orchestrator().RunVirtualChain(ctx, serviceConfig, appConfig)
+			return b.orchestrator.RunVirtualChain(ctx, serviceConfig, appConfig)
 		})
 }
 

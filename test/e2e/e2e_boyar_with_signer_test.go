@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar"
 	"github.com/orbs-network/boyarin/boyar/config"
-	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/orbs-network/scribe/log"
@@ -19,7 +18,6 @@ func TestE2ESingleVchainWithSignerWithSwarmAndBoyar(t *testing.T) {
 		helpers.InitSwarmEnvironment(t, ctx)
 		swarm, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{}, log.GetLogger())
 		require.NoError(t, err)
-		s := strelets.NewStrelets(swarm)
 
 		for i := 1; i <= 4; i++ {
 
@@ -29,7 +27,7 @@ func TestE2ESingleVchainWithSignerWithSwarmAndBoyar(t *testing.T) {
 			require.NoError(t, err)
 			cfg.SetKeyConfigPath(fmt.Sprintf("%s/node%d/keys.json", getConfigPath(), i))
 
-			b := boyar.NewBoyar(s, cfg, boyar.NewCache(), helpers.DefaultTestLogger())
+			b := boyar.NewBoyar(swarm, cfg, boyar.NewCache(), helpers.DefaultTestLogger())
 			err = b.ProvisionServices(context.Background())
 			require.NoError(t, err)
 			err = b.ProvisionVirtualChains(context.Background())

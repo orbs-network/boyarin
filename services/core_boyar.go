@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/orbs-network/boyarin/boyar"
 	"github.com/orbs-network/boyarin/boyar/config"
-	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/utils"
 	"github.com/orbs-network/scribe/log"
@@ -32,8 +31,7 @@ func (coreBoyar *BoyarService) OnConfigChange(ctx context.Context, cfg config.No
 	}
 	defer orchestrator.Close()
 
-	s := strelets.NewStrelets(orchestrator)
-	b := boyar.NewBoyar(s, cfg, coreBoyar.cache, coreBoyar.logger)
+	b := boyar.NewBoyar(orchestrator, cfg, coreBoyar.cache, coreBoyar.logger)
 
 	var errors []error
 

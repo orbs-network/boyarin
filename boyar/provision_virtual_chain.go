@@ -18,12 +18,14 @@ var removed = &utils.HashedValue{Value: "foo"}
 func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 	chains := b.config.Chains()
 
+	var errors []error
 	for _, chain := range chains {
 		if chain.Disabled {
 			if err := b.removeVirtualChain(ctx, chain); err != nil {
 				b.logger.Error("failed to remove virtual chain",
 					log_types.VirtualChainId(int64(chain.Id)),
 					log.Error(err))
+				errors = append(errors, err)
 			} else {
 				b.logger.Info("removed virtual chain", log_types.VirtualChainId(int64(chain.Id)))
 			}
@@ -32,6 +34,7 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 				b.logger.Error("failed to apply virtual chain configuration",
 					log_types.VirtualChainId(int64(chain.Id)),
 					log.Error(err))
+				errors = append(errors, err)
 			} else {
 				data, _ := json.Marshal(chain)
 				b.logger.Info("updated virtual chain configuration",
@@ -41,21 +44,11 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 		}
 	}
 
-	return nil
+	return utils.AggregateErrors(errors)
 }
 
 func (b *boyar) provisionVirtualChain(ctx context.Context, chain *config.VirtualChain) error {
-	peers := buildPeersMap(b.config.FederationNodes(), chain.GossipPort)
-
-	signerOn := b.config.Services().SignerOn()
-	keyPairConfig := getKeyConfigJson(b.config, signerOn)
-
-	input := &config.VirtualChainCompositeKey{
-		VirtualChain:  chain,
-		Peers:         peers,
-		NodeAddress:   b.config.NodeAddress(),
-		KeyPairConfig: keyPairConfig,
-	}
+	input := getVirtualChainConfig(b.config, chain)
 
 	if b.cache.vChains.CheckNewJsonValue(chain.Id.String(), input) {
 		imageName := chain.DockerConfig.FullImageName()
@@ -84,7 +77,7 @@ func (b *boyar) provisionVirtualChain(ctx context.Context, chain *config.Virtual
 		}
 
 		appConfig := &adapter.AppConfig{
-			KeyPair: keyPairConfig,
+			KeyPair: input.KeyPairConfig,
 			Network: getNetworkConfigJSON(b.config.FederationNodes()),
 			Config:  chain.GetSerializedConfig(),
 		}

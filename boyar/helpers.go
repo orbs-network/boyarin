@@ -30,3 +30,17 @@ func getKeyConfigJson(config config.NodeConfiguration, addressOnly bool) []byte 
 	}
 	return keyConfig.JSON(addressOnly)
 }
+
+func getVirtualChainConfig(cfg config.NodeConfiguration, chain *config.VirtualChain) *config.VirtualChainConfig {
+	peers := buildPeersMap(cfg.FederationNodes(), chain.GossipPort)
+
+	signerOn := cfg.Services().SignerOn()
+	keyPairConfig := getKeyConfigJson(cfg, signerOn)
+
+	return &config.VirtualChainConfig{
+		VirtualChain:  chain,
+		Peers:         peers,
+		NodeAddress:   cfg.NodeAddress(),
+		KeyPairConfig: keyPairConfig,
+	}
+}

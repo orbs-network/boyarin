@@ -37,11 +37,6 @@ type boyar struct {
 	logger       log.Logger
 }
 
-type errorContainer struct {
-	error error
-	id    config.VirtualChainId
-}
-
 func NewBoyar(orchestrator adapter.Orchestrator, cfg config.NodeConfiguration, cache *Cache, logger log.Logger) Boyar {
 	return &boyar{
 		orchestrator: orchestrator,

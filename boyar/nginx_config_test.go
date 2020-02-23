@@ -1,12 +1,13 @@
 package boyar
 
 import (
+	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 func Test_getNginxConfig(t *testing.T) {
-	chains := []*VirtualChain{
+	chains := []*config.VirtualChain{
 		{
 			Id:       42,
 			HttpPort: 8081,
@@ -25,7 +26,7 @@ location /vchains/42/ { proxy_pass http://192.168.0.1:8081/; error_page 502 = @e
 }
 
 func Test_getNginxConfigWithDisabledChains(t *testing.T) {
-	chains := []*VirtualChain{
+	chains := []*config.VirtualChain{
 		{
 			Id:       1832,
 			HttpPort: 8080,
@@ -49,7 +50,7 @@ location /vchains/42/ { proxy_pass http://192.168.0.1:8081/; error_page 502 = @e
 }
 
 func Test_getNginxConfigWithSSL(t *testing.T) {
-	chains := []*VirtualChain{
+	chains := []*config.VirtualChain{
 		{
 			Id:       42,
 			HttpPort: 8081,

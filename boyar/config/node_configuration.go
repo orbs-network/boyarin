@@ -19,7 +19,7 @@ type NodeConfiguration interface {
 	EthereumEndpoint() string
 	NodeAddress() NodeAddress
 	SSLOptions() adapter.SSLOptions
-	Services() strelets.Services
+	Services() Services
 
 	VerifyConfig() error
 	Hash() string
@@ -39,7 +39,7 @@ type nodeConfiguration struct {
 	Chains              []*strelets.VirtualChain    `json:"chains"`
 	FederationNodes     []*strelets.FederationNode  `json:"network"`
 	OrchestratorOptions adapter.OrchestratorOptions `json:"orchestrator"`
-	Services            strelets.Services           `json:"services"`
+	Services            Services                    `json:"services"`
 }
 
 type nodeConfigurationContainer struct {
@@ -57,7 +57,7 @@ func (c *nodeConfigurationContainer) FederationNodes() []*strelets.FederationNod
 	return c.value.FederationNodes
 }
 
-func (c *nodeConfigurationContainer) Services() strelets.Services {
+func (c *nodeConfigurationContainer) Services() Services {
 	return c.value.Services
 }
 

@@ -1,12 +1,10 @@
 package strelets
 
 import (
-	"context"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 )
 
 type Strelets interface {
-	UpdateService(ctx context.Context, input *UpdateServiceInput) error
 	Orchestrator() adapter.Orchestrator
 }
 

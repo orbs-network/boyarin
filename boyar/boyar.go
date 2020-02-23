@@ -157,10 +157,45 @@ func (b *boyar) ProvisionServices(ctx context.Context) error {
 
 	var errors []error
 	for serviceName, service := range b.config.Services().AsMap() {
+
 		if b.cache.services.CheckNewJsonValue(serviceName, service) {
 			if service != nil {
-				err := b.strelets.UpdateService(ctx, b.getServiceConfig(serviceName, service))
-				if err == nil {
+				fullServiceName := service.GetContainerName(serviceName)
+				imageName := service.DockerConfig.FullImageName()
+
+				if service.Disabled {
+					return fmt.Errorf("signer service is disabled")
+				}
+
+				if service.DockerConfig.Pull {
+					if err := b.strelets.Orchestrator().PullImage(ctx, imageName); err != nil {
+						return fmt.Errorf("could not pull docker image: %s", err)
+					}
+				}
+
+				serviceConfig := &adapter.ServiceConfig{
+					ImageName:     imageName,
+					ContainerName: fullServiceName,
+
+					LimitedMemory:  service.DockerConfig.Resources.Limits.Memory,
+					LimitedCPU:     service.DockerConfig.Resources.Limits.CPUs,
+					ReservedMemory: service.DockerConfig.Resources.Reservations.Memory,
+					ReservedCPU:    service.DockerConfig.Resources.Reservations.CPUs,
+				}
+
+				jsonConfig, _ := json.Marshal(service.Config)
+
+				var keyPairConfigJSON []byte
+				if b.config.Services().NeedsKeys(fullServiceName) {
+					keyPairConfigJSON = getKeyConfigJson(b.config, false)
+				}
+
+				appConfig := &adapter.AppConfig{
+					KeyPair: keyPairConfigJSON,
+					Config:  jsonConfig,
+				}
+
+				if err := b.strelets.Orchestrator().RunService(ctx, serviceConfig, appConfig); err == nil {
 					b.logger.Info("updated service configuration", log.Service(serviceName))
 				} else {
 					b.logger.Error("failed to update service configuration", log.Service(serviceName), log.Error(err))
@@ -271,13 +306,13 @@ func (s *boyar) provisionSingleVirtualChain(ctx context.Context, nodeAddress con
 		})
 }
 
-func (b *boyar) getServiceConfig(serviceName string, service *strelets.Service) *strelets.UpdateServiceInput {
+func (b *boyar) getServiceConfig(serviceName string, service *config.Service) *config.UpdateServiceInput {
 	var keyPairConfigJSON []byte
 	if b.config.Services().NeedsKeys(serviceName) {
 		keyPairConfigJSON = getKeyConfigJson(b.config, false)
 	}
 
-	return &strelets.UpdateServiceInput{
+	return &config.UpdateServiceInput{
 		Name:          serviceName,
 		Service:       service,
 		KeyPairConfig: keyPairConfigJSON,

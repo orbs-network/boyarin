@@ -162,9 +162,9 @@ func (m *JsonMap) String(name string) string {
 	return m.value[name].(map[string]interface{})["Value"].(string)
 }
 
-func GetVChainMetrics(t helpers.TestingT, vc VChainArgument) JsonMap {
+func GetVChainMetrics(t helpers.TestingT, port uint32, vc VChainArgument) JsonMap {
 	metrics := make(map[string]interface{})
-	resp, err := http.Get(fmt.Sprintf("http://127.0.0.1/vchains/%d/metrics", vc.Id))
+	resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/vchains/%d/metrics", port, vc.Id))
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	defer resp.Body.Close()
@@ -203,14 +203,14 @@ func AssertServiceUp(t helpers.TestingT, ctx context.Context, serviceName string
 	require.True(t, ok, "service should be up")
 }
 
-func AssertVchainUp(t helpers.TestingT, publickKey string, vc1 VChainArgument) {
-	metrics := GetVChainMetrics(t, vc1)
+func AssertVchainUp(t helpers.TestingT, port uint32, publickKey string, vc1 VChainArgument) {
+	metrics := GetVChainMetrics(t, port, vc1)
 	require.Equal(t, metrics.String("Node.Address"), publickKey)
 	AssertGossipServer(t, vc1)
 }
 
-func AssertVchainDown(t helpers.TestingT, vc1 VChainArgument) {
-	res, err := http.Get(fmt.Sprintf("http://127.0.0.1/vchains/%d/metrics", vc1.Id))
+func AssertVchainDown(t helpers.TestingT, port uint32, vc1 VChainArgument) {
+	res, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/vchains/%d/metrics", port, vc1.Id))
 	require.NoError(t, err)
 	require.EqualValues(t, http.StatusNotFound, res.StatusCode)
 }

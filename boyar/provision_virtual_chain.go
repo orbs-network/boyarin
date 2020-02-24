@@ -138,9 +138,7 @@ func buildPeersMap(nodes []*topology.FederationNode, gossipPort int) *config.Pee
 
 func getVirtualChainConfig(cfg config.NodeConfiguration, chain *config.VirtualChain) *config.VirtualChainConfig {
 	peers := buildPeersMap(cfg.FederationNodes(), chain.GossipPort)
-
-	signerOn := cfg.Services().SignerOn()
-	keyPairConfig := getKeyConfigJson(cfg, signerOn)
+	keyPairConfig := getKeyConfigJson(cfg, true)
 
 	return &config.VirtualChainConfig{
 		VirtualChain:  chain,

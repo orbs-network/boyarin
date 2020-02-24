@@ -64,7 +64,7 @@ func Test_StringConfigurationSource(t *testing.T) {
 	require.NotNil(t, source, source.Chains()[1].DockerConfig.Resources.Reservations)
 
 	require.NotNil(t, source.Services())
-	require.Empty(t, source.Chains()[0].Config["signer-endpoint"])
+	require.NotEmpty(t, source.Chains()[0].Config["signer-endpoint"])
 }
 
 func Test_StringConfigurationSourceFromEmptyConfig(t *testing.T) {

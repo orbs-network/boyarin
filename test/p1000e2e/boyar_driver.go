@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/services"
+	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/orbs-network/govnr"
 	"github.com/orbs-network/scribe/log"
@@ -47,8 +48,24 @@ func configJson(t *testing.T, vChains []VChainArgument) string {
 		"orchestrator": map[string]interface{}{
 			"max-reload-time-delay": "1s",
 		},
-		"chains":   chains,
-		"services": map[string]interface{}{},
+		"chains": chains,
+		"services": map[string]interface{}{
+			"signer": map[string]interface{}{
+				"HttpPort": 7777,
+				"DockerConfig": map[string]interface{}{
+					"ContainerNamePrefix": "e2e",
+					"Image":               "orbsnetwork/signer",
+					"Tag":                 "experimental",
+					"Pull":                false,
+				},
+				"Config": map[string]interface{}{
+					"active-consensus-algo": 2,
+					"genesis-validator-addresses": []interface{}{
+						"dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173",
+					},
+				},
+			},
+		},
 	}
 	for i, id := range vChains {
 		chains[i] = VChainConfig(id)
@@ -66,8 +83,8 @@ func VChainConfig(vc VChainArgument) map[string]interface{} {
 		"Disabled":   vc.Disabled,
 		"DockerConfig": map[string]interface{}{
 			"ContainerNamePrefix": "e2e",
-			"Image":               "orbs",
-			"Tag":                 "export",
+			"Image":               "orbsnetwork/node",
+			"Tag":                 "experimental",
 			"Pull":                false,
 		},
 		"Config": map[string]interface{}{
@@ -167,6 +184,24 @@ func AssertGossipServer(t helpers.TestingT, vc VChainArgument) {
 	require.NotNil(t, conn, "nil connection to port %d vChainId %d", port, vc.Id)
 	err = conn.Close()
 	require.NoError(t, err, "closing connection to port %d vChainId %d", port, vc.Id)
+}
+
+func AssertServiceUp(t helpers.TestingT, ctx context.Context, serviceName string) {
+	orchestrator, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{}, helpers.DefaultTestLogger())
+	require.NoError(t, err)
+
+	statuses, err := orchestrator.GetStatus(ctx, 1*time.Second)
+	require.NoError(t, err)
+
+	ok := false
+	for _, status := range statuses {
+		if status.Name == serviceName && status.State == "started" {
+			ok = true
+			return
+		}
+	}
+
+	require.True(t, ok, "service should be up")
 }
 
 func AssertVchainUp(t helpers.TestingT, publickKey string, vc1 VChainArgument) {

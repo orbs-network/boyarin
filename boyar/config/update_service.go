@@ -16,17 +16,17 @@ func (s *Service) GetContainerName(serviceName string) string {
 	return fmt.Sprintf("%s-%s", s.DockerConfig.ContainerNamePrefix, serviceName)
 }
 
-func (s *Service) SignerInternalEndpoint() string {
-	return fmt.Sprintf("%s:%d", adapter.GetServiceId(s.GetContainerName(SIGNER)), s.Port)
-}
-
 type Services struct {
 	Signer *Service `json:"signer"`
 	Config *Service `json:"config"`
 }
 
-func (s Services) SignerOn() bool {
-	return s.Signer != nil && s.Signer.Disabled == false
+func (s Services) SignerInternalEndpoint() string {
+	if s.Signer != nil {
+		return fmt.Sprintf("%s:%d", adapter.GetServiceId(s.Signer.GetContainerName(SIGNER)), s.Signer.Port)
+	}
+
+	return ""
 }
 
 const SIGNER = "signer-service"

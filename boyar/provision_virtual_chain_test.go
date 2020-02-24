@@ -1,9 +1,13 @@
 package boyar
 
 import (
+	"context"
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar/topology"
+	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test/helpers"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -27,4 +31,165 @@ func Test_getNetworkConfigJSON(t *testing.T) {
 			{"address":"6e2cb55e4cbe97bf5b1e731d51cc2c285d83cbf9","ip":"10.0.0.3","port":4402}
 		]
 	}`, string(getNetworkConfigJSON(nodes)))
+}
+
+func Test_BoyarProvisionVirtualChains(t *testing.T) {
+	orchestrator := &adapter.OrchestratorMock{}
+
+	source := getJSONConfig(t, Config)
+	source.SetKeyConfigPath(fakeKeyPairPath)
+
+	cache := NewCache()
+	b := NewBoyar(orchestrator, source, cache, helpers.DefaultTestLogger())
+
+	orchestrator.On("RunVirtualChain", mock.Anything, mock.Anything, mock.Anything).Twice().Return(nil)
+	orchestrator.On("ServiceRemove", mock.Anything, mock.Anything).Return(nil)
+
+	err := b.ProvisionVirtualChains(context.Background())
+
+	require.NoError(t, err)
+	orchestrator.AssertExpectations(t)
+}
+
+func TestBoyar_ProvisionVirtualChainsWithNoConfigChanges(t *testing.T) {
+	cfg := getJSONConfig(t, ConfigWithActiveVchains)
+	cfg.SetKeyConfigPath(fakeKeyPairPath)
+
+	orchestrator := &adapter.OrchestratorMock{}
+	orchestrator.On("RunVirtualChain", mock.Anything, mock.Anything, mock.Anything).Return(nil).Twice()
+
+	cache := NewCache()
+	b := NewBoyar(orchestrator, cfg, cache, helpers.DefaultTestLogger())
+
+	err := b.ProvisionVirtualChains(context.Background())
+	require.NoError(t, err)
+	orchestrator.AssertExpectations(t)
+	assertAllChainedCached(t, cfg, cache)
+
+	err = b.ProvisionVirtualChains(context.Background())
+	require.NoError(t, err)
+	orchestrator.AssertExpectations(t)
+}
+
+func TestBoyar_ProvisionVirtualChainsReprovisionsIfConfigChanges(t *testing.T) {
+	cfg := getJSONConfig(t, ConfigWithActiveVchains)
+	cfg.SetKeyConfigPath(fakeKeyPairPath)
+
+	orchestrator := &adapter.OrchestratorMock{}
+	orchestrator.On("RunVirtualChain", mock.Anything, mock.Anything, mock.Anything).Return(nil).Twice()
+
+	cache := NewCache()
+	b := NewBoyar(orchestrator, cfg, cache, helpers.DefaultTestLogger())
+
+	err := b.ProvisionVirtualChains(context.Background())
+	require.NoError(t, err)
+	orchestrator.AssertExpectations(t)
+	assertAllChainedCached(t, cfg, cache)
+
+	orchestrator.On("RunVirtualChain", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+	cfg.Chains()[0].Config["active-consensus-algo"] = 999
+
+	err = b.ProvisionVirtualChains(context.Background())
+	require.NoError(t, err)
+	orchestrator.AssertExpectations(t)
+}
+
+func TestBoyar_ProvisionVirtualChainsReprovisionsIfDockerConfigChanges(t *testing.T) {
+	cfg := getJSONConfig(t, ConfigWithActiveVchains)
+	cfg.SetKeyConfigPath(fakeKeyPairPath)
+
+	orchestrator := &adapter.OrchestratorMock{}
+	orchestrator.On("RunVirtualChain", mock.Anything, mock.Anything, mock.Anything).Return(nil).Twice()
+
+	cache := NewCache()
+	b := NewBoyar(orchestrator, cfg, cache, helpers.DefaultTestLogger())
+
+	err := b.ProvisionVirtualChains(context.Background())
+	require.NoError(t, err)
+	orchestrator.AssertExpectations(t)
+	assertAllChainedCached(t, cfg, cache)
+
+	orchestrator.On("RunVirtualChain", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+	cfg.Chains()[1].DockerConfig.Tag = "beta"
+
+	err = b.ProvisionVirtualChains(context.Background())
+	require.NoError(t, err)
+	orchestrator.AssertExpectations(t)
+}
+
+func Test_BoyarProvisionVirtualChainsReprovisionsWithErrors(t *testing.T) {
+	orchestrator := &adapter.OrchestratorMock{}
+
+	cfg := getJSONConfig(t, ConfigWithSingleChain)
+	cfg.SetKeyConfigPath(fakeKeyPairPath)
+
+	cache := NewCache()
+	b := NewBoyar(orchestrator, cfg, cache, helpers.DefaultTestLogger())
+
+	orchestrator.On("RunVirtualChain", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("unbearable catastrophe")).Once()
+	err := b.ProvisionVirtualChains(context.Background())
+	require.EqualError(t, err, "unbearable catastrophe")
+	orchestrator.AssertExpectations(t)
+
+	orchestratorWithNoErrors := &adapter.OrchestratorMock{}
+	orchestratorWithNoErrors.On("RunVirtualChain", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+
+	bWithNoErrors := NewBoyar(orchestratorWithNoErrors, cfg, cache, helpers.DefaultTestLogger())
+	err = bWithNoErrors.ProvisionVirtualChains(context.Background())
+	require.NoError(t, err)
+	assertAllChainedCached(t, cfg, cache)
+	orchestratorWithNoErrors.AssertExpectations(t)
+}
+
+func Test_BoyarProvisionVirtualChainsClearsCacheAfterFailedAttempts(t *testing.T) {
+	orchestrator := &adapter.OrchestratorMock{}
+
+	cfg := getJSONConfig(t, ConfigWithSingleChain)
+	cfg.SetKeyConfigPath(fakeKeyPairPath)
+
+	cache := NewCache()
+	b := NewBoyar(orchestrator, cfg, cache, helpers.DefaultTestLogger())
+
+	orchestrator.On("RunVirtualChain", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	err := b.ProvisionVirtualChains(context.Background())
+	require.NoError(t, err)
+	orchestrator.AssertExpectations(t)
+	assertAllChainedCached(t, cfg, cache)
+
+	orchestratorWithError := &adapter.OrchestratorMock{}
+	orchestratorWithError.On("RunVirtualChain", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("unbearable catastrophe"))
+	cfg.Chains()[0].DockerConfig.Tag = "new-tag"
+
+	bWithError := NewBoyar(orchestratorWithError, cfg, cache, helpers.DefaultTestLogger())
+	err = bWithError.ProvisionVirtualChains(context.Background())
+	require.EqualError(t, err, "unbearable catastrophe")
+	orchestratorWithError.AssertExpectations(t)
+	assert.True(t, cache.vChains.CheckNewJsonValue(cfg.Chains()[0].Id.String(), getVirtualChainConfig(cfg, cfg.Chains()[0])), "cache should not remember chain deployed with configuration")
+}
+
+func Test_BoyarProvisionVirtualChainsUpdatesCacheAfterRemovingChain(t *testing.T) {
+	orchestrator := &adapter.OrchestratorMock{}
+
+	cfg := getJSONConfig(t, ConfigWithSingleChain)
+	cfg.SetKeyConfigPath(fakeKeyPairPath)
+
+	cache := NewCache()
+	b := NewBoyar(orchestrator, cfg, cache, helpers.DefaultTestLogger())
+
+	orchestrator.On("RunVirtualChain", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	err := b.ProvisionVirtualChains(context.Background())
+	require.NoError(t, err)
+	assertAllChainedCached(t, cfg, cache)
+	orchestrator.AssertExpectations(t)
+
+	orchestrator.On("ServiceRemove", mock.Anything, mock.Anything).Return(nil)
+
+	cfg.Chains()[0].Disabled = true
+	err = b.ProvisionVirtualChains(context.Background())
+	require.NoError(t, err)
+	assertAllChainedCached(t, cfg, cache)
+
+	orchestrator.AssertExpectations(t)
 }

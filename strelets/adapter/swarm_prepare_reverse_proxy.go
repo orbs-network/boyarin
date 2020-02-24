@@ -7,11 +7,18 @@ import (
 )
 
 type ReverseProxyConfig struct {
-	ContainerName  string
+	ContainerName string
+
+	HTTPPort uint32
+	SSLPort  uint32
+
 	NginxConfig    string
 	SSLCertificate []byte
 	SSLPrivateKey  []byte
 }
+
+const DEFAULT_HTTP_PORT = uint32(80)
+const DEFAULT_SSL_PORT = uint32(433)
 
 func (d *dockerSwarmOrchestrator) RunReverseProxy(ctx context.Context, config *ReverseProxyConfig) error {
 	serviceName := GetServiceId(config.ContainerName)
@@ -23,11 +30,22 @@ func (d *dockerSwarmOrchestrator) RunReverseProxy(ctx context.Context, config *R
 	if err != nil {
 		return err
 	}
-	spec := getNginxServiceSpec(config.ContainerName, storedSecrets)
+
+	httpPort := DEFAULT_HTTP_PORT
+	if config.HTTPPort != 0 {
+		httpPort = config.HTTPPort
+	}
+
+	sslPort := DEFAULT_SSL_PORT
+	if config.SSLPort != 0 {
+		sslPort = config.SSLPort
+	}
+
+	spec := getNginxServiceSpec(config.ContainerName, httpPort, sslPort, storedSecrets)
 	return d.create(ctx, spec, "")
 }
 
-func getNginxServiceSpec(namespace string, storedSecrets *dockerSwarmNginxSecretsConfig) swarm.ServiceSpec {
+func getNginxServiceSpec(namespace string, httpPort uint32, sslPort uint32, storedSecrets *dockerSwarmNginxSecretsConfig) swarm.ServiceSpec {
 	restartDelay := time.Duration(10 * time.Second)
 	replicas := uint64(1)
 
@@ -48,8 +66,8 @@ func getNginxServiceSpec(namespace string, storedSecrets *dockerSwarmNginxSecret
 		{
 			Protocol:      "tcp",
 			PublishMode:   swarm.PortConfigPublishModeIngress,
-			PublishedPort: uint32(80),
-			TargetPort:    80,
+			PublishedPort: httpPort,
+			TargetPort:    DEFAULT_HTTP_PORT,
 		},
 	}
 
@@ -57,8 +75,8 @@ func getNginxServiceSpec(namespace string, storedSecrets *dockerSwarmNginxSecret
 		ports = append(ports, swarm.PortConfig{
 			Protocol:      "tcp",
 			PublishMode:   swarm.PortConfigPublishModeIngress,
-			PublishedPort: uint32(443),
-			TargetPort:    443,
+			PublishedPort: sslPort,
+			TargetPort:    DEFAULT_SSL_PORT,
 		})
 	}
 

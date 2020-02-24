@@ -47,6 +47,7 @@ func configJson(t *testing.T, vChains []VChainArgument) string {
 		},
 		"orchestrator": map[string]interface{}{
 			"max-reload-time-delay": "1s",
+			//"http-port":             8080,
 		},
 		"chains": chains,
 		"services": map[string]interface{}{

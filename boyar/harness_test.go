@@ -47,10 +47,12 @@ func getJSONConfig(t *testing.T, conf configFile) config.MutableNodeConfiguratio
 
 func assertAllChainedCached(t *testing.T, cfg config.MutableNodeConfiguration, cache *Cache) {
 	for _, chain := range cfg.Chains() {
+		chainId := cfg.PrefixedContainerName("chain-" + chain.Id.String())
+
 		if chain.Disabled {
-			assert.False(t, cache.vChains.CheckNewValue(chain.Id.String(), removed), "cache should remember chain was removed")
+			assert.False(t, cache.vChains.CheckNewValue(chainId, removed), "cache should remember chain was removed")
 		} else {
-			assert.False(t, cache.vChains.CheckNewJsonValue(chain.Id.String(), getVirtualChainConfig(cfg, chain)), "cache should remember chain deployed with configuration")
+			assert.False(t, cache.vChains.CheckNewJsonValue(chainId, getVirtualChainConfig(cfg, chain)), "cache should remember chain deployed with configuration")
 		}
 	}
 }

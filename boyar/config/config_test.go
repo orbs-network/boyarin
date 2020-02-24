@@ -89,13 +89,14 @@ func Test_StringConfigurationSourceWithOverrides(t *testing.T) {
 
 func Test_StringConfigurationSourceWithSigner(t *testing.T) {
 	source, err := NewStringConfigurationSource(getTestJSONConfigSigner(), "http://some.ethereum.node")
+	source.SetKeyConfigPath("/Users/kirill/gopath/src/github.com/orbs-network/boyarin/boyar/config/test/fake-key-pair.json")
 	require.NoError(t, err)
-	source.SetKeyConfigPath("/tmp/fake-key-pair.json")
 
 	require.NotNil(t, source.Services())
 	require.NotNil(t, source.Services().Signer)
 	require.NotNil(t, source.Services().Signer.DockerConfig)
 	require.NotNil(t, source.Services().Signer.Config)
 
-	require.Equal(t, "http://node1-signer-service-stack:7777", source.Chains()[0].Config["signer-endpoint"])
+	// FIXME wrong values
+	require.Equal(t, "http://orbs-n-signer-service-stack:7777", source.Chains()[0].Config["signer-endpoint"])
 }

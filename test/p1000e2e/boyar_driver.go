@@ -53,10 +53,9 @@ func configJson(t *testing.T, vChains []VChainArgument) string {
 			"signer": map[string]interface{}{
 				"HttpPort": 7777,
 				"DockerConfig": map[string]interface{}{
-					"ContainerNamePrefix": "e2e",
-					"Image":               "orbsnetwork/signer",
-					"Tag":                 "experimental",
-					"Pull":                false,
+					"Image": "orbsnetwork/signer",
+					"Tag":   "experimental",
+					"Pull":  false,
 				},
 				"Config": map[string]interface{}{
 					"active-consensus-algo": 2,
@@ -82,10 +81,9 @@ func VChainConfig(vc VChainArgument) map[string]interface{} {
 		"GossipPort": vc.GossipPort(),
 		"Disabled":   vc.Disabled,
 		"DockerConfig": map[string]interface{}{
-			"ContainerNamePrefix": "e2e",
-			"Image":               "orbsnetwork/node",
-			"Tag":                 "experimental",
-			"Pull":                false,
+			"Image": "orbsnetwork/node",
+			"Tag":   "experimental",
+			"Pull":  false,
 		},
 		"Config": map[string]interface{}{
 			"active-consensus-algo": 2,

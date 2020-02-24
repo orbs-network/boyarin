@@ -43,7 +43,7 @@ func Test_BoyarProvisionVirtualChains(t *testing.T) {
 	b := NewBoyar(orchestrator, source, cache, helpers.DefaultTestLogger())
 
 	orchestrator.On("RunVirtualChain", mock.Anything, mock.Anything, mock.Anything).Twice().Return(nil)
-	orchestrator.On("ServiceRemove", mock.Anything, mock.Anything).Return(nil)
+	orchestrator.On("RemoveService", mock.Anything, mock.Anything).Return(nil)
 
 	err := b.ProvisionVirtualChains(context.Background())
 
@@ -184,7 +184,7 @@ func Test_BoyarProvisionVirtualChainsUpdatesCacheAfterRemovingChain(t *testing.T
 	assertAllChainedCached(t, cfg, cache)
 	orchestrator.AssertExpectations(t)
 
-	orchestrator.On("ServiceRemove", mock.Anything, mock.Anything).Return(nil)
+	orchestrator.On("RemoveService", mock.Anything, mock.Anything).Return(nil)
 
 	cfg.Chains()[0].Disabled = true
 	err = b.ProvisionVirtualChains(context.Background())

@@ -20,8 +20,8 @@ func (a *OrchestratorMock) RunVirtualChain(ctx context.Context, serviceConfig *S
 	return res.Error(0)
 }
 
-func (a *OrchestratorMock) ServiceRemove(ctx context.Context, containerName string) error {
-	res := a.MethodCalled("ServiceRemove", ctx, containerName)
+func (a *OrchestratorMock) RemoveService(ctx context.Context, containerName string) error {
+	res := a.MethodCalled("RemoveService", ctx, containerName)
 	return res.Error(0)
 }
 

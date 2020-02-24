@@ -64,7 +64,7 @@ func (d *dockerSwarmOrchestrator) create(ctx context.Context, spec swarm.Service
 	return errors.Wrap(err, "failed creating service")
 }
 
-func (d *dockerSwarmOrchestrator) ServiceRemove(ctx context.Context, serviceName string) error {
+func (d *dockerSwarmOrchestrator) RemoveService(ctx context.Context, serviceName string) error {
 	services, err := d.client.ServiceList(ctx, types.ServiceListOptions{
 		Filters: filters.NewArgs(filters.KeyValuePair{Key: "name", Value: serviceName}),
 	})

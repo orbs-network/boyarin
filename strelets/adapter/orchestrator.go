@@ -48,11 +48,12 @@ type ContainerStatus struct {
 
 type Orchestrator interface {
 	PullImage(ctx context.Context, imageName string) error
-	RunVirtualChain(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) error
-	ServiceRemove(ctx context.Context, containerName string) error
 
-	RunService(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) error
+	RunVirtualChain(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) error
 	RunReverseProxy(ctx context.Context, config *ReverseProxyConfig) error
+	RunService(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) error
+
+	RemoveService(ctx context.Context, containerName string) error
 
 	GetOverlayNetwork(ctx context.Context, name string) (string, error)
 

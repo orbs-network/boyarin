@@ -1,10 +1,5 @@
 package config
 
-import (
-	"fmt"
-	"github.com/orbs-network/boyarin/strelets/adapter"
-)
-
 type Service struct {
 	Port         int
 	DockerConfig DockerConfig
@@ -12,21 +7,9 @@ type Service struct {
 	Disabled     bool
 }
 
-func (s *Service) GetContainerName(serviceName string) string {
-	return fmt.Sprintf("%s-%s", s.DockerConfig.ContainerNamePrefix, serviceName)
-}
-
 type Services struct {
 	Signer *Service `json:"signer"`
 	Config *Service `json:"config"`
-}
-
-func (s Services) SignerInternalEndpoint() string {
-	if s.Signer != nil {
-		return fmt.Sprintf("%s:%d", adapter.GetServiceId(s.Signer.GetContainerName(SIGNER)), s.Signer.Port)
-	}
-
-	return ""
 }
 
 const SIGNER = "signer-service"

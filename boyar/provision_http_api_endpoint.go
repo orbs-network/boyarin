@@ -20,7 +20,8 @@ func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
 		sslEnabled := nginxConfig.SSLOptions.SSLCertificatePath != "" && nginxConfig.SSLOptions.SSLPrivateKeyPath != ""
 
 		config := &adapter.ReverseProxyConfig{
-			NginxConfig: getNginxConfig(nginxConfig.Chains, nginxConfig.IP, sslEnabled),
+			ContainerName: b.config.PrefixedContainerName(adapter.PROXY_CONTAINER_NAME),
+			NginxConfig:   getNginxConfig(nginxConfig.Chains, nginxConfig.IP, sslEnabled),
 		}
 
 		if sslEnabled {

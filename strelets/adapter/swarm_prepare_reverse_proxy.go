@@ -7,13 +7,14 @@ import (
 )
 
 type ReverseProxyConfig struct {
+	ContainerName  string
 	NginxConfig    string
 	SSLCertificate []byte
 	SSLPrivateKey  []byte
 }
 
 func (d *dockerSwarmOrchestrator) RunReverseProxy(ctx context.Context, config *ReverseProxyConfig) error {
-	serviceName := GetServiceId(PROXY_CONTAINER_NAME)
+	serviceName := GetServiceId(config.ContainerName)
 	if err := d.ServiceRemove(ctx, serviceName); err != nil {
 		return err
 	}
@@ -22,25 +23,25 @@ func (d *dockerSwarmOrchestrator) RunReverseProxy(ctx context.Context, config *R
 	if err != nil {
 		return err
 	}
-	spec := getNginxServiceSpec(storedSecrets)
+	spec := getNginxServiceSpec(config.ContainerName, storedSecrets)
 	return d.create(ctx, spec, "")
 }
 
-func getNginxServiceSpec(storedSecrets *dockerSwarmNginxSecretsConfig) swarm.ServiceSpec {
+func getNginxServiceSpec(namespace string, storedSecrets *dockerSwarmNginxSecretsConfig) swarm.ServiceSpec {
 	restartDelay := time.Duration(10 * time.Second)
 	replicas := uint64(1)
 
 	secrets := []*swarm.SecretReference{
-		getSecretReference(PROXY_CONTAINER_NAME, storedSecrets.nginxConfId, NGINX_CONF, "nginx.conf"),
-		getSecretReference(PROXY_CONTAINER_NAME, storedSecrets.vchainConfId, VCHAINS_CONF, "vchains.conf"),
+		getSecretReference(namespace, storedSecrets.nginxConfId, NGINX_CONF, "nginx.conf"),
+		getSecretReference(namespace, storedSecrets.vchainConfId, VCHAINS_CONF, "vchains.conf"),
 	}
 
 	if storedSecrets.sslCertificateId != "" {
-		secrets = append(secrets, getSecretReference(PROXY_CONTAINER_NAME, storedSecrets.sslCertificateId, SSL_CERT, "ssl-cert"))
+		secrets = append(secrets, getSecretReference(namespace, storedSecrets.sslCertificateId, SSL_CERT, "ssl-cert"))
 	}
 
 	if storedSecrets.sslPrivateKeyId != "" {
-		secrets = append(secrets, getSecretReference(PROXY_CONTAINER_NAME, storedSecrets.sslPrivateKeyId, SSL_KEY, "ssl-key"))
+		secrets = append(secrets, getSecretReference(namespace, storedSecrets.sslPrivateKeyId, SSL_KEY, "ssl-key"))
 	}
 
 	ports := []swarm.PortConfig{
@@ -80,7 +81,7 @@ func getNginxServiceSpec(storedSecrets *dockerSwarmNginxSecretsConfig) swarm.Ser
 			Ports: ports,
 		},
 	}
-	spec.Name = GetServiceId(PROXY_CONTAINER_NAME)
+	spec.Name = GetServiceId(namespace)
 
 	return spec
 }

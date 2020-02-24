@@ -29,7 +29,7 @@ func (b *boyar) ProvisionServices(ctx context.Context) error {
 func (b *boyar) provisionService(ctx context.Context, serviceName string, service *config.Service) error {
 	if b.cache.services.CheckNewJsonValue(serviceName, service) {
 		if service != nil {
-			fullServiceName := service.GetContainerName(serviceName)
+			fullServiceName := b.config.PrefixedContainerName(serviceName)
 			imageName := service.DockerConfig.FullImageName()
 
 			if service.Disabled {

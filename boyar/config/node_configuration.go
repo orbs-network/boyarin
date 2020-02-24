@@ -21,6 +21,8 @@ type NodeConfiguration interface {
 	SSLOptions() adapter.SSLOptions
 	Services() Services
 
+	PrefixedContainerName(name string) string
+
 	VerifyConfig() error
 	Hash() string
 }
@@ -89,8 +91,8 @@ func (c *nodeConfigurationContainer) SetKeyConfigPath(keyConfigPath string) Muta
 }
 
 // FIXME should add more checks
-func (n *nodeConfigurationContainer) VerifyConfig() error {
-	_, err := n.readKeysConfig()
+func (c *nodeConfigurationContainer) VerifyConfig() error {
+	_, err := c.readKeysConfig()
 	if err != nil {
 		return err
 	}
@@ -127,16 +129,20 @@ func (c *nodeConfigurationContainer) SetSSLOptions(options adapter.SSLOptions) M
 }
 
 func (c *nodeConfigurationContainer) SetSignerEndpoint() {
-	// FIXME find a better way
-	if value := "http://" + c.Services().SignerInternalEndpoint(); value != "" {
+	if signer := c.Services().Signer; signer != nil { // FIXME this should become mandatory
+		value := fmt.Sprintf("http://%s:%d", c.PrefixedContainerName(SIGNER), signer.Port)
 		c.value.overrideValues("signer-endpoint", value)
 	}
 }
 
-func (n *nodeConfigurationContainer) KeyConfig() KeyConfig {
-	cfg, err := n.readKeysConfig()
+func (c *nodeConfigurationContainer) KeyConfig() KeyConfig {
+	cfg, err := c.readKeysConfig()
 	if err != nil {
 		fmt.Println("error reading KeysConfig", err)
 	}
 	return cfg
+}
+
+func (c *nodeConfigurationContainer) PrefixedContainerName(name string) string {
+	return c.NodeAddress().ShortID() + "-" + name
 }

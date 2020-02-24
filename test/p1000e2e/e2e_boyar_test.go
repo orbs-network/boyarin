@@ -29,7 +29,7 @@ func TestE2ERunSingleVirtualChain(t *testing.T) {
 
 		helpers.RequireEventually(t, 20*time.Second, func(t helpers.TestingT) {
 			AssertVchainUp(t, PublickKey, vc1)
-			AssertServiceUp(t, ctx, "e2e-signer-service-stack")
+			AssertServiceUp(t, ctx, "cfc9e5-signer-service-stack")
 		})
 		return
 	})

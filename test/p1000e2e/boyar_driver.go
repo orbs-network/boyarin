@@ -24,30 +24,35 @@ import (
 type VChainArgument struct {
 	Id       int
 	Disabled bool
+	BasePort int
 }
 
 const basePort = 6000
 
 func (vc VChainArgument) GossipPort() int {
-	return basePort + vc.Id
+	port := basePort
+	if vc.BasePort != 0 {
+		port = vc.BasePort
+	}
+
+	return port + vc.Id
 }
 
 func (vc VChainArgument) HttpPort() int {
-	return basePort - vc.Id
+	port := basePort
+	if vc.BasePort != 0 {
+		port = vc.BasePort
+	}
+	return port - vc.Id
 }
 
-func configJson(t *testing.T, vChains []VChainArgument) string {
+func configJson(t *testing.T, topology []interface{}, genesisValidators []string, httpPort int, vChains []VChainArgument) string {
 	chains := make([]interface{}, len(vChains))
 	model := map[string]interface{}{
-		"network": []interface{}{
-			map[string]interface{}{
-				"address": "dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173",
-				"ip":      "127.0.0.1",
-			},
-		},
+		"network": topology,
 		"orchestrator": map[string]interface{}{
 			"max-reload-time-delay": "1s",
-			//"http-port":             8080,
+			"http-port":             httpPort,
 		},
 		"chains": chains,
 		"services": map[string]interface{}{
@@ -58,24 +63,18 @@ func configJson(t *testing.T, vChains []VChainArgument) string {
 					"Tag":   "experimental",
 					"Pull":  false,
 				},
-				"Config": map[string]interface{}{
-					"active-consensus-algo": 2,
-					"genesis-validator-addresses": []interface{}{
-						"dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173",
-					},
-				},
 			},
 		},
 	}
 	for i, id := range vChains {
-		chains[i] = VChainConfig(id)
+		chains[i] = VChainConfig(id, genesisValidators)
 	}
 	jsonStr, err := json.MarshalIndent(model, "", "    ")
 	require.NoError(t, err)
 	return string(jsonStr)
 }
 
-func VChainConfig(vc VChainArgument) map[string]interface{} {
+func VChainConfig(vc VChainArgument, genesisValidators []string) map[string]interface{} {
 	return map[string]interface{}{
 		"Id":         vc.Id,
 		"HttpPort":   vc.HttpPort(),
@@ -87,10 +86,8 @@ func VChainConfig(vc VChainArgument) map[string]interface{} {
 			"Pull":  false,
 		},
 		"Config": map[string]interface{}{
-			"active-consensus-algo": 2,
-			"genesis-validator-addresses": []interface{}{
-				"dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173",
-			},
+			"active-consensus-algo":       2,
+			"genesis-validator-addresses": genesisValidators,
 		},
 	}
 }
@@ -108,13 +105,27 @@ func serveConfig(configStr *string) *httptest.Server {
 }
 
 func SetupDynamicBoyarDependencies(t *testing.T, keyPair KeyConfig, vChains <-chan []VChainArgument) (*config.Flags, func()) {
+	return SetupDynamicBoyarDepencenciesForNetwork(t, keyPair, []interface{}{
+		map[string]interface{}{
+			"address": keyPair.NodeAddress,
+			"ip":      "127.0.0.1",
+		},
+	}, []string{
+		keyPair.NodeAddress,
+	}, 80, vChains)
+}
+
+func SetupDynamicBoyarDepencenciesForNetwork(t *testing.T, keyPair KeyConfig,
+	topology []interface{}, genesisValidators []string, httpPort int, vChains <-chan []VChainArgument) (*config.Flags, func()) {
+
 	keyPairJson, err := json.Marshal(keyPair)
 	require.NoError(t, err)
 	file := TempFile(t, keyPairJson)
-	configStr := configJson(t, []VChainArgument{})
+
+	configStr := configJson(t, topology, genesisValidators, httpPort, []VChainArgument{})
 	go func() {
 		for currentChains := range vChains {
-			configStr = configJson(t, currentChains)
+			configStr = configJson(t, topology, genesisValidators, httpPort, currentChains)
 			fmt.Println(configStr)
 		}
 	}()
@@ -130,6 +141,13 @@ func SetupDynamicBoyarDependencies(t *testing.T, keyPair KeyConfig, vChains <-ch
 		defer ts.Close()
 	}
 	return flags, cleanup
+}
+
+func SetupBoyarDependenciesForNetwork(t *testing.T, keyPair KeyConfig, topology []interface{}, genesisValidators []string, httpPort int, vChains ...VChainArgument) (*config.Flags, func()) {
+	vChainsChannel := make(chan []VChainArgument, 1)
+	vChainsChannel <- vChains
+	close(vChainsChannel)
+	return SetupDynamicBoyarDepencenciesForNetwork(t, keyPair, topology, genesisValidators, httpPort, vChainsChannel)
 }
 
 func SetupBoyarDependencies(t *testing.T, keyPair KeyConfig, vChains ...VChainArgument) (*config.Flags, func()) {
@@ -162,7 +180,11 @@ func (m *JsonMap) String(name string) string {
 	return m.value[name].(map[string]interface{})["Value"].(string)
 }
 
-func GetVChainMetrics(t helpers.TestingT, port uint32, vc VChainArgument) JsonMap {
+func (m *JsonMap) Uint64(name string) uint64 {
+	return m.value[name].(map[string]interface{})["Value"].(uint64)
+}
+
+func GetVChainMetrics(t helpers.TestingT, port int, vc VChainArgument) JsonMap {
 	metrics := make(map[string]interface{})
 	resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/vchains/%d/metrics", port, vc.Id))
 	require.NoError(t, err)
@@ -203,13 +225,13 @@ func AssertServiceUp(t helpers.TestingT, ctx context.Context, serviceName string
 	require.True(t, ok, "service should be up")
 }
 
-func AssertVchainUp(t helpers.TestingT, port uint32, publickKey string, vc1 VChainArgument) {
+func AssertVchainUp(t helpers.TestingT, port int, publickKey string, vc1 VChainArgument) {
 	metrics := GetVChainMetrics(t, port, vc1)
 	require.Equal(t, metrics.String("Node.Address"), publickKey)
 	AssertGossipServer(t, vc1)
 }
 
-func AssertVchainDown(t helpers.TestingT, port uint32, vc1 VChainArgument) {
+func AssertVchainDown(t helpers.TestingT, port int, vc1 VChainArgument) {
 	res, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/vchains/%d/metrics", port, vc1.Id))
 	require.NoError(t, err)
 	require.EqualValues(t, http.StatusNotFound, res.StatusCode)

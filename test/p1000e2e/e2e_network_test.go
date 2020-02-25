@@ -2,9 +2,11 @@ package p1000e2e
 
 import (
 	"context"
+	"fmt"
 	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/orbs-network/govnr"
 	"github.com/orbs-network/scribe/log"
+	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
 )
@@ -28,25 +30,62 @@ var NETWORK_KEY_CONFIG = []KeyConfig{
 	},
 }
 
+// Because we don't have per-vc topology it's impossible to build it any other way for now
+func buildTopology(keyPairs []KeyConfig, vchains []VChainArgument) (topology []interface{}) {
+	for i, kp := range keyPairs {
+		topology = append(topology, map[string]interface{}{
+			"address": kp.NodeAddress,
+			"ip":      helpers.LocalIP(),
+			"port":    vchains[i].GossipPort(),
+		})
+	}
+
+	return
+}
+
 func TestE2ERunFullNetwork(t *testing.T) {
 	helpers.WithContext(func(ctx context.Context) {
 		helpers.InitSwarmEnvironment(t, ctx)
 	})
 
-	for i, keys := range NETWORK_KEY_CONFIG[:1] {
+	var vcs []VChainArgument
+	for i := 0; i < 4; i++ {
+		vcs = append(vcs, VChainArgument{
+			Id:       42,
+			BasePort: basePort + 1000*i,
+		})
+	}
+
+	var genesisValidators []string
+	for _, keyPair := range NETWORK_KEY_CONFIG {
+		genesisValidators = append(genesisValidators, keyPair.NodeAddress)
+	}
+
+	topology := buildTopology(NETWORK_KEY_CONFIG, vcs)
+
+	for i, keys := range NETWORK_KEY_CONFIG {
 		helpers.WithContextAndShutdown(func(ctx context.Context) (waiter govnr.ShutdownWaiter) {
 			logger := log.GetLogger().WithTags(log.Int("node", i))
 
-			vc1 := VChainArgument{Id: 42}
-			flags, cleanup := SetupBoyarDependencies(t, keys, vc1)
+			vc := vcs[i]
+			httpPort := basePort*2 + 1000*i
+			flags, cleanup := SetupBoyarDependenciesForNetwork(t, keys, topology, genesisValidators, httpPort, vc)
 			defer cleanup()
+			flags.KeyPairConfigPath = fmt.Sprintf("../../e2e-config/node%d/keys.json", i+1)
+
 			waiter = InProcessBoyar(t, ctx, logger, flags)
 
 			helpers.RequireEventually(t, 20*time.Second, func(t helpers.TestingT) {
-				AssertVchainUp(t, uint32(80+i), keys.NodeAddress, vc1)
+				AssertVchainUp(t, httpPort, keys.NodeAddress, vc)
 			})
 
 			return
 		})
 	}
+
+	helpers.RequireEventually(t, 20*time.Second, func(t helpers.TestingT) {
+		metrics := GetVChainMetrics(t, basePort*2, vcs[0])
+		require.EqualValues(t, 3, metrics.Uint64("BlockStorage.BlockHeight"))
+	})
+
 }

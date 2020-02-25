@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-const DEFAULT_TRUNCATE_WINDOW = 7*24*time.Hour // 1 week
+const DEFAULT_TRUNCATE_WINDOW = 7 * 24 * time.Hour // 1 week
 
 func GetLogger(flags *Flags) (log.Logger, error) {
 	var outputs []log.Output
@@ -40,8 +40,7 @@ func GetLogger(flags *Flags) (log.Logger, error) {
 		WithTags(tags...).
 		WithOutput(outputs...)
 
-	cfg, _ := NewStringConfigurationSource("{}", "")
-	cfg.SetKeyConfigPath(flags.KeyPairConfigPath)
+	cfg, _ := NewStringConfigurationSource("{}", "", flags.KeyPairConfigPath)
 	if err := cfg.VerifyConfig(); err != nil {
 		logger.Error("Invalid configuration", log.Error(err))
 		return nil, err

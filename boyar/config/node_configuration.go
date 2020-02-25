@@ -31,7 +31,6 @@ type MutableNodeConfiguration interface {
 	NodeConfiguration
 
 	SetFederationNodes(federationNodes []*topology.FederationNode) MutableNodeConfiguration
-	SetKeyConfigPath(keyConfigPath string) MutableNodeConfiguration
 	SetEthereumEndpoint(ethereumEndpoint string) MutableNodeConfiguration
 	SetOrchestratorOptions(options adapter.OrchestratorOptions) MutableNodeConfiguration
 	SetSSLOptions(options adapter.SSLOptions) MutableNodeConfiguration
@@ -85,11 +84,6 @@ func (c *nodeConfigurationContainer) SetFederationNodes(federationNodes []*topol
 	return c
 }
 
-func (c *nodeConfigurationContainer) SetKeyConfigPath(keyConfigPath string) MutableNodeConfiguration {
-	c.keyConfigPath = keyConfigPath
-	return c
-}
-
 // FIXME should add more checks
 func (c *nodeConfigurationContainer) VerifyConfig() error {
 	_, err := c.readKeysConfig()
@@ -138,7 +132,7 @@ func (c *nodeConfigurationContainer) SetSignerEndpoint() {
 func (c *nodeConfigurationContainer) KeyConfig() KeyConfig {
 	cfg, err := c.readKeysConfig()
 	if err != nil {
-		fmt.Println("error reading KeysConfig", err)
+		panic(fmt.Sprintf("key file %s is missing: %s", c.keyConfigPath, err.Error()))
 	}
 	return cfg
 }

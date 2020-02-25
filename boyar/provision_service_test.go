@@ -13,7 +13,6 @@ func Test_BoyarProvisionServices(t *testing.T) {
 	orchestrator := &adapter.OrchestratorMock{}
 
 	source := getJSONConfig(t, ConfigWithSigner)
-	source.SetKeyConfigPath(fakeKeyPairPath)
 
 	cache := NewCache()
 	b := NewBoyar(orchestrator, source, cache, helpers.DefaultTestLogger())

@@ -57,7 +57,7 @@ func configJson(t *testing.T, topology []interface{}, genesisValidators []string
 		"chains": chains,
 		"services": map[string]interface{}{
 			"signer": map[string]interface{}{
-				"HttpPort": 7777,
+				"Port": 7777,
 				"DockerConfig": map[string]interface{}{
 					"Image": "orbsnetwork/signer",
 					"Tag":   "experimental",
@@ -86,8 +86,9 @@ func VChainConfig(vc VChainArgument, genesisValidators []string) map[string]inte
 			"Pull":  false,
 		},
 		"Config": map[string]interface{}{
-			"active-consensus-algo":       2,
-			"genesis-validator-addresses": genesisValidators,
+			"active-consensus-algo":               1, // FIXME move back to lean helix
+			"genesis-validator-addresses":         genesisValidators,
+			"benchmark-consensus-constant-leader": genesisValidators[0],
 		},
 	}
 }
@@ -181,7 +182,7 @@ func (m *JsonMap) String(name string) string {
 }
 
 func (m *JsonMap) Uint64(name string) uint64 {
-	return m.value[name].(map[string]interface{})["Value"].(uint64)
+	return uint64(m.value[name].(map[string]interface{})["Value"].(float64))
 }
 
 func GetVChainMetrics(t helpers.TestingT, port int, vc VChainArgument) JsonMap {

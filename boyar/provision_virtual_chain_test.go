@@ -37,7 +37,6 @@ func Test_BoyarProvisionVirtualChains(t *testing.T) {
 	orchestrator := &adapter.OrchestratorMock{}
 
 	source := getJSONConfig(t, Config)
-	source.SetKeyConfigPath(fakeKeyPairPath)
 
 	cache := NewCache()
 	b := NewBoyar(orchestrator, source, cache, helpers.DefaultTestLogger())
@@ -53,7 +52,6 @@ func Test_BoyarProvisionVirtualChains(t *testing.T) {
 
 func TestBoyar_ProvisionVirtualChainsWithNoConfigChanges(t *testing.T) {
 	cfg := getJSONConfig(t, ConfigWithActiveVchains)
-	cfg.SetKeyConfigPath(fakeKeyPairPath)
 
 	orchestrator := &adapter.OrchestratorMock{}
 	orchestrator.On("RunVirtualChain", mock.Anything, mock.Anything, mock.Anything).Return(nil).Twice()
@@ -73,7 +71,6 @@ func TestBoyar_ProvisionVirtualChainsWithNoConfigChanges(t *testing.T) {
 
 func TestBoyar_ProvisionVirtualChainsReprovisionsIfConfigChanges(t *testing.T) {
 	cfg := getJSONConfig(t, ConfigWithActiveVchains)
-	cfg.SetKeyConfigPath(fakeKeyPairPath)
 
 	orchestrator := &adapter.OrchestratorMock{}
 	orchestrator.On("RunVirtualChain", mock.Anything, mock.Anything, mock.Anything).Return(nil).Twice()
@@ -96,7 +93,6 @@ func TestBoyar_ProvisionVirtualChainsReprovisionsIfConfigChanges(t *testing.T) {
 
 func TestBoyar_ProvisionVirtualChainsReprovisionsIfDockerConfigChanges(t *testing.T) {
 	cfg := getJSONConfig(t, ConfigWithActiveVchains)
-	cfg.SetKeyConfigPath(fakeKeyPairPath)
 
 	orchestrator := &adapter.OrchestratorMock{}
 	orchestrator.On("RunVirtualChain", mock.Anything, mock.Anything, mock.Anything).Return(nil).Twice()
@@ -121,7 +117,6 @@ func Test_BoyarProvisionVirtualChainsReprovisionsWithErrors(t *testing.T) {
 	orchestrator := &adapter.OrchestratorMock{}
 
 	cfg := getJSONConfig(t, ConfigWithSingleChain)
-	cfg.SetKeyConfigPath(fakeKeyPairPath)
 
 	cache := NewCache()
 	b := NewBoyar(orchestrator, cfg, cache, helpers.DefaultTestLogger())
@@ -145,7 +140,6 @@ func Test_BoyarProvisionVirtualChainsClearsCacheAfterFailedAttempts(t *testing.T
 	orchestrator := &adapter.OrchestratorMock{}
 
 	cfg := getJSONConfig(t, ConfigWithSingleChain)
-	cfg.SetKeyConfigPath(fakeKeyPairPath)
 
 	cache := NewCache()
 	b := NewBoyar(orchestrator, cfg, cache, helpers.DefaultTestLogger())
@@ -172,7 +166,6 @@ func Test_BoyarProvisionVirtualChainsUpdatesCacheAfterRemovingChain(t *testing.T
 	orchestrator := &adapter.OrchestratorMock{}
 
 	cfg := getJSONConfig(t, ConfigWithSingleChain)
-	cfg.SetKeyConfigPath(fakeKeyPairPath)
 
 	cache := NewCache()
 	b := NewBoyar(orchestrator, cfg, cache, helpers.DefaultTestLogger())

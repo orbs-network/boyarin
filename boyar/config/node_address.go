@@ -3,12 +3,7 @@ package config
 type NodeAddress string
 
 func (c *nodeConfigurationContainer) NodeAddress() NodeAddress {
-	cfg, err := c.readKeysConfig()
-	if err != nil {
-		return "orbs-network"
-	}
-
-	return NodeAddress(cfg.Address())
+	return NodeAddress(c.KeyConfig().Address())
 }
 
 func (n NodeAddress) ShortID() string {

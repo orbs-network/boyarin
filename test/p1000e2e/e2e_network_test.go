@@ -2,7 +2,6 @@ package p1000e2e
 
 import (
 	"context"
-	"fmt"
 	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/orbs-network/govnr"
 	"github.com/orbs-network/scribe/log"
@@ -64,26 +63,27 @@ func TestE2ERunFullNetwork(t *testing.T) {
 	topology := buildTopology(NETWORK_KEY_CONFIG, vcs)
 
 	for i, keys := range NETWORK_KEY_CONFIG {
-		helpers.WithContextAndShutdown(func(ctx context.Context) (waiter govnr.ShutdownWaiter) {
-			logger := log.GetLogger().WithTags(log.Int("node", i))
+		go func(i int, keys KeyConfig) {
+			helpers.WithContextAndShutdown(func(ctx context.Context) (waiter govnr.ShutdownWaiter) {
+				logger := log.GetLogger().WithTags(log.Int("node", i))
 
-			vc := vcs[i]
-			httpPort := basePort*2 + 1000*i
-			flags, cleanup := SetupBoyarDependenciesForNetwork(t, keys, topology, genesisValidators, httpPort, vc)
-			defer cleanup()
-			flags.KeyPairConfigPath = fmt.Sprintf("../../e2e-config/node%d/keys.json", i+1)
+				vc := vcs[i]
+				httpPort := basePort*2 + 1000*i
+				flags, cleanup := SetupBoyarDependenciesForNetwork(t, keys, topology, genesisValidators, httpPort, vc)
+				defer cleanup()
 
-			waiter = InProcessBoyar(t, ctx, logger, flags)
+				waiter = InProcessBoyar(t, ctx, logger, flags)
 
-			helpers.RequireEventually(t, 20*time.Second, func(t helpers.TestingT) {
-				AssertVchainUp(t, httpPort, keys.NodeAddress, vc)
+				helpers.RequireEventually(t, 20*time.Second, func(t helpers.TestingT) {
+					AssertVchainUp(t, httpPort, keys.NodeAddress, vc)
+				})
+
+				return
 			})
-
-			return
-		})
+		}(i, keys)
 	}
 
-	helpers.RequireEventually(t, 20*time.Second, func(t helpers.TestingT) {
+	helpers.RequireEventually(t, 2*time.Minute, func(t helpers.TestingT) {
 		metrics := GetVChainMetrics(t, basePort*2, vcs[0])
 		require.EqualValues(t, 3, metrics.Uint64("BlockStorage.BlockHeight"))
 	})

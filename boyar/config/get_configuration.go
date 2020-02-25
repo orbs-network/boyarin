@@ -9,7 +9,8 @@ import (
 )
 
 func GetConfiguration(flags *Flags) (NodeConfiguration, error) {
-	config, err := NewUrlConfigurationSource(flags.ConfigUrl, flags.EthereumEndpoint)
+	config, err := NewUrlConfigurationSource(flags.ConfigUrl, flags.EthereumEndpoint, flags.KeyPairConfigPath)
+
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +35,6 @@ func GetConfiguration(flags *Flags) (NodeConfiguration, error) {
 		config.SetFederationNodes(federationNodes)
 	}
 
-	config.SetKeyConfigPath(flags.KeyPairConfigPath)
 	if err := config.VerifyConfig(); err != nil {
 		return nil, fmt.Errorf("config verification failed: %s", err)
 	}

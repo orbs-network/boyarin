@@ -29,7 +29,7 @@ func TestE2ERunSingleVirtualChain(t *testing.T) {
 		defer cleanup()
 		waiter = InProcessBoyar(t, ctx, logger, flags)
 
-		helpers.RequireEventually(t, 20*time.Second, func(t helpers.TestingT) {
+		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
 			AssertVchainUp(t, 80, PublicKey, vc1)
 			AssertServiceUp(t, ctx, "cfc9e5-signer-service-stack")
 		})
@@ -83,13 +83,13 @@ func TestE2EAddVirtualChain(t *testing.T) {
 
 		logger.Info(fmt.Sprintf("adding vchain %d", vc1.Id))
 		vChainsChannel <- []VChainArgument{vc1}
-		helpers.RequireEventually(t, 20*time.Second, func(t helpers.TestingT) {
+		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
 			AssertVchainUp(t, 80, PublicKey, vc1)
 		})
 
 		logger.Info(fmt.Sprintf("adding vchain %d", vc2.Id))
 		vChainsChannel <- []VChainArgument{vc1, vc2}
-		helpers.RequireEventually(t, 20*time.Second, func(t helpers.TestingT) {
+		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
 			AssertVchainUp(t, 80, PublicKey, vc1)
 			AssertVchainUp(t, 80, PublicKey, vc2)
 		})
@@ -118,13 +118,13 @@ func TestE2EAddAndRemoveVirtualChain(t *testing.T) {
 
 		logger.Info(fmt.Sprintf("adding vchain %d", vc1.Id))
 		vChainsChannel <- []VChainArgument{vc1}
-		helpers.RequireEventually(t, 20*time.Second, func(t helpers.TestingT) {
+		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
 			AssertVchainUp(t, 80, PublicKey, vc1)
 		})
 
 		logger.Info(fmt.Sprintf("adding vchain %d", vc2.Id))
 		vChainsChannel <- []VChainArgument{vc1, vc2}
-		helpers.RequireEventually(t, 20*time.Second, func(t helpers.TestingT) {
+		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
 			AssertVchainUp(t, 80, PublicKey, vc1)
 			AssertVchainUp(t, 80, PublicKey, vc2)
 		})
@@ -132,7 +132,7 @@ func TestE2EAddAndRemoveVirtualChain(t *testing.T) {
 		vc2.Disabled = true
 		logger.Info(fmt.Sprintf("adding vchain %d", vc2.Id))
 		vChainsChannel <- []VChainArgument{vc1, vc2}
-		helpers.RequireEventually(t, 20*time.Second, func(t helpers.TestingT) {
+		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
 			AssertVchainUp(t, 80, PublicKey, vc1)
 			AssertVchainDown(t, 80, vc2)
 		})

@@ -32,7 +32,7 @@ func TestE2ERunSingleVirtualChainWithSSL(t *testing.T) {
 
 		waiter = InProcessBoyar(t, ctx, logger, flags)
 
-		helpers.RequireEventually(t, 20*time.Second, func(t helpers.TestingT) {
+		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
 			AssertVchainUp(t, 80, PublicKey, vc1)
 
 			url := fmt.Sprintf("https://127.0.0.1:443/vchains/%d", vc1.Id)

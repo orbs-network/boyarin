@@ -21,6 +21,8 @@ import (
 	"time"
 )
 
+const DEFAULT_VCHAIN_TIMEOUT = 30 * time.Second
+
 type VChainArgument struct {
 	Id       int
 	Disabled bool

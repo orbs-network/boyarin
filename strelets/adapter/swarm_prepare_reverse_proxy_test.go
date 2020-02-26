@@ -11,15 +11,19 @@ func Test_getNginxServiceSpec(t *testing.T) {
 	restartDelay := time.Duration(10 * time.Second)
 	replicas := uint64(1)
 
+	namespace := "node123-proxy"
+	httpPort := uint32(80)
+	sslPort := uint32(443)
+
 	secrets := &dockerSwarmNginxSecretsConfig{
 		vchainConfId: "vchain-config-id",
 		nginxConfId:  "nginx-config-id",
 	}
-	spec := getNginxServiceSpec(secrets)
+	spec := getNginxServiceSpec(namespace, httpPort, sslPort, secrets)
 
-	require.EqualValues(t, spec.Name, PROXY_CONTAINER_NAME+"-stack")
+	require.EqualValues(t, "node123-proxy-stack", spec.Name)
 
-	require.EqualValues(t, spec.TaskTemplate, swarm.TaskSpec{
+	require.EqualValues(t, swarm.TaskSpec{
 		ContainerSpec: &swarm.ContainerSpec{
 			Image: "nginx:latest",
 			Command: []string{
@@ -28,7 +32,7 @@ func Test_getNginxServiceSpec(t *testing.T) {
 			},
 			Secrets: []*swarm.SecretReference{
 				{
-					SecretName: getSwarmSecretName(PROXY_CONTAINER_NAME, "nginx.conf"),
+					SecretName: "node123-proxy-nginx.conf",
 					SecretID:   "nginx-config-id",
 					File: &swarm.SecretReferenceFileTarget{
 						Name: "nginx.conf",
@@ -37,7 +41,7 @@ func Test_getNginxServiceSpec(t *testing.T) {
 					},
 				},
 				{
-					SecretName: getSwarmSecretName(PROXY_CONTAINER_NAME, "vchains.conf"),
+					SecretName: "node123-proxy-vchains.conf",
 					SecretID:   "vchain-config-id",
 					File: &swarm.SecretReferenceFileTarget{
 						Name: "vchains.conf",
@@ -52,7 +56,7 @@ func Test_getNginxServiceSpec(t *testing.T) {
 			Condition: "",
 			Delay:     &restartDelay,
 		},
-	})
+	}, spec.TaskTemplate)
 
 	require.EqualValues(t, spec.EndpointSpec, &swarm.EndpointSpec{
 		Ports: []swarm.PortConfig{

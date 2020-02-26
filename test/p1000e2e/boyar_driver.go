@@ -86,9 +86,13 @@ func VChainConfig(vc VChainArgument, genesisValidators []string) map[string]inte
 			"Pull":  false,
 		},
 		"Config": map[string]interface{}{
-			"active-consensus-algo":               1, // FIXME move back to lean helix
-			"genesis-validator-addresses":         genesisValidators,
-			"benchmark-consensus-constant-leader": genesisValidators[0],
+			"active-consensus-algo":       2,
+			"genesis-validator-addresses": genesisValidators,
+			//"lean-helix-show-debug":                             true,
+			//"logger-full-log":                                   true,
+
+			// in case we want to enable benchmark consensus
+			//"benchmark-consensus-constant-leader":               genesisValidators[1],
 		},
 	}
 }

@@ -2,6 +2,8 @@ package p1000e2e
 
 import (
 	"context"
+	"fmt"
+	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/orbs-network/govnr"
 	"github.com/orbs-network/scribe/log"
@@ -29,13 +31,14 @@ var NETWORK_KEY_CONFIG = []KeyConfig{
 	},
 }
 
-// Because we don't have per-vc topology it's impossible to build it any other way for now
-func buildTopology(keyPairs []KeyConfig, vchains []VChainArgument) (topology []interface{}) {
-	for i, kp := range keyPairs {
+// Every vc is on the same shared network -
+// a quirk of the shared networks that WILL stop working if shared network name becomes unique
+func buildTopology(keyPairs []KeyConfig, vcId int) (topology []interface{}) {
+	for _, kp := range keyPairs {
 		topology = append(topology, map[string]interface{}{
 			"address": kp.NodeAddress,
-			"ip":      helpers.LocalIP(),
-			"port":    vchains[i].GossipPort(),
+			"ip":      fmt.Sprintf("%s-chain-%d-stack", config.NodeAddress(kp.NodeAddress).ShortID(), vcId),
+			"port":    4400,
 		})
 	}
 
@@ -60,7 +63,7 @@ func TestE2ERunFullNetwork(t *testing.T) {
 		genesisValidators = append(genesisValidators, keyPair.NodeAddress)
 	}
 
-	topology := buildTopology(NETWORK_KEY_CONFIG, vcs)
+	topology := buildTopology(NETWORK_KEY_CONFIG, 42)
 
 	for i, keys := range NETWORK_KEY_CONFIG {
 		go func(i int, keys KeyConfig) {
@@ -74,7 +77,7 @@ func TestE2ERunFullNetwork(t *testing.T) {
 
 				waiter = InProcessBoyar(t, ctx, logger, flags)
 
-				helpers.RequireEventually(t, 20*time.Second, func(t helpers.TestingT) {
+				helpers.RequireEventually(t, 30*time.Second, func(t helpers.TestingT) {
 					AssertVchainUp(t, httpPort, keys.NodeAddress, vc)
 				})
 

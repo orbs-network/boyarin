@@ -8,9 +8,9 @@ import (
 	"time"
 )
 
-func (n *nodeConfigurationContainer) ReloadTimeDelay(maxDelay time.Duration) time.Duration {
-	overrideDelay := n.value.OrchestratorOptions.MaxReloadTimedDelay()
-	if n.value.OrchestratorOptions.MaxReloadTimedDelay() != 0 {
+func (c *nodeConfigurationContainer) ReloadTimeDelay(maxDelay time.Duration) time.Duration {
+	overrideDelay := c.value.OrchestratorOptions.MaxReloadTimedDelay()
+	if c.value.OrchestratorOptions.MaxReloadTimedDelay() != 0 {
 		return overrideDelay
 	}
 
@@ -18,7 +18,7 @@ func (n *nodeConfigurationContainer) ReloadTimeDelay(maxDelay time.Duration) tim
 		return 0
 	}
 
-	cfg, err := n.readKeysConfig()
+	cfg, err := c.readKeysConfig()
 	if err != nil {
 		return maxDelay
 	}

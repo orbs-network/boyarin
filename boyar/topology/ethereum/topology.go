@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/orbs-network/boyarin/strelets"
+	"github.com/orbs-network/boyarin/boyar/topology"
 	"net"
 	"strings"
 )
@@ -44,9 +44,9 @@ func IpToString(ip [4]byte) string {
 	return net.IPv4(ip[0], ip[1], ip[2], ip[3]).String()
 }
 
-func (rawTopology *RawTopology) FederationNodes() (federationNodes []*strelets.FederationNode) {
+func (rawTopology *RawTopology) FederationNodes() (federationNodes []*topology.FederationNode) {
 	for index, address := range rawTopology.NodeAddresses {
-		federationNodes = append(federationNodes, &strelets.FederationNode{
+		federationNodes = append(federationNodes, &topology.FederationNode{
 			Address: hex.EncodeToString(address[:]),
 			IP:      IpToString(rawTopology.IpAddresses[index]),
 		})

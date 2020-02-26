@@ -53,15 +53,6 @@ func NodeAddresses() []string {
 	}
 }
 
-func ChainConfigWithGenesisValidatorAddresses() map[string]interface{} {
-	config := make(map[string]interface{})
-	config["genesis-validator-addresses"] = NodeAddresses()
-	config["active-consensus-algo"] = 2
-	config["lean-helix-show-debug"] = true
-
-	return config
-}
-
 const eventuallyIterations = 50
 
 func Eventually(timeout time.Duration, f func() bool) bool {

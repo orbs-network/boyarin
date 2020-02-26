@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/orbs-network/boyarin/strelets"
+	"github.com/orbs-network/boyarin/boyar/topology"
 	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
@@ -19,7 +19,7 @@ func getJSONConfig() string {
 }
 
 func verifySource(t *testing.T, source NodeConfiguration) {
-	require.EqualValues(t, []*strelets.FederationNode{
+	require.EqualValues(t, []*topology.FederationNode{
 		{
 			Address: "dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173",
 			IP:      "192.168.1.14",
@@ -41,14 +41,14 @@ func verifySource(t *testing.T, source NodeConfiguration) {
 }
 
 func Test_parseStringConfig(t *testing.T) {
-	source, err := parseStringConfig(getJSONConfig(), "")
+	source, err := parseStringConfig(getJSONConfig(), "", fakeKeyPair)
 
 	require.NoError(t, err)
 	verifySource(t, source)
 }
 
 func TestNewStringConfigurationSource(t *testing.T) {
-	source, err := NewStringConfigurationSource(getJSONConfig(), "")
+	source, err := NewStringConfigurationSource(getJSONConfig(), "", fakeKeyPair)
 
 	require.NoError(t, err)
 	verifySource(t, source)
@@ -61,7 +61,7 @@ func TestNewUrlConfigurationSource(t *testing.T) {
 	server.Start()
 	defer server.Shutdown()
 
-	source, err := NewUrlConfigurationSource(server.Url(), "")
+	source, err := NewUrlConfigurationSource(server.Url(), "", fakeKeyPair)
 
 	require.NoError(t, err)
 	verifySource(t, source)

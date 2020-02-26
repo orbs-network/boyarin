@@ -1,8 +1,7 @@
-package test
+package adapter
 
 import (
 	"context"
-	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/stretchr/testify/mock"
 	"time"
 )
@@ -16,17 +15,17 @@ func (a *OrchestratorMock) PullImage(ctx context.Context, imageName string) erro
 	return nil
 }
 
-func (a *OrchestratorMock) RunVirtualChain(ctx context.Context, serviceConfig *adapter.ServiceConfig, appConfig *adapter.AppConfig) error {
+func (a *OrchestratorMock) RunVirtualChain(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) error {
 	res := a.MethodCalled("RunVirtualChain", ctx, serviceConfig, appConfig)
 	return res.Error(0)
 }
 
-func (a *OrchestratorMock) ServiceRemove(ctx context.Context, containerName string) error {
-	res := a.MethodCalled("ServiceRemove", ctx, containerName)
+func (a *OrchestratorMock) RemoveService(ctx context.Context, containerName string) error {
+	res := a.MethodCalled("RemoveService", ctx, containerName)
 	return res.Error(0)
 }
 
-func (a *OrchestratorMock) RunReverseProxy(ctx context.Context, config *adapter.ReverseProxyConfig) error {
+func (a *OrchestratorMock) RunReverseProxy(ctx context.Context, config *ReverseProxyConfig) error {
 	res := a.MethodCalled("RunReverseProxy", ctx, config)
 	return res.Error(0)
 }
@@ -36,12 +35,12 @@ func (a *OrchestratorMock) Close() error {
 	return res.Error(0)
 }
 
-func (a *OrchestratorMock) GetStatus(ctx context.Context, since time.Duration) (results []*adapter.ContainerStatus, err error) {
+func (a *OrchestratorMock) GetStatus(ctx context.Context, since time.Duration) (results []*ContainerStatus, err error) {
 	res := a.MethodCalled("GetStatus", ctx, since)
-	return res.Get(0).([]*adapter.ContainerStatus), res.Error(1)
+	return res.Get(0).([]*ContainerStatus), res.Error(1)
 }
 
-func (a *OrchestratorMock) RunService(ctx context.Context, serviceConfig *adapter.ServiceConfig, appConfig *adapter.AppConfig) error {
+func (a *OrchestratorMock) RunService(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) error {
 	res := a.MethodCalled("RunService", ctx, serviceConfig, appConfig)
 	return res.Error(0)
 }

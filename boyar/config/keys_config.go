@@ -18,8 +18,8 @@ type keyConfig struct {
 	NodePrivateKey string `json:"node-private-key,omitempty"` // Very important to omit empty value to produce a valid config
 }
 
-func (n *nodeConfigurationContainer) readKeysConfig() (cfg KeyConfig, err error) {
-	return NewKeysConfig(n.keyConfigPath)
+func (c *nodeConfigurationContainer) readKeysConfig() (cfg KeyConfig, err error) {
+	return NewKeysConfig(c.keyConfigPath)
 }
 
 func NewKeysConfig(path string) (cfg KeyConfig, err error) {

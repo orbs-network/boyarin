@@ -3,8 +3,8 @@ package services
 import (
 	"context"
 	"fmt"
+	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/log_types"
-	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/utils"
 	"github.com/orbs-network/govnr"
@@ -57,7 +57,7 @@ func reportStatus(ctx context.Context, logger log.Logger, since time.Duration) e
 			log.String("createdAt", formatAsISO6801(s.CreatedAt)),
 		}
 
-		if vcid := strelets.GetVcidFromServiceName(s.Name); vcid > 0 {
+		if vcid := config.GetVcidFromServiceName(s.Name); vcid > 0 {
 			fields = append(fields, log_types.VirtualChainId(vcid))
 		}
 

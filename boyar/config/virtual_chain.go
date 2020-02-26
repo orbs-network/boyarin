@@ -1,4 +1,4 @@
-package strelets
+package config
 
 import (
 	"encoding/json"
@@ -18,6 +18,21 @@ type VirtualChain struct {
 	Disabled     bool
 }
 
+type VirtualChainConfig struct {
+	VirtualChain *VirtualChain
+	Peers        *PeersMap
+	NodeAddress  NodeAddress
+
+	KeyPairConfig []byte `json:"-"` // Prevents key leak via log
+}
+
+type Peer struct {
+	IP   string
+	Port int
+}
+
+type PeersMap map[NodeAddress]*Peer
+
 func GetVcidFromServiceName(serviceName string) int64 {
 	tokens := strings.Split(serviceName, "-")
 	if len(tokens) < 2 {
@@ -32,11 +47,11 @@ func GetVcidFromServiceName(serviceName string) int64 {
 	return result
 }
 
-func (v *VirtualChain) getContainerName() string {
+func (v *VirtualChain) GetContainerName() string {
 	return fmt.Sprintf("%s-chain-%d", v.DockerConfig.ContainerNamePrefix, v.Id)
 }
 
-func (c *VirtualChain) getSerializedConfig() []byte {
+func (c *VirtualChain) GetSerializedConfig() []byte {
 	m := make(map[string]interface{})
 	for k, v := range c.Config {
 		m[k] = v

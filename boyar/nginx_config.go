@@ -1,8 +1,9 @@
-package strelets
+package boyar
 
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/version"
 	"strings"
 	"text/template"
@@ -13,7 +14,7 @@ func getDefaultNginxResponse(status string) string {
 	return fmt.Sprintf(`{"Status":"%s","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":%s}}}`, status, string(rawVersion))
 }
 
-func getNginxConfig(chains []*VirtualChain, ip string, sslEnabled bool) string {
+func getNginxConfig(chains []*config.VirtualChain, ip string, sslEnabled bool) string {
 	var sb strings.Builder
 	var TplNginxConf = template.Must(template.New("").Funcs(template.FuncMap{
 		"DefaultResponse": getDefaultNginxResponse,
@@ -44,7 +45,7 @@ ssl_certificate_key /var/run/secrets/ssl-key;
 }
 {{- end}} {{- /* if .SslEnabled */ -}}`))
 	err := TplNginxConf.Execute(&sb, struct {
-		Chains     []*VirtualChain
+		Chains     []*config.VirtualChain
 		Ip         string
 		SslEnabled bool
 	}{

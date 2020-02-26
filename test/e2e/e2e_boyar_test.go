@@ -2,107 +2,140 @@ package e2e
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"github.com/orbs-network/boyarin/boyar/config"
-	"github.com/orbs-network/boyarin/services"
-	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/test/helpers"
-	"github.com/stretchr/testify/require"
+	"github.com/orbs-network/govnr"
+	"github.com/orbs-network/scribe/log"
 	"testing"
+	"time"
 )
 
-func getBoyarVchains(nodeIndex int, vchainIds ...int) []*strelets.VirtualChain {
-	var chains []*strelets.VirtualChain
+const PublicKey = "cfc9e5189223aedce9543be0ef419f89aaa69e8b"
+const PrivateKey = "c30bf9e301a19c319818b34a75901fd8f067b676a834eeb4169ec887dd03d2a8"
 
-	for _, vchainId := range vchainIds {
-		chain := &strelets.VirtualChain{
-			Id:         strelets.VirtualChainId(vchainId),
-			HttpPort:   getHttpPortForVChain(nodeIndex, vchainId),
-			GossipPort: getGossipPortForVChain(nodeIndex, vchainId),
-			DockerConfig: strelets.DockerConfig{
-				ContainerNamePrefix: fmt.Sprintf("node%d", nodeIndex),
-				Image:               "orbs",
-				Tag:                 "export",
-				Pull:                false,
-			},
-			Config: helpers.ChainConfigWithGenesisValidatorAddresses(),
-		}
+func TestE2ERunSingleVirtualChain(t *testing.T) {
+	helpers.SkipUnlessSwarmIsEnabled(t)
 
-		chains = append(chains, chain)
-	}
-
-	return chains
-}
-
-func getConfigMap(vchains []*strelets.VirtualChain) map[string]interface{} {
-	ip := helpers.LocalIP()
-
-	configMap := make(map[string]interface{})
-	var network []*strelets.FederationNode
-	for i, key := range helpers.NodeAddresses() {
-		network = append(network, &strelets.FederationNode{
-			Address: key,
-			IP:      ip,
-			Port:    GossipPort + int(vchains[0].Id) + i + 1,
-		})
-	}
-
-	configMap["network"] = network
-	configMap["chains"] = vchains
-
-	return configMap
-}
-
-func getBoyarConfig(vchains []*strelets.VirtualChain) []byte {
-	configMap := getConfigMap(vchains)
-	jsonConfig, _ := json.Marshal(configMap)
-	return jsonConfig
-}
-
-func getBoyarConfigWithSigner(i int, vchains []*strelets.VirtualChain) []byte {
-	configMap := getConfigMap(vchains)
-	configMap["services"] = strelets.Services{
-		Signer: &strelets.Service{
-			Port: 7777,
-			DockerConfig: strelets.DockerConfig{
-				ContainerNamePrefix: fmt.Sprintf("node%d", i),
-				Image:               "orbs",
-				Tag:                 "signer",
-			},
-		},
-	}
-
-	jsonConfig, _ := json.Marshal(configMap)
-	return jsonConfig
-}
-
-// Tests boyar.Flow as close as it gets to production starting up
-func TestE2EWithFullFlowAndDisabledSimilarVchainId(t *testing.T) {
-	helpers.SkipOnCI(t)
-	logger := helpers.DefaultTestLogger()
-	helpers.WithContext(func(ctx context.Context) {
+	vc1 := VChainArgument{Id: 42}
+	helpers.WithContextAndShutdown(func(ctx context.Context) (waiter govnr.ShutdownWaiter) {
+		logger := log.GetLogger()
 		helpers.InitSwarmEnvironment(t, ctx)
-
-		for i := 1; i <= 4; i++ {
-			vchains := getBoyarVchains(i, 1000, 92, 100)
-			vchains[len(vchains)-1].Disabled = true // Check for namespace clashes: 100 will be removed but 1000 should be intact
-
-			boyarConfig := getBoyarConfig(vchains)
-			logger.Info(fmt.Sprintf("node %d config %s", i, string(boyarConfig)))
-			cfg, err := config.NewStringConfigurationSource(string(boyarConfig), helpers.LocalEthEndpoint()) // ethereum endpoint is optional
-			require.NoError(t, err)
-			cfg.SetKeyConfigPath(fmt.Sprintf("%s/node%d/keys.json", getConfigPath(), i))
-
-			err = services.NewCoreBoyarService(logger).OnConfigChange(ctx, cfg)
-			require.NoError(t, err)
+		keys := KeyConfig{
+			NodeAddress:    PublicKey,
+			NodePrivateKey: PrivateKey,
 		}
 
-		helpers.WaitForBlock(t, helpers.GetMetricsForPort(getHttpPortForVChain(1, 1000)), 3, WaitForBlockTimeout)
-		helpers.WaitForBlock(t, helpers.GetMetricsForPort(getHttpPortForVChain(1, 92)), 0, WaitForBlockTimeout)
+		flags, cleanup := SetupBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), vc1)
+		defer cleanup()
+		waiter = InProcessBoyar(t, ctx, logger, flags)
 
-		_, err := helpers.GetMetricsForPort(getHttpPortForVChain(1, 100))() // port for vcid 100
-		require.Error(t, err)
-		require.Regexp(t, ".*connection refused.*", err.Error())
+		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
+			AssertVchainUp(t, 80, PublicKey, vc1)
+			AssertServiceUp(t, ctx, "cfc9e5-signer-service-stack")
+		})
+		return
+	})
+}
+
+func TestE2ERunMultipleVirtualChains(t *testing.T) {
+	helpers.SkipUnlessSwarmIsEnabled(t)
+
+	vc1 := VChainArgument{Id: 42}
+	vc2 := VChainArgument{Id: 45}
+	helpers.WithContextAndShutdown(func(ctx context.Context) (waiter govnr.ShutdownWaiter) {
+		logger := log.GetLogger()
+		helpers.InitSwarmEnvironment(t, ctx)
+		keys := KeyConfig{
+			NodeAddress:    PublicKey,
+			NodePrivateKey: PrivateKey,
+		}
+
+		flags, cleanup := SetupBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), vc1, vc2)
+		defer cleanup()
+		waiter = InProcessBoyar(t, ctx, logger, flags)
+
+		helpers.RequireEventually(t, 40*time.Second, func(t helpers.TestingT) {
+			AssertVchainUp(t, 80, PublicKey, vc1)
+			AssertVchainUp(t, 80, PublicKey, vc2)
+		})
+		return
+	})
+}
+
+func TestE2EAddVirtualChain(t *testing.T) {
+	helpers.SkipUnlessSwarmIsEnabled(t)
+
+	vc1 := VChainArgument{Id: 42}
+	vc2 := VChainArgument{Id: 45}
+	helpers.WithContextAndShutdown(func(ctx context.Context) (waiter govnr.ShutdownWaiter) {
+		logger := log.GetLogger()
+		helpers.InitSwarmEnvironment(t, ctx)
+		keys := KeyConfig{
+			NodeAddress:    PublicKey,
+			NodePrivateKey: PrivateKey,
+		}
+		vChainsChannel := make(chan []VChainArgument)
+		defer close(vChainsChannel)
+
+		flags, cleanup := SetupDynamicBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), vChainsChannel)
+		defer cleanup()
+		waiter = InProcessBoyar(t, ctx, logger, flags)
+
+		logger.Info(fmt.Sprintf("adding vchain %d", vc1.Id))
+		vChainsChannel <- []VChainArgument{vc1}
+		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
+			AssertVchainUp(t, 80, PublicKey, vc1)
+		})
+
+		logger.Info(fmt.Sprintf("adding vchain %d", vc2.Id))
+		vChainsChannel <- []VChainArgument{vc1, vc2}
+		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
+			AssertVchainUp(t, 80, PublicKey, vc1)
+			AssertVchainUp(t, 80, PublicKey, vc2)
+		})
+		return
+	})
+}
+
+func TestE2EAddAndRemoveVirtualChain(t *testing.T) {
+	helpers.SkipUnlessSwarmIsEnabled(t)
+
+	vc1 := VChainArgument{Id: 42}
+	vc2 := VChainArgument{Id: 45}
+	helpers.WithContextAndShutdown(func(ctx context.Context) (waiter govnr.ShutdownWaiter) {
+		logger := log.GetLogger()
+		helpers.InitSwarmEnvironment(t, ctx)
+		keys := KeyConfig{
+			NodeAddress:    PublicKey,
+			NodePrivateKey: PrivateKey,
+		}
+		vChainsChannel := make(chan []VChainArgument)
+		defer close(vChainsChannel)
+
+		flags, cleanup := SetupDynamicBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), vChainsChannel)
+		defer cleanup()
+		waiter = InProcessBoyar(t, ctx, logger, flags)
+
+		logger.Info(fmt.Sprintf("adding vchain %d", vc1.Id))
+		vChainsChannel <- []VChainArgument{vc1}
+		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
+			AssertVchainUp(t, 80, PublicKey, vc1)
+		})
+
+		logger.Info(fmt.Sprintf("adding vchain %d", vc2.Id))
+		vChainsChannel <- []VChainArgument{vc1, vc2}
+		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
+			AssertVchainUp(t, 80, PublicKey, vc1)
+			AssertVchainUp(t, 80, PublicKey, vc2)
+		})
+
+		vc2.Disabled = true
+		logger.Info(fmt.Sprintf("adding vchain %d", vc2.Id))
+		vChainsChannel <- []VChainArgument{vc1, vc2}
+		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
+			AssertVchainUp(t, 80, PublicKey, vc1)
+			AssertVchainDown(t, 80, vc2)
+		})
+		return
 	})
 }

@@ -4,15 +4,17 @@ import (
 	"encoding/json"
 )
 
-func parseStringConfig(jsonInput string, ethereumEndpoint string) (*nodeConfigurationContainer, error) {
+func parseStringConfig(jsonInput string, ethereumEndpoint string, keyConfigPath string) (*nodeConfigurationContainer, error) {
 	var value nodeConfiguration
 	if err := json.Unmarshal([]byte(jsonInput), &value); err != nil {
 		return nil, err
 	}
 
 	cfg := &nodeConfigurationContainer{
-		value: value,
+		value:         value,
+		keyConfigPath: keyConfigPath,
 	}
+
 	cfg.SetEthereumEndpoint(ethereumEndpoint)
 	cfg.SetSignerEndpoint()
 

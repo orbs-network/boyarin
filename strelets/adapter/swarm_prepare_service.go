@@ -10,7 +10,7 @@ import (
 func (d *dockerSwarmOrchestrator) RunService(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) error {
 	serviceName := GetServiceId(serviceConfig.ContainerName)
 
-	if err := d.ServiceRemove(ctx, serviceName); err != nil {
+	if err := d.RemoveService(ctx, serviceName); err != nil {
 		return err
 	}
 
@@ -26,7 +26,9 @@ func (d *dockerSwarmOrchestrator) RunService(ctx context.Context, serviceConfig 
 
 	secrets := []*swarm.SecretReference{
 		getSecretReference(serviceConfig.ContainerName, config.configSecretId, "config", "config.json"),
-		getSecretReference(serviceConfig.ContainerName, config.keysSecretId, "keyPair", "keys.json"),
+	}
+	if config.keysSecretId != "" {
+		secrets = append(secrets, getSecretReference(serviceConfig.ContainerName, config.keysSecretId, "keyPair", "keys.json"))
 	}
 
 	spec := getServiceSpec(serviceConfig, secrets, networks)
@@ -43,10 +45,12 @@ func (d *dockerSwarmOrchestrator) storeServiceConfiguration(ctx context.Context,
 		secrets.configSecretId = configSecretId
 	}
 
-	if keyPairSecretId, err := d.saveSwarmSecret(ctx, containerName, "keyPair", config.KeyPair); err != nil {
-		return nil, fmt.Errorf("could not store key pair secret: %s", err)
-	} else {
-		secrets.keysSecretId = keyPairSecretId
+	if config.KeyPair != nil {
+		if keyPairSecretId, err := d.saveSwarmSecret(ctx, containerName, "keyPair", config.KeyPair); err != nil {
+			return nil, fmt.Errorf("could not store key pair secret: %s", err)
+		} else {
+			secrets.keysSecretId = keyPairSecretId
+		}
 	}
 
 	return secrets, nil

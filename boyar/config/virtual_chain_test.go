@@ -1,4 +1,4 @@
-package strelets
+package config
 
 import (
 	"github.com/stretchr/testify/require"

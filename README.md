@@ -120,7 +120,7 @@ If both these parameters are present, the node will also start service SSL traff
       }
     }
   ],
-  "services": { // list of auxilary services (optional)
+  "services": { // list of auxilary services (mandatory)
     "signer": {
       "Port": 7777,
       "DockerConfig": {
@@ -147,3 +147,7 @@ If both these parameters are present, the node will also start service SSL traff
 }
 
 ```
+
+## Breaking changes in v1.0.0
+
+Services has become **mandatory** part of the config.

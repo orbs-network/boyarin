@@ -1,4 +1,4 @@
-package p1000e2e
+package e2e
 
 import (
 	"context"

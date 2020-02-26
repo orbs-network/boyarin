@@ -13,6 +13,8 @@ import (
 )
 
 func TestE2ERunSingleVirtualChainWithSSL(t *testing.T) {
+	helpers.SkipUnlessSwarmIsEnabled(t)
+
 	vc1 := VChainArgument{Id: 42}
 	helpers.WithContextAndShutdown(func(ctx context.Context) (waiter govnr.ShutdownWaiter) {
 		logger := log.GetLogger()
@@ -22,7 +24,7 @@ func TestE2ERunSingleVirtualChainWithSSL(t *testing.T) {
 			NodePrivateKey: PrivateKey,
 		}
 
-		flags, cleanup := SetupBoyarDependencies(t, keys, vc1)
+		flags, cleanup := SetupBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), vc1)
 		defer cleanup()
 
 		flags.SSLCertificatePath = "./fixtures/cert.pem"

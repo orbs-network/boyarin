@@ -91,18 +91,6 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 	return utils.AggregateErrors(errors)
 }
 
-func (b *boyar) removeVirtualChain(ctx context.Context, chain *config.VirtualChain) error {
-	if b.cache.vChains.CheckNewValue(chain.Id.String(), removed) {
-		serviceName := adapter.GetServiceId(chain.GetContainerName())
-		if err := b.orchestrator.RemoveService(ctx, serviceName); err != nil {
-			b.cache.vChains.Clear(chain.Id.String())
-			return err
-		}
-	}
-
-	return nil
-}
-
 func getNetworkConfigJSON(nodes []*topology.FederationNode) []byte {
 	jsonMap := make(map[string]interface{})
 

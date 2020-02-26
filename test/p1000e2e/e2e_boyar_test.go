@@ -14,6 +14,8 @@ const PublicKey = "cfc9e5189223aedce9543be0ef419f89aaa69e8b"
 const PrivateKey = "c30bf9e301a19c319818b34a75901fd8f067b676a834eeb4169ec887dd03d2a8"
 
 func TestE2ERunSingleVirtualChain(t *testing.T) {
+	helpers.SkipUnlessSwarmIsEnabled(t)
+
 	vc1 := VChainArgument{Id: 42}
 	helpers.WithContextAndShutdown(func(ctx context.Context) (waiter govnr.ShutdownWaiter) {
 		logger := log.GetLogger()
@@ -23,7 +25,7 @@ func TestE2ERunSingleVirtualChain(t *testing.T) {
 			NodePrivateKey: PrivateKey,
 		}
 
-		flags, cleanup := SetupBoyarDependencies(t, keys, vc1)
+		flags, cleanup := SetupBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), vc1)
 		defer cleanup()
 		waiter = InProcessBoyar(t, ctx, logger, flags)
 
@@ -36,6 +38,8 @@ func TestE2ERunSingleVirtualChain(t *testing.T) {
 }
 
 func TestE2ERunMultipleVirtualChains(t *testing.T) {
+	helpers.SkipUnlessSwarmIsEnabled(t)
+
 	vc1 := VChainArgument{Id: 42}
 	vc2 := VChainArgument{Id: 45}
 	helpers.WithContextAndShutdown(func(ctx context.Context) (waiter govnr.ShutdownWaiter) {
@@ -46,11 +50,11 @@ func TestE2ERunMultipleVirtualChains(t *testing.T) {
 			NodePrivateKey: PrivateKey,
 		}
 
-		flags, cleanup := SetupBoyarDependencies(t, keys, vc1, vc2)
+		flags, cleanup := SetupBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), vc1, vc2)
 		defer cleanup()
 		waiter = InProcessBoyar(t, ctx, logger, flags)
 
-		helpers.RequireEventually(t, 20*time.Second, func(t helpers.TestingT) {
+		helpers.RequireEventually(t, 40*time.Second, func(t helpers.TestingT) {
 			AssertVchainUp(t, 80, PublicKey, vc1)
 			AssertVchainUp(t, 80, PublicKey, vc2)
 		})
@@ -59,6 +63,8 @@ func TestE2ERunMultipleVirtualChains(t *testing.T) {
 }
 
 func TestE2EAddVirtualChain(t *testing.T) {
+	helpers.SkipUnlessSwarmIsEnabled(t)
+
 	vc1 := VChainArgument{Id: 42}
 	vc2 := VChainArgument{Id: 45}
 	helpers.WithContextAndShutdown(func(ctx context.Context) (waiter govnr.ShutdownWaiter) {
@@ -71,7 +77,7 @@ func TestE2EAddVirtualChain(t *testing.T) {
 		vChainsChannel := make(chan []VChainArgument)
 		defer close(vChainsChannel)
 
-		flags, cleanup := SetupDynamicBoyarDependencies(t, keys, vChainsChannel)
+		flags, cleanup := SetupDynamicBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), vChainsChannel)
 		defer cleanup()
 		waiter = InProcessBoyar(t, ctx, logger, flags)
 
@@ -92,6 +98,8 @@ func TestE2EAddVirtualChain(t *testing.T) {
 }
 
 func TestE2EAddAndRemoveVirtualChain(t *testing.T) {
+	helpers.SkipUnlessSwarmIsEnabled(t)
+
 	vc1 := VChainArgument{Id: 42}
 	vc2 := VChainArgument{Id: 45}
 	helpers.WithContextAndShutdown(func(ctx context.Context) (waiter govnr.ShutdownWaiter) {
@@ -104,7 +112,7 @@ func TestE2EAddAndRemoveVirtualChain(t *testing.T) {
 		vChainsChannel := make(chan []VChainArgument)
 		defer close(vChainsChannel)
 
-		flags, cleanup := SetupDynamicBoyarDependencies(t, keys, vChainsChannel)
+		flags, cleanup := SetupDynamicBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), vChainsChannel)
 		defer cleanup()
 		waiter = InProcessBoyar(t, ctx, logger, flags)
 

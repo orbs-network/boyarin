@@ -45,7 +45,17 @@ func buildTopology(keyPairs []KeyConfig, vcId int) (topology []interface{}) {
 	return
 }
 
+func genesisValidators(keyPairs []KeyConfig) (genesisValidators []string) {
+	for _, keyPair := range keyPairs {
+		genesisValidators = append(genesisValidators, keyPair.NodeAddress)
+	}
+
+	return
+}
+
 func TestE2ERunFullNetwork(t *testing.T) {
+	helpers.SkipUnlessSwarmIsEnabled(t)
+
 	helpers.WithContext(func(ctx context.Context) {
 		helpers.InitSwarmEnvironment(t, ctx)
 	})
@@ -58,11 +68,6 @@ func TestE2ERunFullNetwork(t *testing.T) {
 		})
 	}
 
-	var genesisValidators []string
-	for _, keyPair := range NETWORK_KEY_CONFIG {
-		genesisValidators = append(genesisValidators, keyPair.NodeAddress)
-	}
-
 	topology := buildTopology(NETWORK_KEY_CONFIG, 42)
 
 	for i, keys := range NETWORK_KEY_CONFIG {
@@ -72,7 +77,7 @@ func TestE2ERunFullNetwork(t *testing.T) {
 
 				vc := vcs[i]
 				httpPort := basePort*2 + 1000*i
-				flags, cleanup := SetupBoyarDependenciesForNetwork(t, keys, topology, genesisValidators, httpPort, vc)
+				flags, cleanup := SetupBoyarDependenciesForNetwork(t, keys, topology, genesisValidators(NETWORK_KEY_CONFIG), httpPort, vc)
 				defer cleanup()
 
 				waiter = InProcessBoyar(t, ctx, logger, flags)

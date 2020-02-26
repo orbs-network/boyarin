@@ -109,15 +109,13 @@ func serveConfig(configStr *string) *httptest.Server {
 	}))
 }
 
-func SetupDynamicBoyarDependencies(t *testing.T, keyPair KeyConfig, vChains <-chan []VChainArgument) (*config.Flags, func()) {
+func SetupDynamicBoyarDependencies(t *testing.T, keyPair KeyConfig, genesisValidators []string, vChains <-chan []VChainArgument) (*config.Flags, func()) {
 	return SetupDynamicBoyarDepencenciesForNetwork(t, keyPair, []interface{}{
 		map[string]interface{}{
 			"address": keyPair.NodeAddress,
 			"ip":      "127.0.0.1",
 		},
-	}, []string{
-		keyPair.NodeAddress,
-	}, 80, vChains)
+	}, genesisValidators, 80, vChains)
 }
 
 func SetupDynamicBoyarDepencenciesForNetwork(t *testing.T, keyPair KeyConfig,
@@ -155,11 +153,11 @@ func SetupBoyarDependenciesForNetwork(t *testing.T, keyPair KeyConfig, topology 
 	return SetupDynamicBoyarDepencenciesForNetwork(t, keyPair, topology, genesisValidators, httpPort, vChainsChannel)
 }
 
-func SetupBoyarDependencies(t *testing.T, keyPair KeyConfig, vChains ...VChainArgument) (*config.Flags, func()) {
+func SetupBoyarDependencies(t *testing.T, keyPair KeyConfig, genesisValidators []string, vChains ...VChainArgument) (*config.Flags, func()) {
 	vChainsChannel := make(chan []VChainArgument, 1)
 	vChainsChannel <- vChains
 	close(vChainsChannel)
-	return SetupDynamicBoyarDependencies(t, keyPair, vChainsChannel)
+	return SetupDynamicBoyarDependencies(t, keyPair, genesisValidators, vChainsChannel)
 }
 
 func InProcessBoyar(t *testing.T, ctx context.Context, logger log.Logger, flags *config.Flags) govnr.ShutdownWaiter {

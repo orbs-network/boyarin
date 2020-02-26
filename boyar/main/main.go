@@ -35,6 +35,7 @@ func main() {
 	sslCertificatePathPtr := flag.String("ssl-certificate", "", "SSL certificate")
 	sslPrivateKeyPtr := flag.String("ssl-private-key", "", "SSL private key")
 
+	bootstrap := flag.Bool("bootstrap", false, "bootstrap only a configuration provider service and then retrieve all configuration from it")
 	showConfiguration := flag.Bool("show-configuration", false, "show configuration and exit")
 	help := flag.Bool("help", false, "show usage")
 	showVersion := flag.Bool("version", false, "show version")
@@ -60,6 +61,7 @@ func main() {
 		OrchestratorOptions:     *orchestratorOptionsPtr,
 		SSLCertificatePath:      *sslCertificatePathPtr,
 		SSLPrivateKeyPath:       *sslPrivateKeyPtr,
+		Bootstrap:               *bootstrap,
 	}
 
 	if *help {

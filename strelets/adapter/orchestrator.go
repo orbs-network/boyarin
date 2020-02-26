@@ -21,10 +21,12 @@ type ServiceConfig struct {
 	NodeAddress   string
 	ImageName     string
 	ContainerName string
+	Executable    string
 
 	// FIXME rename ports to be less vchain-specific
 	HttpPort   int
 	GossipPort int
+	External   bool
 
 	LimitedMemory  int64
 	LimitedCPU     float64

@@ -162,6 +162,27 @@ func SetupBoyarDependencies(t *testing.T, keyPair KeyConfig, genesisValidators [
 	return SetupDynamicBoyarDependencies(t, keyPair, genesisValidators, vChainsChannel)
 }
 
+func SetupBoostrapDependencies(t *testing.T, keyPair KeyConfig) (*config.Flags, func()) {
+	keyPairJson, err := json.Marshal(keyPair)
+	require.NoError(t, err)
+	file := TempFile(t, keyPairJson)
+
+	configStr := `{"status": "ok"}`
+	ts := serveConfig(&configStr)
+	flags := &config.Flags{
+		Timeout:           time.Minute,
+		ConfigUrl:         ts.URL,
+		KeyPairConfigPath: file.Name(),
+		PollingInterval:   500 * time.Millisecond,
+	}
+
+	cleanup := func() {
+		defer os.Remove(file.Name())
+		defer ts.Close()
+	}
+	return flags, cleanup
+}
+
 func InProcessBoyar(t *testing.T, ctx context.Context, logger log.Logger, flags *config.Flags) govnr.ShutdownWaiter {
 	logger.Info("starting in-process boyar")
 	waiter, err := services.Execute(ctx, flags, logger)

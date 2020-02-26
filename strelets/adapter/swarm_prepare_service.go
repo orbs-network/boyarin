@@ -62,7 +62,7 @@ func getServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.SecretReferen
 
 	spec := swarm.ServiceSpec{
 		TaskTemplate: swarm.TaskSpec{
-			ContainerSpec: getServiceContainerSpec(serviceConfig.ImageName, secrets),
+			ContainerSpec: getServiceContainerSpec(serviceConfig.ImageName, serviceConfig.Executable, secrets),
 			RestartPolicy: &swarm.RestartPolicy{
 				Delay: &restartDelay,
 			},
@@ -72,14 +72,28 @@ func getServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.SecretReferen
 		Networks: networks,
 		Mode:     getServiceMode(replicas),
 	}
+
+	if serviceConfig.External {
+		spec.EndpointSpec = &swarm.EndpointSpec{
+			Ports: []swarm.PortConfig{
+				{
+					Protocol:      "tcp",
+					PublishMode:   swarm.PortConfigPublishModeIngress,
+					PublishedPort: uint32(serviceConfig.HttpPort),
+					TargetPort:    uint32(serviceConfig.HttpPort),
+				},
+			},
+		}
+	}
+
 	spec.Name = GetServiceId(serviceConfig.ContainerName)
 
 	return spec
 }
 
-func getServiceContainerSpec(imageName string, secrets []*swarm.SecretReference) *swarm.ContainerSpec {
+func getServiceContainerSpec(imageName string, executable string, secrets []*swarm.SecretReference) *swarm.ContainerSpec {
 	command := []string{
-		"/opt/orbs/orbs-signer",
+		executable,
 	}
 
 	for _, secret := range secrets {

@@ -19,6 +19,7 @@ func Test_getServiceSpec(t *testing.T) {
 	serviceConfig := &ServiceConfig{
 		ImageName:     "orbs:signer",
 		ContainerName: containerName,
+		Executable:    "/opt/orbs/orbs-signer",
 	}
 
 	networkConfig := []swarm.NetworkAttachmentConfig{

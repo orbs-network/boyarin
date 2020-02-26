@@ -15,24 +15,30 @@ type Services struct {
 const SIGNER = "signer-service"
 const CONFIG = "config-service"
 
-func (s Services) AsMap() map[string]*Service {
-	return map[string]*Service{
-		SIGNER: s.Signer,
-		CONFIG: s.Config,
+var SIGNER_SERVICE_CONFIG = ServiceConfig{
+	Name:       SIGNER,
+	NeedsKeys:  true,
+	External:   false,
+	Executable: "/opt/orbs/orbs-signer",
+}
+
+var CONFIG_SERVICE_CONFIG = ServiceConfig{
+	Name:       CONFIG,
+	NeedsKeys:  false,
+	External:   true,
+	Executable: "/opt/orbs/service",
+}
+
+func (s Services) AsMap() map[ServiceConfig]*Service {
+	return map[ServiceConfig]*Service{
+		SIGNER_SERVICE_CONFIG: s.Signer,
+		CONFIG_SERVICE_CONFIG: s.Config,
 	}
 }
 
-func (s Services) NeedsKeys(serviceId string) bool {
-	switch serviceId {
-	case SIGNER:
-		return true
-	}
-
-	return false
-}
-
-type UpdateServiceInput struct {
-	Name          string
-	Service       *Service
-	KeyPairConfig []byte `json:"-"` // Prevents possible key leak via log
+type ServiceConfig struct {
+	Name       string
+	NeedsKeys  bool
+	External   bool
+	Executable string
 }

@@ -33,7 +33,7 @@ func (b *boyar) provisionService(ctx context.Context, cfg config.ServiceConfig, 
 			imageName := service.DockerConfig.FullImageName()
 
 			if service.Disabled {
-				return fmt.Errorf("signer service is disabled")
+				return fmt.Errorf("service %s is disabled even though it should not be, ignored", cfg.Name)
 			}
 
 			if service.DockerConfig.Pull {

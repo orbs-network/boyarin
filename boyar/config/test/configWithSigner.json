@@ -69,7 +69,7 @@
       "DockerConfig": {
         "ContainerNamePrefix": "node1",
         "Image":  "506367651493.dkr.ecr.us-west-2.amazonaws.com/orbs-network-signer",
-        "Tag":    "master",
+        "Tag":    "another-tag",
         "Pull":   false,
         "Resources": {
           "Limits": {

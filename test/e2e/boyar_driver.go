@@ -105,10 +105,25 @@ type KeyConfig struct {
 }
 
 func serveConfig(configStr *string) *httptest.Server {
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	l, err := net.Listen("tcp", fmt.Sprintf("%s:0", helpers.LocalIP()))
+	if err != nil {
+		panic(err)
+	}
+
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		//fmt.Println("configuration requested")
 		_, _ = fmt.Fprint(w, *configStr)
-	}))
+	})
+
+	server := &httptest.Server{
+		Listener: l,
+		Config: &http.Server{
+			Handler: handler,
+		},
+	}
+	server.Start()
+
+	return server
 }
 
 func SetupDynamicBoyarDependencies(t *testing.T, keyPair KeyConfig, genesisValidators []string, vChains <-chan []VChainArgument) (*config.Flags, func()) {

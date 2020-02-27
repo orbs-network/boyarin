@@ -57,7 +57,7 @@ func (b *boyar) provisionService(ctx context.Context, cfg config.ServiceConfig, 
 
 			jsonConfig, _ := json.Marshal(service.Config)
 
-			var keyPairConfigJSON = getKeyConfigJson(b.config, cfg.NeedsKeys)
+			var keyPairConfigJSON = getKeyConfigJson(b.config, !cfg.NeedsKeys)
 			appConfig := &adapter.AppConfig{
 				KeyPair: keyPairConfigJSON,
 				Config:  jsonConfig,

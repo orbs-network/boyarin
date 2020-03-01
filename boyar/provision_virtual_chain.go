@@ -68,7 +68,7 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 
 				appConfig := &adapter.AppConfig{
 					KeyPair: input.KeyPairConfig,
-					Network: getNetworkConfigJSON(b.config.FederationNodes()),
+					Network: getNetworkConfigJSON(overrideTopologyPort(b.config.FederationNodes(), chain.GossipPort)),
 					Config:  chain.GetSerializedConfig(),
 				}
 
@@ -105,8 +105,8 @@ func getNetworkConfigJSON(nodes []*topology.FederationNode) []byte {
 	return json
 }
 
-func buildPeersMap(nodes []*topology.FederationNode, gossipPort int) *config.PeersMap {
-	peersMap := make(config.PeersMap)
+func overrideTopologyPort(nodes []*topology.FederationNode, gossipPort int) []*topology.FederationNode {
+	var newTopology []*topology.FederationNode
 
 	for _, node := range nodes {
 		// Need this override for more flexibility in network config and also for local testing
@@ -115,22 +115,21 @@ func buildPeersMap(nodes []*topology.FederationNode, gossipPort int) *config.Pee
 			port = gossipPort
 		}
 
-		peersMap[config.NodeAddress(node.Address)] = &config.Peer{
-			node.IP, port,
-		}
+		newTopology = append(newTopology, &topology.FederationNode{
+			Port:    port,
+			Address: node.Address,
+			IP:      node.IP,
+		})
 	}
 
-	return &peersMap
+	return newTopology
 }
 
 func getVirtualChainConfig(cfg config.NodeConfiguration, chain *config.VirtualChain) *config.VirtualChainConfig {
-	peers := buildPeersMap(cfg.FederationNodes(), chain.GossipPort)
-	keyPairConfig := getKeyConfigJson(cfg, true)
-
 	return &config.VirtualChainConfig{
 		VirtualChain:  chain,
-		Peers:         peers,
+		Topology:      overrideTopologyPort(cfg.FederationNodes(), chain.GossipPort),
 		NodeAddress:   cfg.NodeAddress(),
-		KeyPairConfig: keyPairConfig,
+		KeyPairConfig: getKeyConfigJson(cfg, true),
 	}
 }

@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/orbs-network/boyarin/boyar/topology"
 	"strconv"
 	"strings"
 )
@@ -20,7 +21,7 @@ type VirtualChain struct {
 
 type VirtualChainConfig struct {
 	VirtualChain *VirtualChain
-	Peers        *PeersMap
+	Topology     []*topology.FederationNode
 	NodeAddress  NodeAddress
 
 	KeyPairConfig []byte `json:"-"` // Prevents key leak via log
@@ -30,8 +31,6 @@ type Peer struct {
 	IP   string
 	Port int
 }
-
-type PeersMap map[NodeAddress]*Peer
 
 func GetVcidFromServiceName(serviceName string) int64 {
 	tokens := strings.Split(serviceName, "-")

@@ -51,10 +51,10 @@ func (d *dockerSwarmOrchestrator) provisionVolume(ctx context.Context, volumeNam
 
 	return mount.Mount{
 		Source:        source,
-		Type:          d.options.MountType(),
+		Type:          orchestratorOptions.MountType(),
 		Target:        target,
 		ReadOnly:      false,
-		VolumeOptions: getVolumeOptions(d.options, driverName, driverOptions),
+		VolumeOptions: getVolumeOptions(orchestratorOptions, driverName, driverOptions),
 	}, nil
 }
 

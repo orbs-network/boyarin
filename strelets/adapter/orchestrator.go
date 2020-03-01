@@ -36,10 +36,6 @@ type ServiceConfig struct {
 	LogsVolumeSize   int
 }
 
-type Runner interface {
-	Run(ctx context.Context) error
-}
-
 type ContainerStatus struct {
 	Name   string
 	NodeID string
@@ -53,11 +49,12 @@ type ContainerStatus struct {
 
 type Orchestrator interface {
 	PullImage(ctx context.Context, imageName string) error
-	Prepare(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) (Runner, error)
-	RemoveContainer(ctx context.Context, containerName string) error
 
-	PrepareService(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) (Runner, error)
-	PrepareReverseProxy(ctx context.Context, config *ReverseProxyConfig) (Runner, error)
+	RunVirtualChain(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) error
+	RunReverseProxy(ctx context.Context, config *ReverseProxyConfig) error
+	RunService(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) error
+
+	RemoveService(ctx context.Context, containerName string) error
 
 	GetOverlayNetwork(ctx context.Context, name string) (string, error)
 
@@ -71,11 +68,10 @@ type OrchestratorOptions struct {
 	StorageMountType string `json:"storage-mount-type"`
 	StorageOptions         map[string]string `json:"storage-options"`
 	MaxReloadTimedDelayStr string            `json:"max-reload-time-delay"`
-}
 
-func (s OrchestratorOptions) MaxReloadTimedDelay() time.Duration {
-	d, _ := time.ParseDuration(s.MaxReloadTimedDelayStr)
-	return d
+	// Testing purposes
+	HTTPPort uint32 `json:"http-port"`
+	SSLPort  uint32 `json:"ssl-port"`
 }
 
 func (s OrchestratorOptions) MountType() mount.Type {
@@ -90,4 +86,9 @@ func (s OrchestratorOptions) MountType() mount.Type {
 type SSLOptions struct {
 	SSLCertificatePath string
 	SSLPrivateKeyPath  string
+}
+
+func (s OrchestratorOptions) MaxReloadTimedDelay() time.Duration {
+	d, _ := time.ParseDuration(s.MaxReloadTimedDelayStr)
+	return d
 }

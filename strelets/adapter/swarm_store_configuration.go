@@ -43,8 +43,8 @@ func (d *dockerSwarmOrchestrator) saveSwarmSecret(ctx context.Context, container
 
 	if secrets, err := d.client.SecretList(ctx, types.SecretListOptions{
 		Filters: filters.NewArgs(filters.KeyValuePair{
-			"name",
-			secretId,
+			Key:   "name",
+			Value: secretId,
 		}),
 	}); err != nil {
 		return "", fmt.Errorf("could not list swarm secrets: %s", err)
@@ -72,20 +72,20 @@ func getSwarmSecretName(containerName string, secretName string) string {
 func (d *dockerSwarmOrchestrator) storeNginxConfiguration(ctx context.Context, config *ReverseProxyConfig) (*dockerSwarmNginxSecretsConfig, error) {
 	secrets := &dockerSwarmNginxSecretsConfig{}
 
-	if nginxConfId, err := d.saveSwarmSecret(ctx, PROXY_CONTAINER_NAME, NGINX_CONF, []byte(DEFAULT_NGINX_CONFIG)); err != nil {
+	if nginxConfId, err := d.saveSwarmSecret(ctx, config.ContainerName, NGINX_CONF, []byte(DEFAULT_NGINX_CONFIG)); err != nil {
 		return nil, fmt.Errorf("could not store nginx default config secret: %s", err)
 	} else {
 		secrets.nginxConfId = nginxConfId
 	}
 
-	if vchainConfId, err := d.saveSwarmSecret(ctx, PROXY_CONTAINER_NAME, VCHAINS_CONF, []byte(config.NginxConfig)); err != nil {
+	if vchainConfId, err := d.saveSwarmSecret(ctx, config.ContainerName, VCHAINS_CONF, []byte(config.NginxConfig)); err != nil {
 		return nil, fmt.Errorf("could not store nginx vchains config secret: %s", err)
 	} else {
 		secrets.vchainConfId = vchainConfId
 	}
 
 	if config.SSLCertificate != nil {
-		if sslCertificateId, err := d.saveSwarmSecret(ctx, PROXY_CONTAINER_NAME, SSL_CERT, config.SSLCertificate); err != nil {
+		if sslCertificateId, err := d.saveSwarmSecret(ctx, config.ContainerName, SSL_CERT, config.SSLCertificate); err != nil {
 			return nil, fmt.Errorf("could not store nginx ssl certificate secret: %s", err)
 		} else {
 			secrets.sslCertificateId = sslCertificateId
@@ -94,7 +94,7 @@ func (d *dockerSwarmOrchestrator) storeNginxConfiguration(ctx context.Context, c
 	}
 
 	if config.SSLPrivateKey != nil {
-		if sslPrivateKeyId, err := d.saveSwarmSecret(ctx, PROXY_CONTAINER_NAME, SSL_KEY, config.SSLPrivateKey); err != nil {
+		if sslPrivateKeyId, err := d.saveSwarmSecret(ctx, config.ContainerName, SSL_KEY, config.SSLPrivateKey); err != nil {
 			return nil, fmt.Errorf("could not store nginx ssl private key secret: %s", err)
 		} else {
 			secrets.sslPrivateKeyId = sslPrivateKeyId

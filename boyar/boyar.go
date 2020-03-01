@@ -2,17 +2,26 @@ package boyar
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"github.com/orbs-network/boyarin/boyar/config"
-	"github.com/orbs-network/boyarin/crypto"
-	"github.com/orbs-network/boyarin/log_types"
-	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
-	"github.com/orbs-network/boyarin/test/helpers"
+	"github.com/orbs-network/boyarin/utils"
 	"github.com/orbs-network/scribe/log"
-	"strings"
+	"sync"
 )
+
+type Cache struct {
+	vChains  *utils.CacheMap
+	nginx    *utils.CacheFilter
+	services *utils.CacheMap
+}
+
+func NewCache() *Cache {
+	return &Cache{
+		vChains:  utils.NewCacheMap(),
+		nginx:    utils.NewCacheFilter(),
+		services: utils.NewCacheMap(),
+	}
+}
 
 type Boyar interface {
 	ProvisionVirtualChains(ctx context.Context) error
@@ -21,195 +30,18 @@ type Boyar interface {
 }
 
 type boyar struct {
-	strelets    strelets.Strelets
-	config      config.NodeConfiguration
-	configCache config.Cache
-	logger      log.Logger
+	nginxLock    sync.Mutex
+	orchestrator adapter.Orchestrator
+	config       config.NodeConfiguration
+	cache        *Cache
+	logger       log.Logger
 }
 
-type errorContainer struct {
-	error error
-	id    strelets.VirtualChainId
-}
-
-func NewBoyar(strelets strelets.Strelets, cfg config.NodeConfiguration, configCache config.Cache, logger log.Logger) Boyar {
+func NewBoyar(orchestrator adapter.Orchestrator, cfg config.NodeConfiguration, cache *Cache, logger log.Logger) Boyar {
 	return &boyar{
-		strelets:    strelets,
-		config:      cfg,
-		configCache: configCache,
-		logger:      logger,
+		orchestrator: orchestrator,
+		config:       cfg,
+		cache:        cache,
+		logger:       logger,
 	}
-}
-
-func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
-	chains := b.config.Chains()
-
-	var errors []error
-	errorChannel := make(chan *errorContainer, len(chains))
-
-	for _, chain := range chains {
-		if chain.Disabled {
-			b.removeVirtualChain(ctx, chain, errorChannel)
-		} else {
-			b.provisionVirtualChain(ctx, chain, errorChannel)
-		}
-	}
-
-	var messages []string
-
-	for i := 0; i < len(chains); i++ {
-		select {
-		case err := <-errorChannel:
-			if err != nil {
-				errors = append(errors, err.error)
-				messages = append(messages, err.id.String())
-			}
-		case <-ctx.Done():
-			errors = append(errors, ctx.Err())
-			messages = append(messages, ctx.Err().Error())
-		}
-	}
-
-	if len(errors) > 0 {
-		return fmt.Errorf("failed to provision virtual chain %v", strings.Join(messages, ", "))
-	}
-
-	return nil
-}
-
-func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
-	var keys []config.HttpReverseProxyCompositeKey
-
-	// TODO move key manipulation to config package
-	for _, chain := range b.config.Chains() {
-		keys = append(keys, config.HttpReverseProxyCompositeKey{
-			Id:         chain.Id,
-			HttpPort:   chain.HttpPort,
-			GossipPort: chain.HttpPort,
-			Disabled:   chain.Disabled,
-		})
-	}
-
-	data, _ := json.Marshal(keys)
-	hash := crypto.CalculateHash(data)
-
-	if hash == b.configCache.Get(config.HTTP_REVERSE_PROXY_HASH) {
-		return nil
-	}
-
-	// TODO is there a better way to get a loopback interface?
-	if err := b.strelets.UpdateReverseProxy(ctx, &strelets.UpdateReverseProxyInput{
-		Chains:     b.config.Chains(),
-		IP:         helpers.LocalIP(),
-		SSLOptions: b.config.SSLOptions(),
-	}); err != nil {
-		b.logger.Error("failed to apply http proxy configuration", log.Error(err))
-		b.configCache.Remove(config.HTTP_REVERSE_PROXY_HASH)
-		return err
-	}
-
-	b.logger.Info("updated http proxy configuration")
-
-	b.configCache.Put(config.HTTP_REVERSE_PROXY_HASH, hash)
-	return nil
-}
-
-func (b *boyar) ProvisionServices(ctx context.Context) error {
-	if err := b.strelets.ProvisionSharedNetwork(ctx, &strelets.ProvisionSharedNetworkInput{
-		Name: adapter.SHARED_SIGNER_NETWORK,
-	}); err != nil {
-		return err
-	}
-
-	input := &strelets.UpdateServiceInput{
-		Service: b.config.Services().Signer,
-	}
-
-	data, _ := json.Marshal(input)
-	hash := crypto.CalculateHash(data)
-
-	input.KeyPairConfig = b.config.KeyConfig().JSON(false)
-
-	if hash != b.configCache.Get(config.SIGNER_SERVICE_HASH) {
-		if input.Service != nil {
-			err := b.strelets.UpdateService(ctx, input)
-			if err == nil {
-				b.configCache.Put(config.SIGNER_SERVICE_HASH, hash)
-				b.logger.Info("updated signer configuration")
-			} else {
-				b.configCache.Remove(config.SIGNER_SERVICE_HASH)
-				b.logger.Error("failed to update signer configuration", log.Error(err))
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func (b *boyar) removeVirtualChain(ctx context.Context, chain *strelets.VirtualChain, errChannel chan *errorContainer) {
-	go func() {
-		input := &strelets.RemoveVirtualChainInput{
-			VirtualChain: chain,
-		}
-
-		data, _ := json.Marshal(input)
-		hash := crypto.CalculateHash(data)
-
-		if hash == b.configCache.Get(chain.Id.String()) {
-			errChannel <- nil
-			return
-		}
-
-		if err := b.strelets.RemoveVirtualChain(ctx, input); err != nil {
-			b.logger.Error("failed to remove virtual chain",
-				log_types.VirtualChainId(int64(chain.Id)),
-				log.Error(err))
-			errChannel <- &errorContainer{err, chain.Id}
-		} else {
-			b.logger.Info("removed virtual chain", log_types.VirtualChainId(int64(chain.Id)))
-			errChannel <- nil
-		}
-
-		b.configCache.Remove(chain.Id.String()) // clear cache
-	}()
-}
-
-func (b *boyar) provisionVirtualChain(ctx context.Context, chain *strelets.VirtualChain, errChannel chan *errorContainer) {
-	go func() {
-		peers := buildPeersMap(b.config.FederationNodes(), chain.GossipPort)
-
-		signerOn := b.config.Services().SignerOn()
-		keyPairConfig := b.config.KeyConfig().JSON(signerOn)
-
-		input := &strelets.ProvisionVirtualChainInput{
-			VirtualChain: chain,
-			Peers:        peers,
-			NodeAddress:  b.config.NodeAddress(),
-		}
-
-		data, _ := json.Marshal(input)
-		hash := crypto.CalculateHash(data)
-
-		if hash == b.configCache.Get(chain.Id.String()) {
-			errChannel <- nil
-			return
-		}
-
-		input.KeyPairConfig = keyPairConfig // Prevents key leak via log
-
-		if err := b.strelets.ProvisionVirtualChain(ctx, input); err != nil {
-			b.configCache.Remove(chain.Id.String()) // clear cache
-			b.logger.Error("failed to apply virtual chain configuration",
-				log_types.VirtualChainId(int64(chain.Id)),
-				log.Error(err))
-			errChannel <- &errorContainer{err, chain.Id}
-		} else {
-			b.configCache.Put(chain.Id.String(), hash) // update cache
-			b.logger.Info("updated virtual chain configuration",
-				log_types.VirtualChainId(int64(chain.Id)),
-				log.String("configuration", string(data)))
-			errChannel <- nil
-		}
-	}()
 }

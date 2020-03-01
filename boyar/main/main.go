@@ -5,24 +5,20 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/orbs-network/boyarin/boyar"
 	"github.com/orbs-network/boyarin/boyar/config"
+	"github.com/orbs-network/boyarin/services"
 	"github.com/orbs-network/boyarin/strelets/adapter"
-	"github.com/orbs-network/boyarin/supervized"
 	"github.com/orbs-network/boyarin/version"
 	"github.com/orbs-network/scribe/log"
 	"os"
 	"time"
 )
 
-const SERVICE_STATUS_REPORT_PERIOD = 1 * time.Minute
-const SERVICE_STATUS_REPORT_TIMEOUT = 30 * time.Second
-
 func main() {
 	configUrlPtr := flag.String("config-url", "", "http://my-config/config.json")
 	keyPairConfigPathPtr := flag.String("keys", "", "path to public/private key pair in json format")
 
-	daemonizePtr := flag.Bool("daemonize", false, "do not exit the program and keep polling for changes")
+	_ = flag.Bool("daemonize", true, "DEPRECATED (always true)")
 	pollingIntervalPtr := flag.Duration("polling-interval", 1*time.Minute, "how often to poll for configuration in daemon mode (duration: 1s, 1m, 1h, etc)")
 	maxReloadTimePtr := flag.Duration("max-reload-time-delay", 15*time.Minute, "introduces jitter to reloading configuration to make network more stable, only works in daemon mode (duration: 1s, 1m, 1h, etc)")
 
@@ -55,7 +51,6 @@ func main() {
 		ConfigUrl:               *configUrlPtr,
 		KeyPairConfigPath:       *keyPairConfigPathPtr,
 		LogFilePath:             *logFilePath,
-		Daemonize:               *daemonizePtr,
 		PollingInterval:         *pollingIntervalPtr,
 		Timeout:                 *timeoutPtr,
 		MaxReloadTimeDelay:      *maxReloadTimePtr,
@@ -67,25 +62,27 @@ func main() {
 		SSLPrivateKeyPath:       *sslPrivateKeyPtr,
 	}
 
-	logger, err := config.GetLogger(flags)
-	if err != nil {
-		os.Exit(1)
-	}
-
 	if *help {
 		flag.Usage()
 		return
+	}
+
+	logger, err := config.GetLogger(flags)
+	if err != nil {
+		os.Exit(1)
 	}
 
 	if *showConfiguration {
 		printConfiguration(flags, logger)
 		return
 	}
-
-	if err := execute(flags, logger); err != nil {
+	waiter, err := services.Execute(context.Background(), flags, logger)
+	if err != nil {
 		logger.Error("Startup failure", log.Error(err))
 		os.Exit(1)
 	}
+	// should block forever
+	waiter.WaitUntilShutdown(context.Background())
 }
 
 func printConfiguration(flags *config.Flags, logger log.Logger) {
@@ -106,66 +103,4 @@ func printConfiguration(flags *config.Flags, logger log.Logger) {
 	fmt.Println("# Chains:\n# ============================")
 	chains, _ := json.MarshalIndent(cfg.Chains(), "", "  ")
 	fmt.Println(string(chains))
-}
-
-func execute(flags *config.Flags, logger log.Logger) error {
-	if flags.ConfigUrl == "" {
-		return fmt.Errorf("--config-url is a required parameter for provisioning flow")
-	}
-
-	if flags.KeyPairConfigPath == "" {
-		return fmt.Errorf("--keys is a required parameter for provisioning flow")
-	}
-
-	// Even if something crashed, things still were provisioned, meaning the cache should stay
-	configCache := config.NewCache()
-
-	if flags.Daemonize {
-		supervized.GoForever(func() {
-			for {
-				start := time.Now()
-				ctx, cancel := context.WithTimeout(context.Background(), SERVICE_STATUS_REPORT_TIMEOUT)
-				if err := boyar.ReportStatus(ctx, logger, SERVICE_STATUS_REPORT_PERIOD); err != nil {
-					logger.Error("status check failed", log.Error(err))
-				}
-				cancel()
-				<-time.After(SERVICE_STATUS_REPORT_PERIOD - time.Since(start)) // to report exactly every minute
-			}
-		})
-
-		<-supervized.GoForever(func() {
-			for first := true; ; first = false {
-				cfg, err := config.GetConfiguration(flags)
-				if err != nil {
-					logger.Error("invalid configuration", log.Error(err))
-				} else {
-					// skip delay when provisioning for the first time when the node goes up
-					if !first {
-						reloadTimeDelay := cfg.ReloadTimeDelay(flags.MaxReloadTimeDelay)
-						logger.Info("waiting to apply new configuration", log.String("delay", flags.MaxReloadTimeDelay.String()))
-						<-time.After(reloadTimeDelay)
-					}
-
-					ctx, cancel := context.WithTimeout(context.Background(), flags.Timeout)
-					defer cancel()
-
-					boyar.Flow(ctx, cfg, configCache, logger)
-				}
-
-				<-time.After(flags.PollingInterval)
-			}
-		})
-	} else {
-		cfg, err := config.GetConfiguration(flags)
-		if err != nil {
-			return fmt.Errorf("invalid configuration: %s", err)
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), flags.Timeout)
-		defer cancel()
-
-		return boyar.Flow(ctx, cfg, configCache, logger)
-	}
-
-	return nil
 }

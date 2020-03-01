@@ -9,8 +9,6 @@ type Flags struct {
 	SSLCertificatePath string
 	SSLPrivateKeyPath  string
 
-	Daemonize bool
-
 	PollingInterval    time.Duration
 	Timeout            time.Duration
 	MaxReloadTimeDelay time.Duration
@@ -19,7 +17,7 @@ type Flags struct {
 	TopologyContractAddress string
 
 	LoggerHttpEndpoint string
-	LogFilePath string
+	LogFilePath        string
 
 	OrchestratorOptions string
 }

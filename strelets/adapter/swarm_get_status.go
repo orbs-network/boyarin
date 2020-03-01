@@ -34,8 +34,8 @@ func (d *dockerSwarmOrchestrator) GetStatus(ctx context.Context, since time.Dura
 func (d *dockerSwarmOrchestrator) getServiceName(ctx context.Context, serviceID string) (string, error) {
 	if specs, err := d.client.ServiceList(ctx, types.ServiceListOptions{
 		Filters: filters.NewArgs(filters.KeyValuePair{
-			"id",
-			serviceID,
+			Key:   "id",
+			Value: serviceID,
 		}),
 	}); err != nil {
 		return "", err

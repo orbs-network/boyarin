@@ -2,7 +2,7 @@ package ethereum
 
 import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/orbs-network/boyarin/strelets"
+	"github.com/orbs-network/boyarin/boyar/topology"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -37,7 +37,7 @@ func Test_RawTopology_FederationNodes(t *testing.T) {
 		},
 	}).FederationNodes()
 
-	require.EqualValues(t, []*strelets.FederationNode{
+	require.EqualValues(t, []*topology.FederationNode{
 		{
 			IP:      NODE_IP_1,
 			Address: NODE_ADDRESS_1,

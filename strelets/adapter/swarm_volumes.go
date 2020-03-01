@@ -21,13 +21,13 @@ func getVolumeName(nodeAddress string, id uint32, postfix string) string {
 }
 
 func (d *dockerSwarmOrchestrator) provisionVolumes(ctx context.Context, nodeAddress string, id uint32, blocksVolumeSize int, logsVolumeSize int) (mounts []mount.Mount, err error) {
-	if logsMount, err := d.provisionVolume(ctx, getVolumeName(nodeAddress, id, "logs"), ORBS_LOGS_TARGET, logsVolumeSize); err != nil {
+	if logsMount, err := d.provisionVolume(ctx, getVolumeName(nodeAddress, id, "logs"), ORBS_LOGS_TARGET, logsVolumeSize, OrchestratorOptions{}); err != nil {
 		return mounts, err
 	} else {
 		mounts = append(mounts, logsMount)
 	}
 
-	if blocksMount, err := d.provisionVolume(ctx, getVolumeName(nodeAddress, id, "blocks"), ORBS_BLOCKS_TARGET, blocksVolumeSize); err != nil {
+	if blocksMount, err := d.provisionVolume(ctx, getVolumeName(nodeAddress, id, "blocks"), ORBS_BLOCKS_TARGET, blocksVolumeSize, d.options); err != nil {
 		return mounts, err
 	} else {
 		mounts = append(mounts, blocksMount)
@@ -36,8 +36,8 @@ func (d *dockerSwarmOrchestrator) provisionVolumes(ctx context.Context, nodeAddr
 	return mounts, nil
 }
 
-func (d *dockerSwarmOrchestrator) provisionVolume(ctx context.Context, volumeName string, target string, maxSizeInGb int) (mount.Mount, error) {
-	source, driverName, driverOptions := getVolumeDriverOptions(volumeName, d.options, maxSizeInGb)
+func (d *dockerSwarmOrchestrator) provisionVolume(ctx context.Context, volumeName string, target string, maxSizeInGb int, orchestratorOptions OrchestratorOptions) (mount.Mount, error) {
+	source, driverName, driverOptions := getVolumeDriverOptions(volumeName, orchestratorOptions, maxSizeInGb)
 
 	_, err := d.client.VolumeCreate(ctx, volume.VolumeCreateBody{
 		Name:       volumeName,
@@ -50,10 +50,10 @@ func (d *dockerSwarmOrchestrator) provisionVolume(ctx context.Context, volumeNam
 	}
 
 	return mount.Mount{
-		Source:   source,
-		Type:     d.options.MountType(),
-		Target:   target,
-		ReadOnly: false,
+		Source:        source,
+		Type:          d.options.MountType(),
+		Target:        target,
+		ReadOnly:      false,
 		VolumeOptions: getVolumeOptions(d.options, driverName, driverOptions),
 	}, nil
 }

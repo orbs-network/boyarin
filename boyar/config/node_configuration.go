@@ -2,23 +2,26 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/orbs-network/boyarin/boyar/topology"
 	"github.com/orbs-network/boyarin/crypto"
-	"github.com/orbs-network/boyarin/strelets"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"time"
 )
 
 type NodeConfiguration interface {
-	FederationNodes() []*strelets.FederationNode
-	Chains() []*strelets.VirtualChain
+	FederationNodes() []*topology.FederationNode
+	Chains() []*VirtualChain
 	OrchestratorOptions() adapter.OrchestratorOptions
 	KeyConfigPath() string
 	KeyConfig() KeyConfig
 	ReloadTimeDelay(maxDelay time.Duration) time.Duration
 	EthereumEndpoint() string
-	NodeAddress() strelets.NodeAddress
+	NodeAddress() NodeAddress
 	SSLOptions() adapter.SSLOptions
-	Services() strelets.Services
+	Services() Services
+
+	PrefixedContainerName(name string) string
 
 	VerifyConfig() error
 	Hash() string
@@ -27,18 +30,17 @@ type NodeConfiguration interface {
 type MutableNodeConfiguration interface {
 	NodeConfiguration
 
-	SetFederationNodes(federationNodes []*strelets.FederationNode) MutableNodeConfiguration
-	SetKeyConfigPath(keyConfigPath string) MutableNodeConfiguration
+	SetFederationNodes(federationNodes []*topology.FederationNode) MutableNodeConfiguration
 	SetEthereumEndpoint(ethereumEndpoint string) MutableNodeConfiguration
 	SetOrchestratorOptions(options adapter.OrchestratorOptions) MutableNodeConfiguration
 	SetSSLOptions(options adapter.SSLOptions) MutableNodeConfiguration
 }
 
 type nodeConfiguration struct {
-	Chains              []*strelets.VirtualChain    `json:"chains"`
-	FederationNodes     []*strelets.FederationNode  `json:"network"`
+	Chains              []*VirtualChain             `json:"chains"`
+	FederationNodes     []*topology.FederationNode  `json:"network"`
 	OrchestratorOptions adapter.OrchestratorOptions `json:"orchestrator"`
-	Services            strelets.Services           `json:"services"`
+	Services            Services                    `json:"services"`
 }
 
 type nodeConfigurationContainer struct {
@@ -48,15 +50,15 @@ type nodeConfigurationContainer struct {
 	sslOptions       adapter.SSLOptions
 }
 
-func (c *nodeConfigurationContainer) Chains() []*strelets.VirtualChain {
+func (c *nodeConfigurationContainer) Chains() []*VirtualChain {
 	return c.value.Chains
 }
 
-func (c *nodeConfigurationContainer) FederationNodes() []*strelets.FederationNode {
+func (c *nodeConfigurationContainer) FederationNodes() []*topology.FederationNode {
 	return c.value.FederationNodes
 }
 
-func (c *nodeConfigurationContainer) Services() strelets.Services {
+func (c *nodeConfigurationContainer) Services() Services {
 	return c.value.Services
 }
 
@@ -77,19 +79,14 @@ func (c *nodeConfigurationContainer) SSLOptions() adapter.SSLOptions {
 	return c.sslOptions
 }
 
-func (c *nodeConfigurationContainer) SetFederationNodes(federationNodes []*strelets.FederationNode) MutableNodeConfiguration {
+func (c *nodeConfigurationContainer) SetFederationNodes(federationNodes []*topology.FederationNode) MutableNodeConfiguration {
 	c.value.FederationNodes = federationNodes
 	return c
 }
 
-func (c *nodeConfigurationContainer) SetKeyConfigPath(keyConfigPath string) MutableNodeConfiguration {
-	c.keyConfigPath = keyConfigPath
-	return c
-}
-
 // FIXME should add more checks
-func (n *nodeConfigurationContainer) VerifyConfig() error {
-	_, err := n.readKeysConfig()
+func (c *nodeConfigurationContainer) VerifyConfig() error {
+	_, err := c.readKeysConfig()
 	if err != nil {
 		return err
 	}
@@ -126,13 +123,20 @@ func (c *nodeConfigurationContainer) SetSSLOptions(options adapter.SSLOptions) M
 }
 
 func (c *nodeConfigurationContainer) SetSignerEndpoint() {
-	if c.Services().SignerOn() {
-		value := "http://" + c.Services().Signer.InternalEndpoint()
+	if signer := c.Services().Signer; signer != nil { // FIXME this should become mandatory
+		value := fmt.Sprintf("http://%s:%d", adapter.GetServiceId(c.PrefixedContainerName(SIGNER)), signer.Port)
 		c.value.overrideValues("signer-endpoint", value)
 	}
 }
 
-func (n *nodeConfigurationContainer) KeyConfig() KeyConfig {
-	cfg, _ := n.readKeysConfig()
+func (c *nodeConfigurationContainer) KeyConfig() KeyConfig {
+	cfg, err := c.readKeysConfig()
+	if err != nil {
+		panic(fmt.Sprintf("key file %s is missing: %s", c.keyConfigPath, err.Error()))
+	}
 	return cfg
+}
+
+func (c *nodeConfigurationContainer) PrefixedContainerName(name string) string {
+	return c.NodeAddress().ShortID() + "-" + name
 }

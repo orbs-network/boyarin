@@ -7,7 +7,7 @@ import (
 
 func TestDockerSwarm_getVolumeDriverOptionsDefaults(t *testing.T) {
 	orchestratorOptions := OrchestratorOptions{}
-	source, driver, options := getVolumeDriverOptions("myVolume", orchestratorOptions, 1976)
+	_, driver, options := getVolumeDriverOptions("myVolume", orchestratorOptions, 1976)
 
 	require.Equal(t, "local", driver)
 	require.Empty(t, options)
@@ -21,7 +21,7 @@ func TestDockerSwarm_getVolumeDriverOptionsWithStorageOptions(t *testing.T) {
 	orchestratorOptions := OrchestratorOptions{
 		StorageOptions: storageOptions,
 	}
-	driver, options := getVolumeDriverOptions("myVolume", orchestratorOptions, 1976)
+	_, driver, options := getVolumeDriverOptions("myVolume", orchestratorOptions, 1976)
 
 	require.Equal(t, "local", driver)
 	require.NotEmpty(t, options)
@@ -33,7 +33,7 @@ func TestDockerSwarm_getVolumeDriverOptionsWithRexray(t *testing.T) {
 	orchestratorOptions := OrchestratorOptions{
 		StorageDriver: "rexray/ebs",
 	}
-	driver, options := getVolumeDriverOptions("myVolume", orchestratorOptions, 1976)
+	_, driver, options := getVolumeDriverOptions("myVolume", orchestratorOptions, 1976)
 
 	require.Equal(t, "rexray/ebs", driver)
 	require.NotEmpty(t, options)
@@ -47,7 +47,7 @@ func TestDockerSwarm_getVolumeDriverWithLocalNFS(t *testing.T) {
 	orchestratorOptions := OrchestratorOptions{
 		StorageOptions: storageOptions,
 	}
-	driver, options := getVolumeDriverOptions("myVolume", orchestratorOptions, 1976)
+	_, driver, options := getVolumeDriverOptions("myVolume", orchestratorOptions, 1976)
 
 	require.Equal(t, "local", driver)
 	require.NotEmpty(t, options)
@@ -55,19 +55,19 @@ func TestDockerSwarm_getVolumeDriverWithLocalNFS(t *testing.T) {
 	require.Equal(t, "/myVolume", options["device"])
 }
 
-// FIXME add test
 func TestDockerSwarm_getVolumeDriverWithBindMounts(t *testing.T) {
 	storageOptions := make(map[string]string)
 	storageOptions["type"] = "nfs"
 
 	orchestratorOptions := OrchestratorOptions{
-		StorageOptions: storageOptions,
+		StorageOptions:   storageOptions,
 		StorageMountType: "bind",
 	}
-	driver, options := getVolumeDriverOptions("myVolume", orchestratorOptions, 1976)
+	volumeName, driver, options := getVolumeDriverOptions("myVolume", orchestratorOptions, 1976)
 
 	require.Equal(t, "local", driver)
 	require.NotEmpty(t, options)
 	require.Equal(t, "nfs", options["type"])
-	require.Equal(t, "/myVolume", options["device"])
+	require.Empty(t, options["device"])
+	require.Equal(t, "/var/efs/myVolume", volumeName)
 }

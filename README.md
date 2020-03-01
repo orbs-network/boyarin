@@ -24,8 +24,6 @@ To remove all containers: `docker rm -f $(docker ps -aq)`
 
 `--config-url` path to Boyar configuration
 
-`--daemonize` do not exit the program and keep polling for changes
-
 `--ethereum-endpoint` HTTP endpoint for the Ethereum node
 
 `--topology-contract-address` Ethereum address for topology contract
@@ -122,7 +120,7 @@ If both these parameters are present, the node will also start service SSL traff
       }
     }
   ],
-  "services": { // list of auxilary services (optional)
+  "services": { // list of auxilary services (mandatory)
     "signer": {
       "Port": 7777,
       "DockerConfig": {
@@ -149,3 +147,7 @@ If both these parameters are present, the node will also start service SSL traff
 }
 
 ```
+
+## Breaking changes in v1.0.0
+
+Services has become **mandatory** part of the config.

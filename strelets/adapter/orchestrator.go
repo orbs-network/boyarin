@@ -2,6 +2,7 @@ package adapter
 
 import (
 	"context"
+	"github.com/docker/docker/api/types/mount"
 	"io"
 	"time"
 )
@@ -66,6 +67,7 @@ type Orchestrator interface {
 
 type OrchestratorOptions struct {
 	StorageDriver          string            `json:"storage-driver"`
+	StorageMountType string `json:"storage-mount-type"`
 	StorageOptions         map[string]string `json:"storage-options"`
 	MaxReloadTimedDelayStr string            `json:"max-reload-time-delay"`
 
@@ -73,6 +75,15 @@ type OrchestratorOptions struct {
 	HTTPPort uint32 `json:"http-port"`
 	SSLPort  uint32 `json:"ssl-port"`
 }
+
+func (s OrchestratorOptions) MountType() mount.Type {
+	if s.StorageMountType == "" {
+		return mount.TypeVolume
+	}
+
+	return mount.Type(s.StorageMountType)
+}
+
 
 type SSLOptions struct {
 	SSLCertificatePath string

@@ -266,6 +266,21 @@ func AssertServiceUp(t helpers.TestingT, ctx context.Context, serviceName string
 	require.True(t, ok, "service should be up")
 }
 
+func AssertServiceDown(t helpers.TestingT, ctx context.Context, serviceName string) {
+	orchestrator, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{}, helpers.DefaultTestLogger())
+	require.NoError(t, err)
+
+	statuses, err := orchestrator.GetStatus(ctx, 1*time.Second)
+	require.NoError(t, err)
+
+	ok := true
+	for _, status := range statuses {
+		ok = ok && status.Name != serviceName
+	}
+
+	require.True(t, ok, "service should be down")
+}
+
 func AssertVchainUp(t helpers.TestingT, port int, publickKey string, vc1 VChainArgument) {
 	metrics := GetVChainMetrics(t, port, vc1)
 	require.Equal(t, metrics.String("Node.Address"), publickKey)

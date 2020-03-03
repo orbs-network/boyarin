@@ -24,8 +24,7 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 
 		if chain.Disabled {
 			if b.cache.vChains.CheckNewValue(containerName, removed) {
-				serviceName := adapter.GetServiceId(chain.GetContainerName())
-				if err := b.orchestrator.RemoveService(ctx, serviceName); err != nil {
+				if err := b.orchestrator.RemoveService(ctx, containerName); err != nil {
 					b.cache.vChains.Clear(chain.Id.String())
 
 					b.logger.Error("failed to remove virtual chain",

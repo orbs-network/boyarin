@@ -9,6 +9,11 @@ ORBS_NODE_DOCKER_IMAGE=${ORBS_NODE_DOCKER_IMAGE:-"727534866935.dkr.ecr.us-west-2
 #docker pull ${SIGNER_DOCKER_IMAGE}:experimental
 #docker tag ${ORBS_NODE_DOCKER_IMAGE}:experimental orbs:export
 #docker tag ${SIGNER_DOCKER_IMAGE}:experimental orbs:signer
+
+docker pull orbsnetwork/node:experimental
+docker pull orbsnetwork/signer:experimental
+docker pull orbsnetwork/network-state-reader:latest # FIXME replace with experimental
+
 docker swarm init
 
 # clean docker state

@@ -35,8 +35,8 @@ func verifySource(t *testing.T, source NodeConfiguration) {
 	require.EqualValues(t, 4400, chain.GossipPort)
 
 	require.EqualValues(t, "node1", chain.DockerConfig.ContainerNamePrefix)
-	require.EqualValues(t, "506367651493.dkr.ecr.us-west-2.amazonaws.com/orbs-network-v1", chain.DockerConfig.Image)
-	require.EqualValues(t, "master", chain.DockerConfig.Tag)
+	require.EqualValues(t, "orbsnetwork/node", chain.DockerConfig.Image)
+	require.EqualValues(t, "experimental", chain.DockerConfig.Tag)
 	require.EqualValues(t, false, chain.DockerConfig.Pull)
 }
 

@@ -32,7 +32,7 @@ func Test_BoyarSignerOffOn(t *testing.T) {
 	cache := NewCache()
 
 	source := getJSONConfig(t, Config)
-	require.EqualValues(t, "master", source.Services().Signer.DockerConfig.Tag)
+	require.EqualValues(t, "experimental", source.Services().Signer.DockerConfig.Tag)
 	boyarWithoutSigner := NewBoyar(orchestrator, source, cache, helpers.DefaultTestLogger())
 
 	orchestrator.On("GetOverlayNetwork", mock.Anything, mock.Anything, mock.Anything).Return("fake-network-id", nil).Once()

@@ -22,7 +22,7 @@ func Test_getVirtualChainServiceSpec(t *testing.T) {
 	replicas := uint64(1)
 
 	serviceConfig := &ServiceConfig{
-		ImageName:     "orbs:export",
+		ImageName:     "orbsnetwork/node:experimental",
 		ContainerName: containerName,
 		GossipPort:    8800,
 		HttpPort:      16160,
@@ -38,7 +38,7 @@ func Test_getVirtualChainServiceSpec(t *testing.T) {
 
 	require.EqualValues(t, spec.TaskTemplate, swarm.TaskSpec{
 		ContainerSpec: &swarm.ContainerSpec{
-			Image: "orbs:export",
+			Image: "orbsnetwork/node:experimental",
 			Command: []string{
 				"/opt/orbs/orbs-node",
 				"--silent",

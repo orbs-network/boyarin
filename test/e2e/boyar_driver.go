@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-const DEFAULT_VCHAIN_TIMEOUT = 30 * time.Second
+const DEFAULT_VCHAIN_TIMEOUT = 60 * time.Second
 
 type VChainArgument struct {
 	Id       int

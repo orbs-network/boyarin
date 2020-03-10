@@ -12,7 +12,7 @@ ORBS_NODE_DOCKER_IMAGE=${ORBS_NODE_DOCKER_IMAGE:-"727534866935.dkr.ecr.us-west-2
 
 docker pull orbsnetwork/node:experimental
 docker pull orbsnetwork/signer:experimental
-docker pull orbsnetwork/network-state-reader:latest # FIXME replace with experimental
+docker pull orbsnetwork/management:latest # FIXME replace with experimental
 
 docker swarm init
 

@@ -47,6 +47,11 @@ func configJson(t *testing.T, topology []interface{}, genesisValidators []string
 		"orchestrator": map[string]interface{}{
 			"max-reload-time-delay": "1s",
 			"http-port":             httpPort,
+			"DynamicManagementConfig": map[string]interface{}{
+				"Url":          "http://localhost:7666/node/management",
+				"ReadInterval": "1m",
+				"ResetTimeout": "30m",
+			},
 		},
 		"chains": chains,
 		"services": map[string]interface{}{

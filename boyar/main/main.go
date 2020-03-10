@@ -80,19 +80,20 @@ func main() {
 	}
 
 	if flags.Bootstrap {
-		err := services.Bootstrap(context.Background(), flags, logger)
-		if err != nil {
-			logger.Error("Failed to bootstrap", log.Error(err))
-			return
-		}
-
-		flags = &config.Flags{
-			ConfigUrl:         "http://127.0.0.1:7666",
-			KeyPairConfigPath: flags.KeyPairConfigPath,
-			Timeout:           flags.Timeout,
-			PollingInterval:   flags.PollingInterval,
-		}
-
+		logger.Error("FIXME: not supported yet")
+		return
+		//err := services.Bootstrap(context.Background(), flags, logger)
+		//if err != nil {
+		//	logger.Error("Failed to bootstrap", log.Error(err))
+		//	return
+		//}
+		//
+		//flags = &config.Flags{
+		//	ConfigUrl:         "http://127.0.0.1:7666",
+		//	KeyPairConfigPath: flags.KeyPairConfigPath,
+		//	Timeout:           flags.Timeout,
+		//	PollingInterval:   flags.PollingInterval,
+		//}
 	}
 	waiter, err := services.Execute(context.Background(), flags, logger)
 	if err != nil {

@@ -14,7 +14,6 @@ import (
 )
 
 func TestE2EBootstrapWithDefaultConfig(t *testing.T) {
-	t.Skip("not ready yet")
 	helpers.SkipUnlessSwarmIsEnabled(t)
 
 	vc1 := VChainArgument{Id: 42}
@@ -26,23 +25,55 @@ func TestE2EBootstrapWithDefaultConfig(t *testing.T) {
 			NodePrivateKey: PrivateKey,
 		}
 
-		flags, cleanup := SetupBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), vc1)
+		defaultFlags, cleanup := SetupBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), vc1)
 		defer cleanup()
 
-		err := services.Bootstrap(ctx, flags, logger)
+		bootstrapConfig := fmt.Sprintf(`
+{
+  "orchestrator": {
+    "DynamicManagementConfig": {
+      "Url": "http://localhost:7666/node/management",
+      "ReadInterval": "1m",
+      "ResetTimeout": "30m"
+    }
+  },
+  "services": {
+    "management": {
+      "InternalPort": 8080,
+      "ExternalPort": 7666,
+      "DockerConfig": {
+        "Image":  "orbsnetwork/management",
+        "Tag":    "latest",
+        "Pull":   true
+      },
+      "Config": {
+        "EthereumGenesisContract": "0x2384723487623784638272348",
+        "EthereumEndpoint": "http://eth.orbs.com",
+		"boyarLegacyBootstrap": "%s"
+      }
+    }
+  }
+}
+`, defaultFlags.ConfigUrl)
+
+		cfg, err := config.NewStringConfigurationSource(bootstrapConfig, "", defaultFlags.KeyPairConfigPath)
+		require.NoError(t, err)
+
+		err = services.Bootstrap(ctx, cfg, logger)
 		require.NoError(t, err)
 
 		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
 			AssertServiceUp(t, ctx, "cfc9e5-management-service-stack")
 		})
 
-		newFlags := &config.Flags{
-			ConfigUrl:         fmt.Sprintf("http://%s:7666", helpers.LocalIP()),
-			KeyPairConfigPath: flags.KeyPairConfigPath,
+		flags := &config.Flags{
+			ConfigUrl:         cfg.OrchestratorOptions().DynamicManagementConfig.Url,
+			KeyPairConfigPath: defaultFlags.KeyPairConfigPath,
 			Timeout:           time.Minute,
 			PollingInterval:   500 * time.Millisecond,
 		}
-		waiter, err = services.Execute(ctx, newFlags, logger)
+
+		waiter, err = services.Execute(ctx, flags, logger)
 		require.NoError(t, err)
 
 		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {

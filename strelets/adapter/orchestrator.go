@@ -66,11 +66,17 @@ type Orchestrator interface {
 	io.Closer
 }
 
+type DynamicManagementConfig struct {
+	Url string
+}
+
 type OrchestratorOptions struct {
 	StorageDriver          string            `json:"storage-driver"`
 	StorageMountType       string            `json:"storage-mount-type"`
 	StorageOptions         map[string]string `json:"storage-options"`
 	MaxReloadTimedDelayStr string            `json:"max-reload-time-delay"`
+
+	DynamicManagementConfig DynamicManagementConfig
 
 	// Testing purposes
 	HTTPPort uint32 `json:"http-port"`

@@ -19,7 +19,7 @@ func Test_getNginxServiceSpec(t *testing.T) {
 		vchainConfId: "vchain-config-id",
 		nginxConfId:  "nginx-config-id",
 	}
-	spec := getNginxServiceSpec(namespace, httpPort, sslPort, secrets)
+	spec := getNginxServiceSpec(namespace, httpPort, sslPort, secrets, nil)
 
 	require.EqualValues(t, "node123-proxy-stack", spec.Name)
 

@@ -43,11 +43,13 @@ func (b *boyar) provisionService(ctx context.Context, cfg config.ServiceConfig, 
 			}
 
 			serviceConfig := &adapter.ServiceConfig{
-				ImageName:        imageName,
-				ContainerName:    fullServiceName,
-				Executable:       cfg.Executable,
-				HttpPort:         service.InternalPort,
-				ExternalHttpPort: service.ExternalPort,
+				ImageName:     imageName,
+				ContainerName: fullServiceName,
+				Executable:    cfg.Executable,
+				InternalPort:  service.InternalPort,
+				ExternalPort:  service.ExternalPort,
+
+				SignerNetworkEnabled: cfg.SignerNetworkEnabled,
 
 				LimitedMemory:  service.DockerConfig.Resources.Limits.Memory,
 				LimitedCPU:     service.DockerConfig.Resources.Limits.CPUs,

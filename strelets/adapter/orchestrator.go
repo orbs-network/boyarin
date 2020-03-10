@@ -25,9 +25,11 @@ type ServiceConfig struct {
 	Executable    string
 
 	// FIXME rename ports to be less vchain-specific
-	HttpPort         int
-	GossipPort       int
-	ExternalHttpPort int
+	InternalPort int
+	ExternalPort int
+
+	SignerNetworkEnabled    bool
+	HTTPProxyNetworkEnabled bool
 
 	LimitedMemory  int64
 	LimitedCPU     float64

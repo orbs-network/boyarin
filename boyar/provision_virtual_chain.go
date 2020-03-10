@@ -20,7 +20,7 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 
 	var errors []error
 	for _, chain := range chains {
-		containerName := b.config.PrefixedContainerName("chain-" + chain.Id.String())
+		containerName := b.config.PrefixedContainerName(chain.GetContainerName())
 
 		if chain.Disabled {
 			if b.cache.vChains.CheckNewValue(containerName, removed) {
@@ -53,8 +53,11 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 					NodeAddress:   string(b.config.NodeAddress()),
 					ImageName:     imageName,
 					ContainerName: containerName,
-					HttpPort:      chain.HttpPort,
-					GossipPort:    chain.GossipPort,
+					InternalPort:  4400,
+					ExternalPort:  chain.GossipPort,
+
+					SignerNetworkEnabled:    true,
+					HTTPProxyNetworkEnabled: true,
 
 					LimitedMemory:  chain.DockerConfig.Resources.Limits.Memory,
 					LimitedCPU:     chain.DockerConfig.Resources.Limits.CPUs,

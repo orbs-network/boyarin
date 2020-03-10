@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar/config"
+	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/version"
 	"strings"
 	"text/template"
@@ -14,7 +15,7 @@ func getDefaultNginxResponse(status string) string {
 	return fmt.Sprintf(`{"Status":"%s","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":%s}}}`, status, string(rawVersion))
 }
 
-func getNginxConfig(chains []*config.VirtualChain, ip string, sslEnabled bool) string {
+func getNginxConfig(cfg config.NodeConfiguration) string {
 	var sb strings.Builder
 	var TplNginxConf = template.Must(template.New("").Funcs(template.FuncMap{
 		"DefaultResponse": getDefaultNginxResponse,
@@ -24,12 +25,9 @@ location ~^/$ { return 200 '{{DefaultResponse "OK"}}'; }
 location / { error_page 404 = @error404; }
 location @error404 { return 404 '{{DefaultResponse "Not found"}}'; }
 location @error502 { return 502 '{{DefaultResponse "Bad gateway"}}'; }
-{{ $ip := .Ip -}}
-	{{- range .Chains -}}
-		{{- if not .Disabled -}}
-location /vchains/{{.Id}}/ { proxy_pass http://{{$ip}}:{{.HttpPort}}/; error_page 502 = @error502; }
-		{{- end -}} {{- /* if not .Disabled */ -}}
-	{{- end -}} {{- /* range .Chains */ -}}
+	{{- range .Chains }}
+location /vchains/{{.Id}}/ { proxy_pass http://{{.ServiceId}}:8080/; error_page 502 = @error502; }
+	{{- end }} {{- /* range .Chains */ -}}
 {{- end -}} {{- /* define "locations" */ -}}
 server {
 listen 80;
@@ -44,15 +42,28 @@ ssl_certificate_key /var/run/secrets/ssl-key;
 {{template "locations" .}}
 }
 {{- end}} {{- /* if .SslEnabled */ -}}`))
+	var transformedChains []struct {
+		Id        config.VirtualChainId
+		ServiceId string
+	}
+
+	for _, chain := range cfg.Chains() {
+		if !chain.Disabled {
+			transformedChains = append(transformedChains, struct {
+				Id        config.VirtualChainId
+				ServiceId string
+			}{Id: chain.Id, ServiceId: adapter.GetServiceId(cfg.PrefixedContainerName(chain.GetContainerName()))})
+		}
+	}
+
 	err := TplNginxConf.Execute(&sb, struct {
-		Chains     []*config.VirtualChain
-		Ip         string
+		Chains     interface{}
 		SslEnabled bool
 	}{
-		Chains:     chains,
-		Ip:         ip,
-		SslEnabled: sslEnabled,
+		Chains:     transformedChains,
+		SslEnabled: cfg.SSLOptions().SSLCertificatePath != "" && cfg.SSLOptions().SSLPrivateKeyPath != "",
 	})
+
 	if err != nil {
 		panic(err)
 	}

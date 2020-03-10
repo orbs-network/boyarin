@@ -41,11 +41,18 @@ func (d *dockerSwarmOrchestrator) RunReverseProxy(ctx context.Context, config *R
 		sslPort = config.SSLPort
 	}
 
-	spec := getNginxServiceSpec(config.ContainerName, httpPort, sslPort, storedSecrets)
+	var networks []swarm.NetworkAttachmentConfig
+	proxyNetwork, err := d.getNetwork(ctx, SHARED_PROXY_NETWORK)
+	if err != nil {
+		return err
+	}
+	networks = append(networks, proxyNetwork)
+
+	spec := getNginxServiceSpec(config.ContainerName, httpPort, sslPort, storedSecrets, networks)
 	return d.create(ctx, spec, "")
 }
 
-func getNginxServiceSpec(namespace string, httpPort uint32, sslPort uint32, storedSecrets *dockerSwarmNginxSecretsConfig) swarm.ServiceSpec {
+func getNginxServiceSpec(namespace string, httpPort uint32, sslPort uint32, storedSecrets *dockerSwarmNginxSecretsConfig, networks []swarm.NetworkAttachmentConfig) swarm.ServiceSpec {
 	restartDelay := time.Duration(10 * time.Second)
 	replicas := uint64(1)
 
@@ -98,6 +105,7 @@ func getNginxServiceSpec(namespace string, httpPort uint32, sslPort uint32, stor
 		EndpointSpec: &swarm.EndpointSpec{
 			Ports: ports,
 		},
+		Networks: networks,
 	}
 	spec.Name = GetServiceId(namespace)
 

@@ -24,8 +24,8 @@ func Test_getVirtualChainServiceSpec(t *testing.T) {
 	serviceConfig := &ServiceConfig{
 		ImageName:     "orbsnetwork/node:experimental",
 		ContainerName: containerName,
-		GossipPort:    8800,
-		HttpPort:      16160,
+		InternalPort:  8800,
+		ExternalPort:  16160,
 	}
 
 	networkConfig := []swarm.NetworkAttachmentConfig{
@@ -65,13 +65,7 @@ func Test_getVirtualChainServiceSpec(t *testing.T) {
 				Protocol:      "tcp",
 				PublishMode:   swarm.PortConfigPublishModeIngress,
 				PublishedPort: 16160,
-				TargetPort:    8080,
-			},
-			{
-				Protocol:      "tcp",
-				PublishMode:   swarm.PortConfigPublishModeIngress,
-				PublishedPort: 8800,
-				TargetPort:    4400,
+				TargetPort:    8800,
 			},
 		},
 	})

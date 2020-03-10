@@ -14,9 +14,14 @@ func (d *dockerSwarmOrchestrator) RunService(ctx context.Context, serviceConfig 
 		return err
 	}
 
-	networks, err := d.getNetworks(ctx, SHARED_SIGNER_NETWORK)
-	if err != nil {
-		return err
+	var networks []swarm.NetworkAttachmentConfig
+	if serviceConfig.SignerNetworkEnabled {
+		signerNetwork, err := d.getNetwork(ctx, SHARED_SIGNER_NETWORK)
+		if err != nil {
+			return err
+		}
+
+		networks = append(networks, signerNetwork)
 	}
 
 	config, err := d.storeServiceConfiguration(ctx, serviceConfig.ContainerName, appConfig)
@@ -73,14 +78,14 @@ func getServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.SecretReferen
 		Mode:     getServiceMode(replicas),
 	}
 
-	if serviceConfig.ExternalHttpPort != 0 {
+	if serviceConfig.ExternalPort != 0 {
 		spec.EndpointSpec = &swarm.EndpointSpec{
 			Ports: []swarm.PortConfig{
 				{
 					Protocol:      "tcp",
 					PublishMode:   swarm.PortConfigPublishModeIngress,
-					PublishedPort: uint32(serviceConfig.HttpPort),
-					TargetPort:    uint32(serviceConfig.ExternalHttpPort),
+					PublishedPort: uint32(serviceConfig.ExternalPort),
+					TargetPort:    uint32(serviceConfig.InternalPort),
 				},
 			},
 		}

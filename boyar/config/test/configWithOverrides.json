@@ -36,28 +36,27 @@
       }
     }
   ],
-  "services": {
-    "signer": {
-      "Port": 7777,
-      "DockerConfig": {
-        "ContainerNamePrefix": "node1",
-        "Image":  "orbsnetwork/signer",
-        "Tag":    "experimental",
-        "Pull":   false,
-        "Resources": {
-          "Limits": {
-            "Memory": 1024,
-            "CPUs": 1
-          },
-          "Reservations": {
-            "Memory": 512,
-            "CPUs": 0.5
-          }
+  "management": {
+    "Port": 8080,
+    "ExternalPort": 7666,
+    "DockerConfig": {
+      "ContainerNamePrefix": "node1",
+      "Image": "orbsnetwork/management",
+      "Tag": "latest",
+      "Pull": false,
+      "Resources": {
+        "Limits": {
+          "Memory": 1024,
+          "CPUs": 1
+        },
+        "Reservations": {
+          "Memory": 512,
+          "CPUs": 0.5
         }
-      },
-      "Config": {
-        "api": "v1"
       }
+    },
+    "Config": {
+      "api": "v1"
     }
   }
 }

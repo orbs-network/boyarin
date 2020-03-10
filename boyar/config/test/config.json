@@ -93,29 +93,6 @@
       "Config": {
         "api": "v1"
       }
-    },
-    "config": {
-      "Port": 7666,
-      "External": true,
-      "DockerConfig": {
-        "ContainerNamePrefix": "node1",
-        "Image": "orbsnetwork/network-state-reader",
-        "Tag": "latest",
-        "Pull": false,
-        "Resources": {
-          "Limits": {
-            "Memory": 1024,
-            "CPUs": 1
-          },
-          "Reservations": {
-            "Memory": 512,
-            "CPUs": 0.5
-          }
-        }
-      },
-      "Config": {
-        "api": "v1"
-      }
     }
   }
 }

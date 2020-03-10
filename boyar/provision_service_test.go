@@ -71,7 +71,7 @@ func Test_BoyarSignerOffOn(t *testing.T) {
 //	require.NoError(t, err)
 //	orchestrator.AssertExpectations(t)
 //
-//	sourceWithoutSigner := getJSONConfig(t, Config)
+//	sourceWithoutSigner := getJSONConfig(t, Management)
 //	boyarWithoutSigner := NewBoyar(orchestrator, sourceWithoutSigner, cache, helpers.DefaultTestLogger())
 //
 //	orchestrator.On("ProvisionSharedNetwork", mock.Anything, mock.Anything).Return(nil).Once()

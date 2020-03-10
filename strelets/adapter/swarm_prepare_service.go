@@ -73,14 +73,14 @@ func getServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.SecretReferen
 		Mode:     getServiceMode(replicas),
 	}
 
-	if serviceConfig.External {
+	if serviceConfig.ExternalHttpPort != 0 {
 		spec.EndpointSpec = &swarm.EndpointSpec{
 			Ports: []swarm.PortConfig{
 				{
 					Protocol:      "tcp",
 					PublishMode:   swarm.PortConfigPublishModeIngress,
 					PublishedPort: uint32(serviceConfig.HttpPort),
-					TargetPort:    uint32(serviceConfig.HttpPort),
+					TargetPort:    uint32(serviceConfig.ExternalHttpPort),
 				},
 			},
 		}

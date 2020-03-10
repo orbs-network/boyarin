@@ -14,6 +14,7 @@ import (
 )
 
 func TestE2EBootstrapWithDefaultConfig(t *testing.T) {
+	t.Skip("not ready yet")
 	helpers.SkipUnlessSwarmIsEnabled(t)
 
 	vc1 := VChainArgument{Id: 42}
@@ -32,7 +33,7 @@ func TestE2EBootstrapWithDefaultConfig(t *testing.T) {
 		require.NoError(t, err)
 
 		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
-			AssertServiceUp(t, ctx, "cfc9e5-config-service-stack")
+			AssertServiceUp(t, ctx, "cfc9e5-management-service-stack")
 		})
 
 		newFlags := &config.Flags{

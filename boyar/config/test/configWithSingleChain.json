@@ -36,13 +36,14 @@
     }
   ],
   "services": {
-    "signer": {
-      "Port": 7777,
+    "management": {
+      "Port": 8080,
+      "ExternalPort": 7666,
       "DockerConfig": {
         "ContainerNamePrefix": "node1",
-        "Image":  "orbsnetwork/signer",
-        "Tag":    "experimental",
-        "Pull":   false,
+        "Image": "orbsnetwork/management",
+        "Tag": "latest",
+        "Pull": false,
         "Resources": {
           "Limits": {
             "Memory": 1024,

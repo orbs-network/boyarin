@@ -17,7 +17,7 @@ func buildBootstrapConfig(configUrl string, ethereumEndpoint string) string {
 					"Tag":   "latest",
 					"Pull":  false,
 				},
-				"Config": map[string]interface{}{
+				"Management": map[string]interface{}{
 					"ethereumEndpoint":     ethereumEndpoint,
 					"boyarLegacyBootstrap": configUrl,
 				},

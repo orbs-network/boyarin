@@ -8,6 +8,17 @@ Management layer that provisions virtual chains for [ORBS blockchain](https://gi
 
 Works together with [Nebula](https://github.com/orbs-network/nebula).
 
+
+## Changelog
+
+### Breaking changes in v1.0.0
+
+Services has become **mandatory** part of the config.
+
+**FIXME** update config to reflect latest changes.
+
+### v0.17.0
+
 Staring from version 0.17.0, Boyar only works with Docker version higher than 19.03.
 
 ## Tips
@@ -92,8 +103,8 @@ If both these parameters are present, the node will also start service SSL traff
   "chains": [
     {
       "Id":         42, // vchain id passed to the binary inside the container (mandatory, unique)
-      "HttpPort":   8080, // http port passed to the binary inside the container (mandatory, unique)
-      "GossipPort": 4400, // gossip port passed to the binary inside the container (mandatory, unique)
+      "InternalPort":   4400, // gossip port passed to the binary inside the container (mandatory, unique)
+      "ExternalPort": 4400, // gossip port passed to the binary inside the container (mandatory, unique)
       "Disabled": false, // (optional)
       "DockerConfig": {
         "ContainerNamePrefix": "orbs-network",
@@ -147,7 +158,3 @@ If both these parameters are present, the node will also start service SSL traff
 }
 
 ```
-
-## Breaking changes in v1.0.0
-
-Services has become **mandatory** part of the config.

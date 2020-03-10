@@ -12,10 +12,9 @@
   "chains": [
     {
       "Id":        42,
-      "HttpPort":   8080,
-      "GossipPort": 4400,
+      "InternalPort": 4400,
+      "ExternalPort": 4400,
       "DockerConfig": {
-        "ContainerNamePrefix": "node1",
         "Image":  "orbsnetwork/node",
         "Tag":    "experimental",
         "Pull":   false,
@@ -41,10 +40,9 @@
     },
     {
       "Id":        1991,
-      "HttpPort":   8081,
-      "GossipPort": 4401,
+      "InternalPort": 4400,
+      "ExternalPort": 4401,
       "DockerConfig": {
-        "ContainerNamePrefix": "node1",
         "Image":  "orbsnetwork/node",
         "Tag":    "experimental",
         "Pull":   false
@@ -56,11 +54,10 @@
     },
     {
       "Id":        1976,
-      "HttpPort":   8082,
-      "GossipPort": 4402,
+      "InternalPort": 4400,
+      "ExternalPort": 4402,
       "Disabled": true,
       "DockerConfig": {
-        "ContainerNamePrefix": "node1",
         "Image":  "orbsnetwork/node",
         "Tag":    "experimental",
         "Pull":   false
@@ -73,22 +70,11 @@
   ],
   "services": {
     "signer": {
-      "Port": 7777,
+      "InternalPort": 7777,
       "DockerConfig": {
-        "ContainerNamePrefix": "node1",
         "Image":  "orbsnetwork/signer",
         "Tag":    "experimental",
-        "Pull":   false,
-        "Resources": {
-          "Limits": {
-            "Memory": 1024,
-            "CPUs": 1
-          },
-          "Reservations": {
-            "Memory": 512,
-            "CPUs": 0.5
-          }
-        }
+        "Pull":   false
       },
       "Config": {
         "api": "v1"

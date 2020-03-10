@@ -24,7 +24,6 @@ type ServiceConfig struct {
 	ContainerName string
 	Executable    string
 
-	// FIXME rename ports to be less vchain-specific
 	InternalPort int
 	ExternalPort int
 

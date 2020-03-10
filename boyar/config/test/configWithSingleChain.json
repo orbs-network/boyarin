@@ -11,23 +11,12 @@
   "chains": [
     {
       "Id":        42,
-      "HttpPort":   8080,
-      "GossipPort": 4400,
+      "InternalPort": 4400,
+      "ExternalPort": 4400,
       "DockerConfig": {
-        "ContainerNamePrefix": "node1",
         "Image":  "orbsnetwork/node",
         "Tag":    "experimental",
-        "Pull":   false,
-        "Resources": {
-          "Limits": {
-            "Memory": 1024,
-            "CPUs": 1
-          },
-          "Reservations": {
-            "Memory": 512,
-            "CPUs": 0.5
-          }
-        }
+        "Pull":   false
       },
       "Config": {
         "ethereum-endpoint": "http://localhost:8545",
@@ -37,23 +26,12 @@
   ],
   "services": {
     "management": {
-      "Port": 8080,
+      "InternalPort": 8080,
       "ExternalPort": 7666,
       "DockerConfig": {
-        "ContainerNamePrefix": "node1",
         "Image": "orbsnetwork/management",
         "Tag": "latest",
-        "Pull": false,
-        "Resources": {
-          "Limits": {
-            "Memory": 1024,
-            "CPUs": 1
-          },
-          "Reservations": {
-            "Memory": 512,
-            "CPUs": 0.5
-          }
-        }
+        "Pull": false
       },
       "Config": {
         "api": "v1"

@@ -11,11 +11,8 @@ import (
 type VirtualChainId uint32
 
 type VirtualChain struct {
-	Id           VirtualChainId
-	GossipPort   int
-	DockerConfig DockerConfig
-	Config       map[string]interface{}
-	Disabled     bool
+	Service
+	Id VirtualChainId
 }
 
 type VirtualChainConfig struct {

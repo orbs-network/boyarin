@@ -31,21 +31,13 @@ type VChainArgument struct {
 
 const basePort = 6000
 
-func (vc VChainArgument) GossipPort() int {
+func (vc VChainArgument) ExternalPort() int {
 	port := basePort
 	if vc.BasePort != 0 {
 		port = vc.BasePort
 	}
 
 	return port + vc.Id
-}
-
-func (vc VChainArgument) HttpPort() int {
-	port := basePort
-	if vc.BasePort != 0 {
-		port = vc.BasePort
-	}
-	return port - vc.Id
 }
 
 func configJson(t *testing.T, topology []interface{}, genesisValidators []string, httpPort int, vChains []VChainArgument) string {
@@ -78,10 +70,10 @@ func configJson(t *testing.T, topology []interface{}, genesisValidators []string
 
 func VChainConfig(vc VChainArgument, genesisValidators []string) map[string]interface{} {
 	return map[string]interface{}{
-		"Id":         vc.Id,
-		"HttpPort":   vc.HttpPort(),
-		"GossipPort": vc.GossipPort(),
-		"Disabled":   vc.Disabled,
+		"Id":           vc.Id,
+		"InternalPort": 4400,
+		"ExternalPort": vc.ExternalPort(),
+		"Disabled":     vc.Disabled,
 		"DockerConfig": map[string]interface{}{
 			"Image": "orbsnetwork/node",
 			"Tag":   "experimental",
@@ -219,7 +211,7 @@ func GetVChainMetrics(t helpers.TestingT, port int, vc VChainArgument) JsonMap {
 
 func AssertGossipServer(t helpers.TestingT, vc VChainArgument) {
 	timeout := time.Second
-	port := strconv.Itoa(vc.GossipPort())
+	port := strconv.Itoa(vc.ExternalPort())
 	conn, err := net.DialTimeout("tcp", "127.0.0.1:"+port, timeout)
 	require.NoError(t, err, "error connecting to port %d vChainId %d", port, vc.Id)
 	require.NotNil(t, conn, "nil connection to port %d vChainId %d", port, vc.Id)

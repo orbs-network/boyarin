@@ -1,5 +1,7 @@
 package boyar
 
+// FIXME uncomment
+
 //func TestBoyar_ProvisionHttpAPIEndpointWithNoConfigChanges(t *testing.T) {
 //	cfg := getJSONConfig(t, ConfigWithActiveVchains)
 //

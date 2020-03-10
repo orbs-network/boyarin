@@ -53,8 +53,8 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 					NodeAddress:   string(b.config.NodeAddress()),
 					ImageName:     imageName,
 					ContainerName: containerName,
-					InternalPort:  4400,
-					ExternalPort:  chain.GossipPort,
+					InternalPort:  chain.InternalPort,
+					ExternalPort:  chain.ExternalPort,
 
 					SignerNetworkEnabled:    true,
 					HTTPProxyNetworkEnabled: true,
@@ -70,7 +70,7 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 
 				appConfig := &adapter.AppConfig{
 					KeyPair: input.KeyPairConfig,
-					Network: getNetworkConfigJSON(overrideTopologyPort(b.config.FederationNodes(), chain.GossipPort)),
+					Network: getNetworkConfigJSON(overrideTopologyPort(b.config.FederationNodes(), chain.ExternalPort)),
 					Config:  chain.GetSerializedConfig(),
 				}
 
@@ -130,7 +130,7 @@ func overrideTopologyPort(nodes []*topology.FederationNode, gossipPort int) []*t
 func getVirtualChainConfig(cfg config.NodeConfiguration, chain *config.VirtualChain) *config.VirtualChainConfig {
 	return &config.VirtualChainConfig{
 		VirtualChain:  chain,
-		Topology:      overrideTopologyPort(cfg.FederationNodes(), chain.GossipPort),
+		Topology:      overrideTopologyPort(cfg.FederationNodes(), chain.ExternalPort),
 		NodeAddress:   cfg.NodeAddress(),
 		KeyPairConfig: getKeyConfigJson(cfg, true),
 	}

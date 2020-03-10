@@ -31,9 +31,8 @@ func verifySource(t *testing.T, source NodeConfiguration) {
 	chain := source.Chains()[0]
 
 	require.EqualValues(t, 42, chain.Id)
-	require.EqualValues(t, 4400, chain.GossipPort)
+	require.EqualValues(t, 4400, chain.InternalPort)
 
-	require.EqualValues(t, "node1", chain.DockerConfig.ContainerNamePrefix)
 	require.EqualValues(t, "orbsnetwork/node", chain.DockerConfig.Image)
 	require.EqualValues(t, "experimental", chain.DockerConfig.Tag)
 	require.EqualValues(t, false, chain.DockerConfig.Pull)

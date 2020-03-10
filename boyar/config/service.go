@@ -1,7 +1,7 @@
 package config
 
 type Service struct {
-	Port         int
+	InternalPort int
 	ExternalPort int
 	DockerConfig DockerConfig
 	Config       map[string]interface{}

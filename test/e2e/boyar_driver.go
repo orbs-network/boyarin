@@ -59,7 +59,7 @@ func configJson(t *testing.T, topology []interface{}, genesisValidators []string
 		"chains": chains,
 		"services": map[string]interface{}{
 			"signer": map[string]interface{}{
-				"Port": 7777,
+				"InternalPort": 7777,
 				"DockerConfig": map[string]interface{}{
 					"Image": "orbsnetwork/signer",
 					"Tag":   "experimental",

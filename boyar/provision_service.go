@@ -46,7 +46,7 @@ func (b *boyar) provisionService(ctx context.Context, cfg config.ServiceConfig, 
 				ImageName:        imageName,
 				ContainerName:    fullServiceName,
 				Executable:       cfg.Executable,
-				HttpPort:         service.Port,
+				HttpPort:         service.InternalPort,
 				ExternalHttpPort: service.ExternalPort,
 
 				LimitedMemory:  service.DockerConfig.Resources.Limits.Memory,

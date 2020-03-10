@@ -11,7 +11,7 @@ func buildBootstrapConfig(configUrl string, ethereumEndpoint string) string {
 	cfg := map[string]interface{}{
 		"services": map[string]interface{}{
 			"config": map[string]interface{}{
-				"Port": 7666,
+				"InternalPort": 7666,
 				"DockerConfig": map[string]interface{}{
 					"Image": "orbsnetwork/network-state-reader",
 					"Tag":   "latest",

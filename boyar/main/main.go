@@ -35,7 +35,8 @@ func main() {
 	sslCertificatePathPtr := flag.String("ssl-certificate", "", "SSL certificate")
 	sslPrivateKeyPtr := flag.String("ssl-private-key", "", "SSL private key")
 
-	bootstrap := flag.Bool("bootstrap", false, "bootstrap only a configuration provider service and then retrieve all configuration from it")
+	managementConfig := flag.String("management-config", "", "bootstrap only a configuration provider service and then retrieve all configuration from it")
+
 	showConfiguration := flag.Bool("show-configuration", false, "show configuration and exit")
 	help := flag.Bool("help", false, "show usage")
 	showVersion := flag.Bool("version", false, "show version")
@@ -61,7 +62,7 @@ func main() {
 		OrchestratorOptions:     *orchestratorOptionsPtr,
 		SSLCertificatePath:      *sslCertificatePathPtr,
 		SSLPrivateKeyPath:       *sslPrivateKeyPtr,
-		Bootstrap:               *bootstrap,
+		ManagementConfig:        *managementConfig,
 	}
 
 	if *help {
@@ -79,21 +80,12 @@ func main() {
 		return
 	}
 
-	if flags.Bootstrap {
-		logger.Error("FIXME: not supported yet")
-		return
-		//err := services.Bootstrap(context.Background(), flags, logger)
-		//if err != nil {
-		//	logger.Error("Failed to bootstrap", log.Error(err))
-		//	return
-		//}
-		//
-		//flags = &config.Flags{
-		//	ConfigUrl:         "http://127.0.0.1:7666",
-		//	KeyPairConfigPath: flags.KeyPairConfigPath,
-		//	Timeout:           flags.Timeout,
-		//	PollingInterval:   flags.PollingInterval,
-		//}
+	if flags.ManagementConfig != "" {
+		flags, err = services.Bootstrap(context.Background(), flags, logger)
+		if err != nil {
+			logger.Error("Bootstrapping failure", log.Error(err))
+			os.Exit(1)
+		}
 	}
 	waiter, err := services.Execute(context.Background(), flags, logger)
 	if err != nil {

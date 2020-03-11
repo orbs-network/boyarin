@@ -21,5 +21,5 @@ type Flags struct {
 
 	OrchestratorOptions string
 
-	Bootstrap bool
+	ManagementConfig string
 }

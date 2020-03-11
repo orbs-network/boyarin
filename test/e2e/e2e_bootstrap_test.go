@@ -3,14 +3,13 @@ package e2e
 import (
 	"context"
 	"fmt"
-	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/services"
 	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/orbs-network/govnr"
 	"github.com/orbs-network/scribe/log"
 	"github.com/stretchr/testify/require"
+	"os"
 	"testing"
-	"time"
 )
 
 func TestE2EBootstrapWithDefaultConfig(t *testing.T) {
@@ -55,23 +54,17 @@ func TestE2EBootstrapWithDefaultConfig(t *testing.T) {
   }
 }
 `, defaultFlags.ConfigUrl)
+		file := TempFile(t, []byte(bootstrapConfig))
+		defer os.Remove(file.Name())
 
-		cfg, err := config.NewStringConfigurationSource(bootstrapConfig, "", defaultFlags.KeyPairConfigPath)
-		require.NoError(t, err)
+		defaultFlags.ManagementConfig = file.Name()
 
-		err = services.Bootstrap(ctx, cfg, logger)
+		flags, err := services.Bootstrap(ctx, defaultFlags, logger)
 		require.NoError(t, err)
 
 		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
 			AssertServiceUp(t, ctx, "cfc9e5-management-service-stack")
 		})
-
-		flags := &config.Flags{
-			ConfigUrl:         cfg.OrchestratorOptions().DynamicManagementConfig.Url,
-			KeyPairConfigPath: defaultFlags.KeyPairConfigPath,
-			Timeout:           time.Minute,
-			PollingInterval:   500 * time.Millisecond,
-		}
 
 		waiter, err = services.Execute(ctx, flags, logger)
 		require.NoError(t, err)

@@ -39,7 +39,7 @@
       "InternalPort": 8080,
       "ExternalPort": 7666,
       "DockerConfig": {
-        "Image": "orbsnetwork/management",
+        "Image": "orbsnetwork/management-service",
         "Tag": "latest",
         "Pull": false
       },

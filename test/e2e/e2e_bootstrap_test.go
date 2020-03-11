@@ -42,7 +42,7 @@ func TestE2EBootstrapWithDefaultConfig(t *testing.T) {
       "InternalPort": 8080,
       "ExternalPort": 7666,
       "DockerConfig": {
-        "Image":  "orbsnetwork/management",
+        "Image":  "orbsnetwork/management-service",
         "Tag":    "latest",
         "Pull":   true
       },

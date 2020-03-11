@@ -1,0 +1,25 @@
+{
+  "orchestrator": {
+    "DynamicManagementConfig": {
+      "Url": "http://localhost:7666/node/management",
+      "ReadInterval": "1m",
+      "ResetTimeout": "30m"
+    }
+  },
+  "services": {
+    "management": {
+      "InternalPort": 8080,
+      "ExternalPort": 7666,
+      "DockerConfig": {
+        "Image":  "orbsnetwork/management-service",
+        "Tag":    "latest",
+        "Pull":   true
+      },
+      "Config": {
+        "EthereumGenesisContract": "0x2384723487623784638272348",
+        "EthereumEndpoint": "http://eth.orbs.com",
+        "boyarLegacyBootstrap": "http://192.168.1.19:8000/boyar/config/test/configWithReader.json"
+      }
+    }
+  }
+}

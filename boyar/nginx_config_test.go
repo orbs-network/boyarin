@@ -10,12 +10,17 @@ func Test_getNginxConfig(t *testing.T) {
 	cfg := getJSONConfig(t, ConfigWithSingleChain)
 
 	require.EqualValues(t, `server {
+resolver 127.0.0.11 ipv6=off;
 listen 80;
 location ~^/$ { return 200 '{"Status":"OK","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 location / { error_page 404 = @error404; }
 location @error404 { return 404 '{"Status":"Not found","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 location @error502 { return 502 '{"Status":"Bad gateway","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
-location /vchains/42/ { proxy_pass http://cfc9e5-chain-42-stack:8080/; error_page 502 = @error502; }
+set $vc42 cfc9e5-chain-42-stack;
+location ~ ^/vchains/42(/?)(.*) {
+	proxy_pass http://$vc42:8080/$2;
+	error_page 502 = @error502;
+}
 }`,
 		getNginxConfig(cfg))
 }
@@ -24,13 +29,22 @@ func Test_getNginxConfigWithDisabledChains(t *testing.T) {
 	cfg := getJSONConfig(t, Config)
 
 	require.EqualValues(t, `server {
+resolver 127.0.0.11 ipv6=off;
 listen 80;
 location ~^/$ { return 200 '{"Status":"OK","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 location / { error_page 404 = @error404; }
 location @error404 { return 404 '{"Status":"Not found","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 location @error502 { return 502 '{"Status":"Bad gateway","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
-location /vchains/42/ { proxy_pass http://cfc9e5-chain-42-stack:8080/; error_page 502 = @error502; }
-location /vchains/1991/ { proxy_pass http://cfc9e5-chain-1991-stack:8080/; error_page 502 = @error502; }
+set $vc42 cfc9e5-chain-42-stack;
+location ~ ^/vchains/42(/?)(.*) {
+	proxy_pass http://$vc42:8080/$2;
+	error_page 502 = @error502;
+}
+set $vc1991 cfc9e5-chain-1991-stack;
+location ~ ^/vchains/1991(/?)(.*) {
+	proxy_pass http://$vc1991:8080/$2;
+	error_page 502 = @error502;
+}
 }`,
 		getNginxConfig(cfg))
 }
@@ -42,14 +56,20 @@ func Test_getNginxConfigWithSSL(t *testing.T) {
 	})
 
 	require.EqualValues(t, `server {
+resolver 127.0.0.11 ipv6=off;
 listen 80;
 location ~^/$ { return 200 '{"Status":"OK","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 location / { error_page 404 = @error404; }
 location @error404 { return 404 '{"Status":"Not found","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 location @error502 { return 502 '{"Status":"Bad gateway","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
-location /vchains/42/ { proxy_pass http://cfc9e5-chain-42-stack:8080/; error_page 502 = @error502; }
+set $vc42 cfc9e5-chain-42-stack;
+location ~ ^/vchains/42(/?)(.*) {
+	proxy_pass http://$vc42:8080/$2;
+	error_page 502 = @error502;
+}
 }
 server {
+resolver 127.0.0.11 ipv6=off;
 listen 443;
 ssl on;
 ssl_certificate /var/run/secrets/ssl-cert;
@@ -58,7 +78,11 @@ location ~^/$ { return 200 '{"Status":"OK","Description":"ORBS blockchain node",
 location / { error_page 404 = @error404; }
 location @error404 { return 404 '{"Status":"Not found","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 location @error502 { return 502 '{"Status":"Bad gateway","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
-location /vchains/42/ { proxy_pass http://cfc9e5-chain-42-stack:8080/; error_page 502 = @error502; }
+set $vc42 cfc9e5-chain-42-stack;
+location ~ ^/vchains/42(/?)(.*) {
+	proxy_pass http://$vc42:8080/$2;
+	error_page 502 = @error502;
+}
 }`,
 		getNginxConfig(cfg))
 }

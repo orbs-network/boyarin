@@ -26,15 +26,21 @@ location / { error_page 404 = @error404; }
 location @error404 { return 404 '{{DefaultResponse "Not found"}}'; }
 location @error502 { return 502 '{{DefaultResponse "Bad gateway"}}'; }
 	{{- range .Chains }}
-location /vchains/{{.Id}}/ { proxy_pass http://{{.ServiceId}}:8080/; error_page 502 = @error502; }
+set $vc{{.Id}} {{.ServiceId}};
+location ~ ^/vchains/{{.Id}}(/?)(.*) {
+	proxy_pass http://$vc{{.Id}}:8080/$2;
+	error_page 502 = @error502;
+}
 	{{- end }} {{- /* range .Chains */ -}}
 {{- end -}} {{- /* define "locations" */ -}}
 server {
+resolver 127.0.0.11 ipv6=off;
 listen 80;
 {{ template "locations" .}}
 }
 {{- if .SslEnabled }}
 server {
+resolver 127.0.0.11 ipv6=off;
 listen 443;
 ssl on;
 ssl_certificate /var/run/secrets/ssl-cert;

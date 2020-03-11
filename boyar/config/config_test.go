@@ -48,6 +48,8 @@ func Test_StringConfigurationSource(t *testing.T) {
 
 	require.NotNil(t, source.Services())
 	require.NotEmpty(t, source.Chains()[0].Config["signer-endpoint"])
+
+	require.EqualValues(t, 8080, source, source.Chains()[0].HttpPort)
 }
 
 func Test_StringConfigurationSourceFromEmptyConfig(t *testing.T) {

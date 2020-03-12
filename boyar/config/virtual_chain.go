@@ -12,7 +12,8 @@ type VirtualChainId uint32
 
 type VirtualChain struct {
 	Service
-	Id VirtualChainId
+	Id               VirtualChainId
+	InternalHttpPort int
 }
 
 type VirtualChainConfig struct {

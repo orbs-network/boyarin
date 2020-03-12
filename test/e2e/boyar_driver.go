@@ -75,10 +75,11 @@ func configJson(t *testing.T, topology []interface{}, genesisValidators []string
 
 func VChainConfig(vc VChainArgument, genesisValidators []string) map[string]interface{} {
 	return map[string]interface{}{
-		"Id":           vc.Id,
-		"InternalPort": 4400,
-		"ExternalPort": vc.ExternalPort(),
-		"Disabled":     vc.Disabled,
+		"Id":               vc.Id,
+		"InternalHttpPort": 8080,
+		"InternalPort":     4400,
+		"ExternalPort":     vc.ExternalPort(),
+		"Disabled":         vc.Disabled,
 		"DockerConfig": map[string]interface{}{
 			"Image": "orbsnetwork/node",
 			"Tag":   "experimental",

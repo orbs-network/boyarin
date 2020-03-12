@@ -11,6 +11,7 @@
   "chains": [
     {
       "Id":        42,
+      "InternalHttpPort": 8080,
       "InternalPort": 4400,
       "ExternalPort": 4400,
       "DockerConfig": {
@@ -35,6 +36,7 @@
     },
     {
       "Id":        1991,
+      "InternalHttpPort": 8080,
       "InternalPort": 4400,
       "ExternalPort": 4401,
       "DockerConfig": {

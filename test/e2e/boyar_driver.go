@@ -269,3 +269,16 @@ func AssertVchainDown(t helpers.TestingT, port int, vc1 VChainArgument) {
 	require.NoError(t, err)
 	require.EqualValues(t, http.StatusNotFound, res.StatusCode)
 }
+
+func AssertManagementServiceUp(t helpers.TestingT, port int) {
+	resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/node/management", port))
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	config := make(map[string]interface{})
+	err = json.Unmarshal(body, &config)
+	require.NoError(t, err)
+}

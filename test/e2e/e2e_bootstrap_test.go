@@ -42,7 +42,7 @@ func TestE2EBootstrapWithDefaultConfig(t *testing.T) {
       "ExternalPort": 7666,
       "DockerConfig": {
         "Image":  "orbsnetwork/management-service",
-        "Tag":    "latest",
+        "Tag":    "G-0-N",
         "Pull":   true
       },
       "Config": {
@@ -72,6 +72,7 @@ func TestE2EBootstrapWithDefaultConfig(t *testing.T) {
 		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
 			AssertVchainUp(t, 80, PublicKey, vc1)
 			AssertServiceUp(t, ctx, "cfc9e5-management-service-stack")
+			AssertManagementServiceUp(t, 7666)
 			AssertServiceUp(t, ctx, "cfc9e5-signer-service-stack")
 		})
 

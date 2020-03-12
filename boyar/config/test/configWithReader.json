@@ -35,7 +35,7 @@
         "api": "v1"
       }
     },
-    "management": {
+    "management-service": {
       "InternalPort": 8080,
       "ExternalPort": 7666,
       "DockerConfig": {
@@ -44,7 +44,7 @@
         "Pull": false
       },
       "Config": {
-        "api": "v1"
+
       }
     }
   }

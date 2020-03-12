@@ -10,7 +10,7 @@ type Service struct {
 
 type Services struct {
 	Signer     *Service `json:"signer"`
-	Management *Service `json:"management"`
+	Management *Service `json:"management-service"`
 }
 
 const SIGNER = "signer-service"

@@ -25,7 +25,7 @@
       }
     }
   ],
-  "management": {
+  "management-service": {
     "InternalPort": 8080,
     "ExternalPort": 7666,
     "DockerConfig": {

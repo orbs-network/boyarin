@@ -7,7 +7,7 @@
     }
   },
   "services": {
-    "management": {
+    "management-service": {
       "InternalPort": 8080,
       "ExternalPort": 7666,
       "DockerConfig": {
@@ -18,7 +18,7 @@
       "Config": {
         "EthereumGenesisContract": "0x2384723487623784638272348",
         "EthereumEndpoint": "http://eth.orbs.com",
-        "boyarLegacyBootstrap": "http://192.168.1.19:8000/boyar/config/test/configWithReader.json"
+        "boyarLegacyBootstrap": "https://s3.eu-central-1.amazonaws.com/orbs-tech-engagement-temp/legacy.json"
       }
     }
   }

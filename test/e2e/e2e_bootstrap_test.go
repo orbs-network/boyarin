@@ -37,7 +37,7 @@ func TestE2EBootstrapWithDefaultConfig(t *testing.T) {
     }
   },
   "services": {
-    "management": {
+    "management-service": {
       "InternalPort": 8080,
       "ExternalPort": 7666,
       "DockerConfig": {
@@ -71,6 +71,8 @@ func TestE2EBootstrapWithDefaultConfig(t *testing.T) {
 
 		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
 			AssertVchainUp(t, 80, PublicKey, vc1)
+			AssertServiceUp(t, ctx, "cfc9e5-management-service-stack")
+			AssertServiceUp(t, ctx, "cfc9e5-signer-service-stack")
 		})
 
 		return

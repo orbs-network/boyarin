@@ -17,8 +17,8 @@ func (b *boyar) ProvisionServices(ctx context.Context) error {
 	}
 
 	var errors []error
-	for serviceName, service := range b.config.Services().AsMap() {
-		if err := b.provisionService(ctx, serviceName, service); err != nil {
+	for serviceCfg, service := range b.config.Services().AsMap() {
+		if err := b.provisionService(ctx, serviceCfg, service); err != nil {
 			errors = append(errors, err)
 		}
 	}
@@ -26,14 +26,14 @@ func (b *boyar) ProvisionServices(ctx context.Context) error {
 	return utils.AggregateErrors(errors)
 }
 
-func (b *boyar) provisionService(ctx context.Context, serviceName string, service *config.Service) error {
-	if b.cache.services.CheckNewJsonValue(serviceName, service) {
+func (b *boyar) provisionService(ctx context.Context, cfg config.ServiceConfig, service *config.Service) error {
+	if b.cache.services.CheckNewJsonValue(cfg.Name, service) {
 		if service != nil {
-			fullServiceName := b.config.PrefixedContainerName(serviceName)
+			fullServiceName := b.config.PrefixedContainerName(cfg.Name)
 			imageName := service.DockerConfig.FullImageName()
 
 			if service.Disabled {
-				return fmt.Errorf("signer service is disabled")
+				return fmt.Errorf("service %s is disabled even though it should not be, ignored", cfg.Name)
 			}
 
 			if service.DockerConfig.Pull {
@@ -45,6 +45,11 @@ func (b *boyar) provisionService(ctx context.Context, serviceName string, servic
 			serviceConfig := &adapter.ServiceConfig{
 				ImageName:     imageName,
 				ContainerName: fullServiceName,
+				Executable:    cfg.Executable,
+				InternalPort:  service.InternalPort,
+				ExternalPort:  service.ExternalPort,
+
+				SignerNetworkEnabled: cfg.SignerNetworkEnabled,
 
 				LimitedMemory:  service.DockerConfig.Resources.Limits.Memory,
 				LimitedCPU:     service.DockerConfig.Resources.Limits.CPUs,
@@ -54,17 +59,17 @@ func (b *boyar) provisionService(ctx context.Context, serviceName string, servic
 
 			jsonConfig, _ := json.Marshal(service.Config)
 
-			var keyPairConfigJSON = getKeyConfigJson(b.config, b.config.Services().NeedsKeys(fullServiceName))
+			var keyPairConfigJSON = getKeyConfigJson(b.config, !cfg.NeedsKeys)
 			appConfig := &adapter.AppConfig{
 				KeyPair: keyPairConfigJSON,
 				Config:  jsonConfig,
 			}
 
 			if err := b.orchestrator.RunService(ctx, serviceConfig, appConfig); err == nil {
-				b.logger.Info("updated service configuration", log.Service(serviceName))
+				b.logger.Info("updated service configuration", log.Service(cfg.Name))
 			} else {
-				b.logger.Error("failed to update service configuration", log.Service(serviceName), log.Error(err))
-				b.cache.services.Clear(serviceName)
+				b.logger.Error("failed to update service configuration", log.Service(cfg.Name), log.Error(err))
+				b.cache.services.Clear(cfg.Name)
 				return err
 			}
 		}

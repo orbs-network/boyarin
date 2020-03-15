@@ -22,10 +22,13 @@ type ServiceConfig struct {
 	NodeAddress   string
 	ImageName     string
 	ContainerName string
+	Executable    string
 
-	// FIXME rename ports to be less vchain-specific
-	HttpPort   int
-	GossipPort int
+	InternalPort int
+	ExternalPort int
+
+	SignerNetworkEnabled    bool
+	HTTPProxyNetworkEnabled bool
 
 	LimitedMemory  int64
 	LimitedCPU     float64
@@ -63,11 +66,17 @@ type Orchestrator interface {
 	io.Closer
 }
 
+type DynamicManagementConfig struct {
+	Url string
+}
+
 type OrchestratorOptions struct {
 	StorageDriver          string            `json:"storage-driver"`
-	StorageMountType string `json:"storage-mount-type"`
+	StorageMountType       string            `json:"storage-mount-type"`
 	StorageOptions         map[string]string `json:"storage-options"`
 	MaxReloadTimedDelayStr string            `json:"max-reload-time-delay"`
+
+	DynamicManagementConfig DynamicManagementConfig
 
 	// Testing purposes
 	HTTPPort uint32 `json:"http-port"`
@@ -81,7 +90,6 @@ func (s OrchestratorOptions) MountType() mount.Type {
 
 	return mount.Type(s.StorageMountType)
 }
-
 
 type SSLOptions struct {
 	SSLCertificatePath string

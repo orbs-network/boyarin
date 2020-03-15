@@ -20,4 +20,6 @@ type Flags struct {
 	LogFilePath        string
 
 	OrchestratorOptions string
+
+	ManagementConfig string
 }

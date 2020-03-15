@@ -11,12 +11,9 @@ import (
 type VirtualChainId uint32
 
 type VirtualChain struct {
-	Id           VirtualChainId
-	HttpPort     int
-	GossipPort   int
-	DockerConfig DockerConfig
-	Config       map[string]interface{}
-	Disabled     bool
+	Service
+	Id               VirtualChainId
+	InternalHttpPort int
 }
 
 type VirtualChainConfig struct {
@@ -47,7 +44,7 @@ func GetVcidFromServiceName(serviceName string) int64 {
 }
 
 func (v *VirtualChain) GetContainerName() string {
-	return fmt.Sprintf("%s-chain-%d", v.DockerConfig.ContainerNamePrefix, v.Id)
+	return fmt.Sprintf("chain-%d", v.Id)
 }
 
 func (c *VirtualChain) GetSerializedConfig() []byte {

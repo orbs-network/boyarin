@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar/config"
+	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/version"
 	"strings"
 	"text/template"
@@ -14,7 +15,18 @@ func getDefaultNginxResponse(status string) string {
 	return fmt.Sprintf(`{"Status":"%s","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":%s}}}`, status, string(rawVersion))
 }
 
-func getNginxConfig(chains []*config.VirtualChain, ip string, sslEnabled bool) string {
+type nginxTemplateChainParams struct {
+	Id        config.VirtualChainId
+	ServiceId string
+	Port      int
+}
+
+type nginxTemplateParams struct {
+	Chains     []nginxTemplateChainParams
+	SslEnabled bool
+}
+
+func getNginxConfig(cfg config.NodeConfiguration) string {
 	var sb strings.Builder
 	var TplNginxConf = template.Must(template.New("").Funcs(template.FuncMap{
 		"DefaultResponse": getDefaultNginxResponse,
@@ -24,19 +36,22 @@ location ~^/$ { return 200 '{{DefaultResponse "OK"}}'; }
 location / { error_page 404 = @error404; }
 location @error404 { return 404 '{{DefaultResponse "Not found"}}'; }
 location @error502 { return 502 '{{DefaultResponse "Bad gateway"}}'; }
-{{ $ip := .Ip -}}
-	{{- range .Chains -}}
-		{{- if not .Disabled -}}
-location /vchains/{{.Id}}/ { proxy_pass http://{{$ip}}:{{.HttpPort}}/; error_page 502 = @error502; }
-		{{- end -}} {{- /* if not .Disabled */ -}}
-	{{- end -}} {{- /* range .Chains */ -}}
+{{- range .Chains }}
+set $vc{{.Id}} {{.ServiceId}};
+location ~ ^/vchains/{{.Id}}(/?)(.*) {
+	proxy_pass http://$vc{{.Id}}:{{.Port}}/$2;
+	error_page 502 = @error502;
+}
+{{- end }} {{- /* range .Chains */ -}}
 {{- end -}} {{- /* define "locations" */ -}}
 server {
+resolver 127.0.0.11 ipv6=off;
 listen 80;
 {{ template "locations" .}}
 }
 {{- if .SslEnabled }}
 server {
+resolver 127.0.0.11 ipv6=off;
 listen 443;
 ssl on;
 ssl_certificate /var/run/secrets/ssl-cert;
@@ -44,15 +59,23 @@ ssl_certificate_key /var/run/secrets/ssl-key;
 {{template "locations" .}}
 }
 {{- end}} {{- /* if .SslEnabled */ -}}`))
-	err := TplNginxConf.Execute(&sb, struct {
-		Chains     []*config.VirtualChain
-		Ip         string
-		SslEnabled bool
-	}{
-		Chains:     chains,
-		Ip:         ip,
-		SslEnabled: sslEnabled,
+	var transformedChains []nginxTemplateChainParams
+
+	for _, chain := range cfg.Chains() {
+		if !chain.Disabled {
+			transformedChains = append(transformedChains, nginxTemplateChainParams{
+				Id:        chain.Id,
+				ServiceId: adapter.GetServiceId(cfg.PrefixedContainerName(chain.GetContainerName())),
+				Port:      chain.InternalHttpPort,
+			})
+		}
+	}
+
+	err := TplNginxConf.Execute(&sb, nginxTemplateParams{
+		Chains:     transformedChains,
+		SslEnabled: cfg.SSLOptions().SSLCertificatePath != "" && cfg.SSLOptions().SSLPrivateKeyPath != "",
 	})
+
 	if err != nil {
 		panic(err)
 	}

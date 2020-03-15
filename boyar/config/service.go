@@ -1,38 +1,45 @@
 package config
 
 type Service struct {
-	Port         int
+	InternalPort int
+	ExternalPort int
 	DockerConfig DockerConfig
 	Config       map[string]interface{}
 	Disabled     bool
 }
 
 type Services struct {
-	Signer *Service `json:"signer"`
-	Config *Service `json:"config"`
+	Signer     *Service `json:"signer"`
+	Management *Service `json:"management-service"`
 }
 
 const SIGNER = "signer-service"
-const CONFIG = "config-service"
+const MANAGEMENT = "management-service"
 
-func (s Services) AsMap() map[string]*Service {
-	return map[string]*Service{
-		SIGNER: s.Signer,
-		CONFIG: s.Config,
+var SIGNER_SERVICE_CONFIG = ServiceConfig{
+	Name:                 SIGNER,
+	NeedsKeys:            true,
+	Executable:           "/opt/orbs/orbs-signer",
+	SignerNetworkEnabled: true,
+}
+
+var CONFIG_SERVICE_CONFIG = ServiceConfig{
+	Name:                 MANAGEMENT,
+	NeedsKeys:            false,
+	Executable:           "/opt/orbs/service",
+	SignerNetworkEnabled: false,
+}
+
+func (s Services) AsMap() map[ServiceConfig]*Service {
+	return map[ServiceConfig]*Service{
+		SIGNER_SERVICE_CONFIG: s.Signer,
+		CONFIG_SERVICE_CONFIG: s.Management,
 	}
 }
 
-func (s Services) NeedsKeys(serviceId string) bool {
-	switch serviceId {
-	case SIGNER:
-		return true
-	}
-
-	return false
-}
-
-type UpdateServiceInput struct {
-	Name          string
-	Service       *Service
-	KeyPairConfig []byte `json:"-"` // Prevents possible key leak via log
+type ServiceConfig struct {
+	Name                 string
+	NeedsKeys            bool
+	Executable           string
+	SignerNetworkEnabled bool
 }

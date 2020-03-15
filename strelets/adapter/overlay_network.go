@@ -8,6 +8,7 @@ import (
 )
 
 const SHARED_SIGNER_NETWORK = "signer-overlay"
+const SHARED_PROXY_NETWORK = "http-proxy-overlay"
 
 func (d *dockerSwarmOrchestrator) GetOverlayNetwork(ctx context.Context, name string) (string, error) {
 	networks, err := d.client.NetworkList(ctx, types.NetworkListOptions{

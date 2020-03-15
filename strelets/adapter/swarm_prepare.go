@@ -15,9 +15,23 @@ func (d *dockerSwarmOrchestrator) RunVirtualChain(ctx context.Context, serviceCo
 		return err
 	}
 
-	networks, err := d.getNetworks(ctx, SHARED_SIGNER_NETWORK)
-	if err != nil {
-		return err
+	var networks []swarm.NetworkAttachmentConfig
+	if serviceConfig.SignerNetworkEnabled {
+		signerNetwork, err := d.getNetwork(ctx, SHARED_SIGNER_NETWORK)
+		if err != nil {
+			return err
+		}
+
+		networks = append(networks, signerNetwork)
+	}
+
+	if serviceConfig.HTTPProxyNetworkEnabled {
+		proxyNetwork, err := d.getNetwork(ctx, SHARED_PROXY_NETWORK)
+		if err != nil {
+			return err
+		}
+
+		networks = append(networks, proxyNetwork)
 	}
 
 	config, err := d.storeVirtualChainConfiguration(ctx, serviceConfig.ContainerName, appConfig)
@@ -82,25 +96,6 @@ func getServiceMode(replicas uint64) swarm.ServiceMode {
 	}
 }
 
-func getEndpointsSpec(httpPort int, gossipPort int) *swarm.EndpointSpec {
-	return &swarm.EndpointSpec{
-		Ports: []swarm.PortConfig{
-			{
-				Protocol:      "tcp",
-				PublishMode:   swarm.PortConfigPublishModeIngress,
-				PublishedPort: uint32(httpPort),
-				TargetPort:    8080,
-			},
-			{
-				Protocol:      "tcp",
-				PublishMode:   swarm.PortConfigPublishModeIngress,
-				PublishedPort: uint32(gossipPort),
-				TargetPort:    4400,
-			},
-		},
-	}
-}
-
 const MEGABYTE = 1024 * 1024
 const CPU_SHARES = 1000000000
 
@@ -139,26 +134,33 @@ func getVirtualChainServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.S
 			Resources: getResourceRequirements(serviceConfig.LimitedMemory, serviceConfig.LimitedCPU,
 				serviceConfig.ReservedMemory, serviceConfig.ReservedCPU),
 		},
-		Networks:     networks,
-		Mode:         getServiceMode(replicas),
-		EndpointSpec: getEndpointsSpec(serviceConfig.HttpPort, serviceConfig.GossipPort),
+		Networks: networks,
+		Mode:     getServiceMode(replicas),
+		EndpointSpec: &swarm.EndpointSpec{
+			Ports: []swarm.PortConfig{
+				{
+					Protocol:      "tcp",
+					PublishMode:   swarm.PortConfigPublishModeIngress,
+					PublishedPort: uint32(serviceConfig.ExternalPort),
+					TargetPort:    uint32(serviceConfig.InternalPort),
+				},
+			},
+		},
 	}
 	spec.Name = GetServiceId(serviceConfig.ContainerName)
 
 	return spec
 }
 
-func (d *dockerSwarmOrchestrator) getNetworks(ctx context.Context, name string) (networks []swarm.NetworkAttachmentConfig, err error) {
+func (d *dockerSwarmOrchestrator) getNetwork(ctx context.Context, name string) (network swarm.NetworkAttachmentConfig, err error) {
 	target, err := d.GetOverlayNetwork(ctx, name)
 	if err != nil {
-		return nil, err
+		return swarm.NetworkAttachmentConfig{}, err
 	}
 
-	networks = append(networks, swarm.NetworkAttachmentConfig{
+	return swarm.NetworkAttachmentConfig{
 		Target: target,
-	})
-
-	return
+	}, nil
 }
 
 func defaultValue(value, defaultV int) int {

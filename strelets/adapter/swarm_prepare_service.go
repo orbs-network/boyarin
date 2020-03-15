@@ -14,9 +14,14 @@ func (d *dockerSwarmOrchestrator) RunService(ctx context.Context, serviceConfig 
 		return err
 	}
 
-	networks, err := d.getNetworks(ctx, SHARED_SIGNER_NETWORK)
-	if err != nil {
-		return err
+	var networks []swarm.NetworkAttachmentConfig
+	if serviceConfig.SignerNetworkEnabled {
+		signerNetwork, err := d.getNetwork(ctx, SHARED_SIGNER_NETWORK)
+		if err != nil {
+			return err
+		}
+
+		networks = append(networks, signerNetwork)
 	}
 
 	config, err := d.storeServiceConfiguration(ctx, serviceConfig.ContainerName, appConfig)
@@ -62,7 +67,7 @@ func getServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.SecretReferen
 
 	spec := swarm.ServiceSpec{
 		TaskTemplate: swarm.TaskSpec{
-			ContainerSpec: getServiceContainerSpec(serviceConfig.ImageName, secrets),
+			ContainerSpec: getServiceContainerSpec(serviceConfig.ImageName, serviceConfig.Executable, secrets),
 			RestartPolicy: &swarm.RestartPolicy{
 				Delay: &restartDelay,
 			},
@@ -72,14 +77,28 @@ func getServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.SecretReferen
 		Networks: networks,
 		Mode:     getServiceMode(replicas),
 	}
+
+	if serviceConfig.ExternalPort != 0 {
+		spec.EndpointSpec = &swarm.EndpointSpec{
+			Ports: []swarm.PortConfig{
+				{
+					Protocol:      "tcp",
+					PublishMode:   swarm.PortConfigPublishModeIngress,
+					PublishedPort: uint32(serviceConfig.ExternalPort),
+					TargetPort:    uint32(serviceConfig.InternalPort),
+				},
+			},
+		}
+	}
+
 	spec.Name = GetServiceId(serviceConfig.ContainerName)
 
 	return spec
 }
 
-func getServiceContainerSpec(imageName string, secrets []*swarm.SecretReference) *swarm.ContainerSpec {
+func getServiceContainerSpec(imageName string, executable string, secrets []*swarm.SecretReference) *swarm.ContainerSpec {
 	command := []string{
-		"/opt/orbs/orbs-signer",
+		executable,
 	}
 
 	for _, secret := range secrets {

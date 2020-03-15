@@ -11,76 +11,58 @@
   "chains": [
     {
       "Id":        42,
-      "HttpPort":   8080,
-      "GossipPort": 4400,
+      "InternalHttpPort": 8080,
+      "InternalPort": 4400,
+      "ExternalPort": 4400,
       "DockerConfig": {
-        "ContainerNamePrefix": "node1",
-        "Image":  "506367651493.dkr.ecr.us-west-2.amazonaws.com/orbs-network-v1",
-        "Tag":    "master",
-        "Pull":   false,
-        "Resources": {
-          "Limits": {
-            "Memory": 1024,
-            "CPUs": 1
-          },
-          "Reservations": {
-            "Memory": 512,
-            "CPUs": 0.5
-          }
-        }
+        "Image":  "orbsnetwork/node",
+        "Tag":    "experimental",
+        "Pull":   false
       },
       "Config": {
-        "ethereum-endpoint": "http://localhost:8545"
+        "ethereum-endpoint": "http://localhost:8545",
+        "genesis-validator-addresses": ["dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173"]
       }
     },
     {
       "Id":        1991,
-      "HttpPort":   8081,
-      "GossipPort": 4401,
+      "InternalHttpPort": 8080,
+      "InternalPort": 4400,
+      "ExternalPort": 4401,
       "DockerConfig": {
-        "ContainerNamePrefix": "node1",
-        "Image":  "506367651493.dkr.ecr.us-west-2.amazonaws.com/orbs-network-v1",
-        "Tag":    "master",
+        "Image":  "orbsnetwork/node",
+        "Tag":    "experimental",
         "Pull":   false
       },
       "Config": {
-        "ethereum-endpoint": "http://localhost:8545"
+        "ethereum-endpoint": "http://localhost:8545",
+        "genesis-validator-addresses": ["dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173"]
       }
     },
     {
       "Id":        1976,
-      "HttpPort":   8082,
-      "GossipPort": 4402,
+      "InternalHttpPort": 8080,
+      "InternalPort": 4400,
+      "ExternalPort": 4402,
       "Disabled": true,
       "DockerConfig": {
-        "ContainerNamePrefix": "node1",
-        "Image":  "506367651493.dkr.ecr.us-west-2.amazonaws.com/orbs-network-v1",
-        "Tag":    "master",
+        "Image":  "orbsnetwork/node",
+        "Tag":    "experimental",
         "Pull":   false
       },
       "Config": {
-        "ethereum-endpoint": "http://localhost:8545"
+        "ethereum-endpoint": "http://localhost:8545",
+        "genesis-validator-addresses": ["dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173"]
       }
     }
   ],
   "services": {
     "signer": {
-      "Port": 7777,
+      "InternalPort": 7777,
       "DockerConfig": {
-        "ContainerNamePrefix": "node1",
-        "Image":  "506367651493.dkr.ecr.us-west-2.amazonaws.com/orbs-network-signer",
-        "Tag":    "master",
-        "Pull":   false,
-        "Resources": {
-          "Limits": {
-            "Memory": 1024,
-            "CPUs": 1
-          },
-          "Reservations": {
-            "Memory": 512,
-            "CPUs": 0.5
-          }
-        }
+        "Image":  "orbsnetwork/signer",
+        "Tag":    "another-tag",
+        "Pull":   false
       },
       "Config": {
         "api": "v1"

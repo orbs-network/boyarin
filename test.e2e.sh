@@ -56,7 +56,7 @@ else
   ganache-cli -m 'pet talent sugar must audit chief biology trash change wheat educate bone' -h 0.0.0.0  -i 5777 -p 7545 & # run ganache in the background
 fi
 
-./setup-e2e.sh
+.circleci/setup-e2e.sh
 
 export ENABLE_SWARM=true
 export ENABLE_ETHEREUM=true

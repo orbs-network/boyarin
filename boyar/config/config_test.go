@@ -16,24 +16,6 @@ func getTestJSONConfig() string {
 	return string(contents)
 }
 
-func getTestJSONConfigWithOverrides() string {
-	contents, err := ioutil.ReadFile("./test/configWithOverrides.json")
-	if err != nil {
-		panic(err)
-	}
-
-	return string(contents)
-}
-
-func getTestJSONConfigSigner() string {
-	contents, err := ioutil.ReadFile("./test/configWithSigner.json")
-	if err != nil {
-		panic(err)
-	}
-
-	return string(contents)
-}
-
 const fakeKeyPair = "./test/fake-key-pair.json"
 
 func Test_StringConfigurationSource(t *testing.T) {
@@ -66,6 +48,8 @@ func Test_StringConfigurationSource(t *testing.T) {
 
 	require.NotNil(t, source.Services())
 	require.NotEmpty(t, source.Chains()[0].Config["signer-endpoint"])
+
+	require.EqualValues(t, 8080, source.Chains()[0].InternalHttpPort)
 }
 
 func Test_StringConfigurationSourceFromEmptyConfig(t *testing.T) {
@@ -79,7 +63,7 @@ func Test_StringConfigurationSourceFromEmptyConfig(t *testing.T) {
 }
 
 func Test_StringConfigurationSourceWithOverrides(t *testing.T) {
-	source, err := NewStringConfigurationSource(getTestJSONConfigWithOverrides(), "http://some.ethereum.node", fakeKeyPair)
+	source, err := NewStringConfigurationSource(getTestJSONConfig(), "http://some.ethereum.node", fakeKeyPair)
 	require.NoError(t, err)
 
 	require.Equal(t, "http://some.ethereum.node", source.EthereumEndpoint())
@@ -88,7 +72,7 @@ func Test_StringConfigurationSourceWithOverrides(t *testing.T) {
 }
 
 func Test_StringConfigurationSourceWithSigner(t *testing.T) {
-	source, err := NewStringConfigurationSource(getTestJSONConfigSigner(), "http://some.ethereum.node", fakeKeyPair)
+	source, err := NewStringConfigurationSource(getTestJSONConfig(), "http://some.ethereum.node", fakeKeyPair)
 	require.NoError(t, err)
 
 	require.NotNil(t, source.Services())

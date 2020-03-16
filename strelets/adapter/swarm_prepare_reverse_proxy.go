@@ -18,7 +18,7 @@ type ReverseProxyConfig struct {
 }
 
 const DEFAULT_HTTP_PORT = uint32(80)
-const DEFAULT_SSL_PORT = uint32(433)
+const DEFAULT_SSL_PORT = uint32(443)
 
 func (d *dockerSwarmOrchestrator) RunReverseProxy(ctx context.Context, config *ReverseProxyConfig) error {
 	serviceName := GetServiceId(config.ContainerName)

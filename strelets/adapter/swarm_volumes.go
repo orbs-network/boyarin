@@ -13,7 +13,6 @@ import (
 const ORBS_BLOCKS_TARGET = "/usr/local/var/orbs"
 const ORBS_LOGS_TARGET = "/opt/orbs/logs"
 const ORBS_STATUS_TARGET = "/opt/orbs/status"
-const NO_VCHAIN_ID = 0
 
 const REXRAY_EBS_DRIVER = "rexray/ebs"
 const LOCAL_DRIVER = "local"
@@ -42,11 +41,8 @@ func getStatusVolumeName(serviceName string) string {
 	return serviceName + "-status"
 }
 
-func (d *dockerSwarmOrchestrator) provisionServiceVolumes(ctx context.Context, serviceName string) (mounts []mount.Mount, err error) {
-	if statusMount, err := d.provisionVolume(ctx, getStatusVolumeName(serviceName), ORBS_STATUS_TARGET, 0, OrchestratorOptions{
-		// FIXME should be enabled in production
-		//StorageMountType: "bind",
-	}); err != nil {
+func (d *dockerSwarmOrchestrator) provisionServiceVolumes(ctx context.Context, serviceName string, mountTarget string) (mounts []mount.Mount, err error) {
+	if statusMount, err := d.provisionVolume(ctx, getStatusVolumeName(serviceName), mountTarget, 0, d.options); err != nil {
 		return mounts, err
 	} else {
 		mounts = append(mounts, statusMount)

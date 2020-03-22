@@ -21,6 +21,12 @@ location ~ ^/vchains/42(/?)(.*) {
 	proxy_pass http://$vc42:8080/$2;
 	error_page 502 = @error502;
 }
+location /services/signer-service/status {
+	alias /opt/orbs/status/signer-service/status.json;
+}
+location /services/management-service/status {
+	alias /opt/orbs/status/management-service/status.json;
+}
 }`,
 		getNginxConfig(cfg))
 }
@@ -45,6 +51,12 @@ location ~ ^/vchains/1991(/?)(.*) {
 	proxy_pass http://$vc1991:8080/$2;
 	error_page 502 = @error502;
 }
+location /services/signer-service/status {
+	alias /opt/orbs/status/signer-service/status.json;
+}
+location /services/management-service/status {
+	alias /opt/orbs/status/management-service/status.json;
+}
 }`,
 		getNginxConfig(cfg))
 }
@@ -67,6 +79,12 @@ location ~ ^/vchains/42(/?)(.*) {
 	proxy_pass http://$vc42:8080/$2;
 	error_page 502 = @error502;
 }
+location /services/signer-service/status {
+	alias /opt/orbs/status/signer-service/status.json;
+}
+location /services/management-service/status {
+	alias /opt/orbs/status/management-service/status.json;
+}
 }
 server {
 resolver 127.0.0.11 ipv6=off;
@@ -82,6 +100,12 @@ set $vc42 cfc9e5-chain-42-stack;
 location ~ ^/vchains/42(/?)(.*) {
 	proxy_pass http://$vc42:8080/$2;
 	error_page 502 = @error502;
+}
+location /services/signer-service/status {
+	alias /opt/orbs/status/signer-service/status.json;
+}
+location /services/management-service/status {
+	alias /opt/orbs/status/management-service/status.json;
 }
 }`,
 		getNginxConfig(cfg))

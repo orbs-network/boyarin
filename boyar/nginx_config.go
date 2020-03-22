@@ -23,6 +23,7 @@ type nginxTemplateChainParams struct {
 
 type nginxTemplateParams struct {
 	Chains     []nginxTemplateChainParams
+	Services   []string
 	SslEnabled bool
 }
 
@@ -43,6 +44,11 @@ location ~ ^/vchains/{{.Id}}(/?)(.*) {
 	error_page 502 = @error502;
 }
 {{- end }} {{- /* range .Chains */ -}}
+{{- range $i, $service := .Services }}
+location /services/{{$service}}/status {
+	alias /opt/orbs/status/{{$service}}/status.json;
+}
+{{- end }}
 {{- end -}} {{- /* define "locations" */ -}}
 server {
 resolver 127.0.0.11 ipv6=off;
@@ -71,13 +77,20 @@ ssl_certificate_key /var/run/secrets/ssl-key;
 		}
 	}
 
+	var services []string
+	for serviceConfig, _ := range cfg.Services().AsMap() {
+		services = append(services, serviceConfig.Name)
+	}
+
 	err := TplNginxConf.Execute(&sb, nginxTemplateParams{
 		Chains:     transformedChains,
+		Services:   services,
 		SslEnabled: cfg.SSLOptions().SSLCertificatePath != "" && cfg.SSLOptions().SSLPrivateKeyPath != "",
 	})
 
 	if err != nil {
 		panic(err)
 	}
+	println(sb.String())
 	return sb.String()
 }

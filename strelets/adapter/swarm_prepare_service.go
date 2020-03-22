@@ -9,9 +9,7 @@ import (
 )
 
 func (d *dockerSwarmOrchestrator) RunService(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) error {
-	serviceName := GetServiceId(serviceConfig.ContainerName)
-
-	if err := d.RemoveService(ctx, serviceName); err != nil {
+	if err := d.RemoveService(ctx, GetServiceId(serviceConfig.ContainerName)); err != nil {
 		return err
 	}
 
@@ -37,7 +35,7 @@ func (d *dockerSwarmOrchestrator) RunService(ctx context.Context, serviceConfig 
 		secrets = append(secrets, getSecretReference(serviceConfig.ContainerName, config.keysSecretId, "keyPair", "keys.json"))
 	}
 
-	mounts, err := d.provisionServiceVolumes(ctx, serviceName)
+	mounts, err := d.provisionServiceVolumes(ctx, serviceConfig.ContainerName, ORBS_STATUS_TARGET)
 	if err != nil {
 		return err
 	}

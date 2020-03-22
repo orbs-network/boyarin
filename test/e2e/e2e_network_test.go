@@ -82,7 +82,7 @@ func TestE2ERunFullNetwork(t *testing.T) {
 
 				waiter = InProcessBoyar(t, ctx, logger, flags)
 
-				helpers.RequireEventually(t, 30*time.Second, func(t helpers.TestingT) {
+				helpers.RequireEventually(t, 1*time.Minute, func(t helpers.TestingT) {
 					AssertVchainUp(t, httpPort, keys.NodeAddress, vc)
 				})
 
@@ -91,7 +91,7 @@ func TestE2ERunFullNetwork(t *testing.T) {
 		}(i, keys)
 	}
 
-	helpers.RequireEventually(t, 2*time.Minute, func(t helpers.TestingT) {
+	helpers.RequireEventually(t, 3*time.Minute, func(t helpers.TestingT) {
 		metrics := GetVChainMetrics(t, basePort*2, vcs[0])
 		require.EqualValues(t, 3, metrics.Uint64("BlockStorage.BlockHeight"))
 	})

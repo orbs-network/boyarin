@@ -24,6 +24,7 @@ func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
 			NginxConfig:   getNginxConfig(b.config),
 			HTTPPort:      b.config.OrchestratorOptions().HTTPPort,
 			SSLPort:       b.config.OrchestratorOptions().SSLPort,
+			Services:      getReverseProxyServices(b.config),
 		}
 
 		if sslEnabled {
@@ -64,4 +65,15 @@ func getNginxCompositeConfig(cfg config.NodeConfiguration) *UpdateReverseProxyIn
 		IP:         helpers.LocalIP(),
 		SSLOptions: cfg.SSLOptions(),
 	}
+}
+
+func getReverseProxyServices(cfg config.NodeConfiguration) (services []adapter.ReverseProxyConfigService) {
+	for serviceConfig, _ := range cfg.Services().AsMap() {
+		services = append(services, adapter.ReverseProxyConfigService{
+			Name:        serviceConfig.Name,
+			ServiceName: cfg.PrefixedContainerName(serviceConfig.Name),
+		})
+	}
+
+	return
 }

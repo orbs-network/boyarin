@@ -2,9 +2,16 @@ package adapter
 
 import (
 	"context"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/swarm"
+	"path"
 	"time"
 )
+
+type ReverseProxyConfigService struct {
+	Name        string
+	ServiceName string
+}
 
 type ReverseProxyConfig struct {
 	ContainerName string
@@ -12,7 +19,10 @@ type ReverseProxyConfig struct {
 	HTTPPort uint32
 	SSLPort  uint32
 
-	NginxConfig    string
+	NginxConfig string
+
+	Services []ReverseProxyConfigService
+
 	SSLCertificate []byte
 	SSLPrivateKey  []byte
 }
@@ -48,11 +58,20 @@ func (d *dockerSwarmOrchestrator) RunReverseProxy(ctx context.Context, config *R
 	}
 	networks = append(networks, proxyNetwork)
 
-	spec := getNginxServiceSpec(config.ContainerName, httpPort, sslPort, storedSecrets, networks)
+	var mounts []mount.Mount
+	for _, nodeService := range config.Services {
+		if ms, err := d.provisionServiceVolumes(ctx, nodeService.ServiceName, getNginxStatusMountPath(nodeService.Name)); err != nil {
+			return err
+		} else {
+			mounts = append(mounts, ms...)
+		}
+	}
+
+	spec := getNginxServiceSpec(config.ContainerName, httpPort, sslPort, storedSecrets, networks, mounts)
 	return d.create(ctx, spec, "")
 }
 
-func getNginxServiceSpec(namespace string, httpPort uint32, sslPort uint32, storedSecrets *dockerSwarmNginxSecretsConfig, networks []swarm.NetworkAttachmentConfig) swarm.ServiceSpec {
+func getNginxServiceSpec(namespace string, httpPort uint32, sslPort uint32, storedSecrets *dockerSwarmNginxSecretsConfig, networks []swarm.NetworkAttachmentConfig, mounts []mount.Mount) swarm.ServiceSpec {
 	restartDelay := time.Duration(10 * time.Second)
 	replicas := uint64(1)
 
@@ -96,6 +115,7 @@ func getNginxServiceSpec(namespace string, httpPort uint32, sslPort uint32, stor
 					"nginx", "-c", "/var/run/secrets/nginx.conf",
 				},
 				Sysctls: GetSysctls(),
+				Mounts:  mounts,
 			},
 			RestartPolicy: &swarm.RestartPolicy{
 				Delay: &restartDelay,
@@ -110,4 +130,8 @@ func getNginxServiceSpec(namespace string, httpPort uint32, sslPort uint32, stor
 	spec.Name = GetServiceId(namespace)
 
 	return spec
+}
+
+func getNginxStatusMountPath(simpleName string) string {
+	return path.Join(ORBS_STATUS_TARGET, simpleName)
 }

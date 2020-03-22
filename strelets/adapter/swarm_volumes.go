@@ -12,25 +12,44 @@ import (
 
 const ORBS_BLOCKS_TARGET = "/usr/local/var/orbs"
 const ORBS_LOGS_TARGET = "/opt/orbs/logs"
+const ORBS_STATUS_TARGET = "/opt/orbs/status"
+const NO_VCHAIN_ID = 0
 
 const REXRAY_EBS_DRIVER = "rexray/ebs"
 const LOCAL_DRIVER = "local"
 
-func getVolumeName(nodeAddress string, id uint32, postfix string) string {
-	return fmt.Sprintf("%s-%d-%s", nodeAddress, id, postfix)
+func getVolumeName(nodeAddress string, virtualChainId uint32, postfix string) string {
+	return fmt.Sprintf("%s-%d-%s", nodeAddress, virtualChainId, postfix)
 }
 
-func (d *dockerSwarmOrchestrator) provisionVolumes(ctx context.Context, nodeAddress string, id uint32, blocksVolumeSize int, logsVolumeSize int) (mounts []mount.Mount, err error) {
-	if logsMount, err := d.provisionVolume(ctx, getVolumeName(nodeAddress, id, "logs"), ORBS_LOGS_TARGET, logsVolumeSize, OrchestratorOptions{}); err != nil {
+func (d *dockerSwarmOrchestrator) provisionVchainVolumes(ctx context.Context, nodeAddress string, virtualChainId uint32, blocksVolumeSize int, logsVolumeSize int) (mounts []mount.Mount, err error) {
+	if logsMount, err := d.provisionVolume(ctx, getVolumeName(nodeAddress, virtualChainId, "logs"), ORBS_LOGS_TARGET, logsVolumeSize, OrchestratorOptions{}); err != nil {
 		return mounts, err
 	} else {
 		mounts = append(mounts, logsMount)
 	}
 
-	if blocksMount, err := d.provisionVolume(ctx, getVolumeName(nodeAddress, id, "blocks"), ORBS_BLOCKS_TARGET, blocksVolumeSize, d.options); err != nil {
+	if blocksMount, err := d.provisionVolume(ctx, getVolumeName(nodeAddress, virtualChainId, "blocks"), ORBS_BLOCKS_TARGET, blocksVolumeSize, d.options); err != nil {
 		return mounts, err
 	} else {
 		mounts = append(mounts, blocksMount)
+	}
+
+	return mounts, nil
+}
+
+func getStatusVolumeName(serviceName string) string {
+	return serviceName + "-status"
+}
+
+func (d *dockerSwarmOrchestrator) provisionServiceVolumes(ctx context.Context, serviceName string) (mounts []mount.Mount, err error) {
+	if statusMount, err := d.provisionVolume(ctx, getStatusVolumeName(serviceName), ORBS_STATUS_TARGET, 0, OrchestratorOptions{
+		// FIXME should be enabled in production
+		//StorageMountType: "bind",
+	}); err != nil {
+		return mounts, err
+	} else {
+		mounts = append(mounts, statusMount)
 	}
 
 	return mounts, nil

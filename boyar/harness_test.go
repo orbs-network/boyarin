@@ -47,7 +47,7 @@ func getJSONConfig(t *testing.T, conf configFile) config.MutableNodeConfiguratio
 
 func assertAllChainedCached(t *testing.T, cfg config.MutableNodeConfiguration, cache *Cache) {
 	for _, chain := range cfg.Chains() {
-		chainId := cfg.PrefixedContainerName(chain.GetContainerName())
+		chainId := cfg.NamespacedContainerName(chain.GetContainerName())
 
 		if chain.Disabled {
 			assert.False(t, cache.vChains.CheckNewValue(chainId, removed), "cache should remember chain was removed")

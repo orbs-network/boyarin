@@ -21,7 +21,8 @@ type NodeConfiguration interface {
 	SSLOptions() adapter.SSLOptions
 	Services() Services
 
-	PrefixedContainerName(name string) string
+	NamespacedContainerName(name string) string
+	WithNamespace() MutableNodeConfiguration
 
 	VerifyConfig() error
 	Hash() string
@@ -48,6 +49,7 @@ type nodeConfigurationContainer struct {
 	keyConfigPath    string
 	ethereumEndpoint string
 	sslOptions       adapter.SSLOptions
+	withNamespace    bool
 }
 
 func (c *nodeConfigurationContainer) Chains() []*VirtualChain {
@@ -124,7 +126,7 @@ func (c *nodeConfigurationContainer) SetSSLOptions(options adapter.SSLOptions) M
 
 func (c *nodeConfigurationContainer) SetSignerEndpoint() {
 	if signer := c.Services().Signer; signer != nil { // FIXME this should become mandatory
-		value := fmt.Sprintf("http://%s:%d", c.PrefixedContainerName(SIGNER), signer.InternalPort)
+		value := fmt.Sprintf("http://%s:%d", c.NamespacedContainerName(SIGNER), signer.InternalPort)
 		c.value.overrideValues("signer-endpoint", value)
 	}
 }
@@ -137,6 +139,15 @@ func (c *nodeConfigurationContainer) KeyConfig() KeyConfig {
 	return cfg
 }
 
-func (c *nodeConfigurationContainer) PrefixedContainerName(name string) string {
-	return c.NodeAddress().ShortID() + "-" + name
+func (c *nodeConfigurationContainer) NamespacedContainerName(name string) string {
+	if c.withNamespace {
+		return c.NodeAddress().ShortID() + "-" + name
+	}
+
+	return name
+}
+
+func (c *nodeConfigurationContainer) WithNamespace() MutableNodeConfiguration {
+	c.withNamespace = true
+	return c
 }

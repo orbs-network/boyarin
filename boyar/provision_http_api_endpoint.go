@@ -20,7 +20,7 @@ func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
 		sslEnabled := nginxConfig.SSLOptions.SSLCertificatePath != "" && nginxConfig.SSLOptions.SSLPrivateKeyPath != ""
 
 		config := &adapter.ReverseProxyConfig{
-			ContainerName: b.config.PrefixedContainerName(adapter.PROXY_CONTAINER_NAME),
+			ContainerName: b.config.NamespacedContainerName(adapter.PROXY_CONTAINER_NAME),
 			NginxConfig:   getNginxConfig(b.config),
 			HTTPPort:      b.config.OrchestratorOptions().HTTPPort,
 			SSLPort:       b.config.OrchestratorOptions().SSLPort,
@@ -71,7 +71,7 @@ func getReverseProxyServices(cfg config.NodeConfiguration) (services []adapter.R
 	for serviceConfig, _ := range cfg.Services().AsMap() {
 		services = append(services, adapter.ReverseProxyConfigService{
 			Name:        serviceConfig.Name,
-			ServiceName: cfg.PrefixedContainerName(serviceConfig.Name),
+			ServiceName: cfg.NamespacedContainerName(serviceConfig.Name),
 		})
 	}
 

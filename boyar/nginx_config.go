@@ -70,7 +70,7 @@ ssl_certificate_key /var/run/secrets/ssl-key;
 		if !chain.Disabled {
 			transformedChains = append(transformedChains, nginxTemplateChainParams{
 				Id:        chain.Id,
-				ServiceId: cfg.PrefixedContainerName(chain.GetContainerName()),
+				ServiceId: cfg.NamespacedContainerName(chain.GetContainerName()),
 				Port:      chain.InternalHttpPort,
 			})
 		}
@@ -90,6 +90,5 @@ ssl_certificate_key /var/run/secrets/ssl-key;
 	if err != nil {
 		panic(err)
 	}
-	println(sb.String())
 	return sb.String()
 }

@@ -20,7 +20,7 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 
 	var errors []error
 	for _, chain := range chains {
-		containerName := b.config.PrefixedContainerName(chain.GetContainerName())
+		containerName := b.config.NamespacedContainerName(chain.GetContainerName())
 
 		if chain.Disabled {
 			if b.cache.vChains.CheckNewValue(containerName, removed) {

@@ -22,4 +22,7 @@ type Flags struct {
 	OrchestratorOptions string
 
 	ManagementConfig string
+
+	// Testing only
+	WithNamespace bool
 }

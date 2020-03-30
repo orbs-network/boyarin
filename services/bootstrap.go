@@ -20,7 +20,7 @@ func Bootstrap(ctx context.Context, flags *config.Flags, logger log.Logger) (*co
 		return nil, err
 	}
 
-	flags = &config.Flags{
+	newFlags := &config.Flags{
 		ConfigUrl: cfg.OrchestratorOptions().DynamicManagementConfig.Url,
 
 		KeyPairConfigPath: flags.KeyPairConfigPath,
@@ -36,8 +36,15 @@ func Bootstrap(ctx context.Context, flags *config.Flags, logger log.Logger) (*co
 		OrchestratorOptions: flags.OrchestratorOptions,
 
 		LogFilePath: flags.LogFilePath,
+
+		WithNamespace: flags.WithNamespace,
+	}
+
+	// for testing only
+	if newFlags.WithNamespace {
+		cfg.WithNamespace()
 	}
 
 	coreBoyar := NewCoreBoyarService(logger)
-	return flags, coreBoyar.OnConfigChange(ctx, cfg)
+	return newFlags, coreBoyar.OnConfigChange(ctx, cfg)
 }

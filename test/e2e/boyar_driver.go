@@ -153,6 +153,7 @@ func SetupDynamicBoyarDepencenciesForNetwork(t *testing.T, keyPair KeyConfig,
 		ConfigUrl:         ts.URL,
 		KeyPairConfigPath: file.Name(),
 		PollingInterval:   500 * time.Millisecond,
+		WithNamespace:     true,
 	}
 	cleanup := func() {
 		defer os.Remove(file.Name())

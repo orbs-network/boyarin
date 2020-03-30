@@ -35,6 +35,11 @@ func GetConfiguration(flags *Flags) (NodeConfiguration, error) {
 		config.SetFederationNodes(federationNodes)
 	}
 
+	// for testing only
+	if flags.WithNamespace {
+		config.WithNamespace()
+	}
+
 	if err := config.VerifyConfig(); err != nil {
 		return nil, fmt.Errorf("config verification failed: %s", err)
 	}

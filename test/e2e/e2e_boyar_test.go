@@ -31,7 +31,7 @@ func TestE2ERunSingleVirtualChain(t *testing.T) {
 
 		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
 			AssertVchainUp(t, 80, PublicKey, vc1)
-			AssertServiceUp(t, ctx, "cfc9e5-signer-service-stack")
+			AssertServiceUp(t, ctx, "cfc9e5-signer-service")
 		})
 		return
 	})
@@ -135,7 +135,7 @@ func TestE2EAddAndRemoveVirtualChain(t *testing.T) {
 		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT*2, func(t helpers.TestingT) {
 			AssertVchainUp(t, 80, PublicKey, vc1)
 			AssertVchainDown(t, 80, vc2)
-			AssertServiceDown(t, ctx, "cfc9e5-chain-45-stack")
+			AssertServiceDown(t, ctx, "cfc9e5-chain-45")
 		})
 		return
 	})

@@ -21,7 +21,7 @@ func Test_getNginxServiceSpec(t *testing.T) {
 	}
 	spec := getNginxServiceSpec(namespace, httpPort, sslPort, secrets, nil, nil)
 
-	require.EqualValues(t, "node123-proxy-stack", spec.Name)
+	require.EqualValues(t, "node123-proxy", spec.Name)
 
 	require.EqualValues(t, swarm.TaskSpec{
 		ContainerSpec: &swarm.ContainerSpec{

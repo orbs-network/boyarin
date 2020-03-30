@@ -85,10 +85,6 @@ func (d *dockerSwarmOrchestrator) RemoveService(ctx context.Context, serviceName
 	return nil
 }
 
-func GetServiceId(input string) string {
-	return input + "-stack"
-}
-
 func (d *dockerSwarmOrchestrator) Close() error {
 	return d.client.Close()
 }

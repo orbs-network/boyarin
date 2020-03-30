@@ -124,7 +124,7 @@ func (c *nodeConfigurationContainer) SetSSLOptions(options adapter.SSLOptions) M
 
 func (c *nodeConfigurationContainer) SetSignerEndpoint() {
 	if signer := c.Services().Signer; signer != nil { // FIXME this should become mandatory
-		value := fmt.Sprintf("http://%s:%d", adapter.GetServiceId(c.PrefixedContainerName(SIGNER)), signer.InternalPort)
+		value := fmt.Sprintf("http://%s:%d", c.PrefixedContainerName(SIGNER), signer.InternalPort)
 		c.value.overrideValues("signer-endpoint", value)
 	}
 }

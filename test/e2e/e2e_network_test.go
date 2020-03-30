@@ -37,7 +37,7 @@ func buildTopology(keyPairs []KeyConfig, vcId int) (topology []interface{}) {
 	for _, kp := range keyPairs {
 		topology = append(topology, map[string]interface{}{
 			"address": kp.NodeAddress,
-			"ip":      fmt.Sprintf("%s-chain-%d-stack", config.NodeAddress(kp.NodeAddress).ShortID(), vcId),
+			"ip":      fmt.Sprintf("%s-chain-%d", config.NodeAddress(kp.NodeAddress).ShortID(), vcId),
 			"port":    4400,
 		})
 	}

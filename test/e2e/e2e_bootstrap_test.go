@@ -63,7 +63,7 @@ func TestE2EBootstrapWithDefaultConfig(t *testing.T) {
 		require.NoError(t, err)
 
 		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
-			AssertServiceUp(t, ctx, "cfc9e5-management-service-stack")
+			AssertServiceUp(t, ctx, "cfc9e5-management-service")
 		})
 
 		waiter, err = services.Execute(ctx, flags, logger)
@@ -71,9 +71,9 @@ func TestE2EBootstrapWithDefaultConfig(t *testing.T) {
 
 		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
 			AssertVchainUp(t, 80, PublicKey, vc1)
-			AssertServiceUp(t, ctx, "cfc9e5-management-service-stack")
+			AssertServiceUp(t, ctx, "cfc9e5-management-service")
 			AssertManagementServiceUp(t, 7666)
-			AssertServiceUp(t, ctx, "cfc9e5-signer-service-stack")
+			AssertServiceUp(t, ctx, "cfc9e5-signer-service")
 		})
 
 		return

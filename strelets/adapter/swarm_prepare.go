@@ -9,9 +9,7 @@ import (
 )
 
 func (d *dockerSwarmOrchestrator) RunVirtualChain(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) error {
-	serviceName := GetServiceId(serviceConfig.ContainerName)
-
-	if err := d.RemoveService(ctx, serviceName); err != nil {
+	if err := d.RemoveService(ctx, serviceConfig.ContainerName); err != nil {
 		return err
 	}
 
@@ -147,7 +145,7 @@ func getVirtualChainServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.S
 			},
 		},
 	}
-	spec.Name = GetServiceId(serviceConfig.ContainerName)
+	spec.Name = serviceConfig.ContainerName
 
 	return spec
 }

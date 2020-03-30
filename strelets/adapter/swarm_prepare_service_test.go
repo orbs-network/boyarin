@@ -33,7 +33,7 @@ func Test_getServiceSpec(t *testing.T) {
 
 	spec := getServiceSpec(serviceConfig, secrets, networkConfig, mounts)
 
-	require.EqualValues(t, spec.Name, containerName+"-stack")
+	require.EqualValues(t, spec.Name, containerName)
 
 	require.EqualValues(t, spec.TaskTemplate, swarm.TaskSpec{
 		ContainerSpec: &swarm.ContainerSpec{

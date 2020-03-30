@@ -31,8 +31,7 @@ const DEFAULT_HTTP_PORT = uint32(80)
 const DEFAULT_SSL_PORT = uint32(443)
 
 func (d *dockerSwarmOrchestrator) RunReverseProxy(ctx context.Context, config *ReverseProxyConfig) error {
-	serviceName := GetServiceId(config.ContainerName)
-	if err := d.RemoveService(ctx, serviceName); err != nil {
+	if err := d.RemoveService(ctx, config.ContainerName); err != nil {
 		return err
 	}
 
@@ -127,7 +126,7 @@ func getNginxServiceSpec(namespace string, httpPort uint32, sslPort uint32, stor
 		},
 		Networks: networks,
 	}
-	spec.Name = GetServiceId(namespace)
+	spec.Name = namespace
 
 	return spec
 }

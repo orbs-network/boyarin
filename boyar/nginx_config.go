@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar/config"
-	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/version"
 	"strings"
 	"text/template"
@@ -71,7 +70,7 @@ ssl_certificate_key /var/run/secrets/ssl-key;
 		if !chain.Disabled {
 			transformedChains = append(transformedChains, nginxTemplateChainParams{
 				Id:        chain.Id,
-				ServiceId: adapter.GetServiceId(cfg.PrefixedContainerName(chain.GetContainerName())),
+				ServiceId: cfg.PrefixedContainerName(chain.GetContainerName()),
 				Port:      chain.InternalHttpPort,
 			})
 		}

@@ -73,7 +73,7 @@ func TestE2EBootstrapWithDefaultConfig(t *testing.T) {
 			AssertVchainUp(t, 80, PublicKey, vc1)
 			AssertServiceUp(t, ctx, "cfc9e5-management-service")
 			AssertManagementServiceUp(t, 7666)
-			AssertServiceUp(t, ctx, "cfc9e5-signer-service")
+			AssertServiceUp(t, ctx, "cfc9e5-signer")
 		})
 
 		return

@@ -13,7 +13,7 @@ type Services struct {
 	Management *Service `json:"management-service"`
 }
 
-const SIGNER = "signer-service"
+const SIGNER = "signer"
 const MANAGEMENT = "management-service"
 
 var SIGNER_SERVICE_CONFIG = ServiceConfig{

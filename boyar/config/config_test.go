@@ -80,5 +80,5 @@ func Test_StringConfigurationSourceWithSigner(t *testing.T) {
 	require.NotNil(t, source.Services().Signer.DockerConfig)
 	require.NotNil(t, source.Services().Signer.Config)
 
-	require.Equal(t, "http://cfc9e5-signer-service:7777", source.Chains()[0].Config["signer-endpoint"])
+	require.Equal(t, "http://cfc9e5-signer:7777", source.Chains()[0].Config["signer-endpoint"])
 }

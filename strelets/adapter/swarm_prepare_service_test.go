@@ -9,7 +9,7 @@ import (
 )
 
 func Test_getServiceSpec(t *testing.T) {
-	containerName := "signer-service"
+	containerName := "signer"
 	secrets := []*swarm.SecretReference{
 		getSecretReference(containerName, "some-secret-id", "some-secret-name", "some-secret.json"),
 	}

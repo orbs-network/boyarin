@@ -7,7 +7,7 @@ import (
 )
 
 func TestNodeConfigurationContainer_Hash(t *testing.T) {
-	source, err := parseStringConfig(getJSONConfig(), "", fakeKeyPair)
+	source, err := parseStringConfig(getJSONConfig(), "", fakeKeyPair, false)
 	require.NoError(t, err)
 
 	oldHash := source.Hash()

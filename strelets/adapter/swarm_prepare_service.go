@@ -9,7 +9,7 @@ import (
 )
 
 func (d *dockerSwarmOrchestrator) RunService(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) error {
-	if err := d.RemoveService(ctx, GetServiceId(serviceConfig.ContainerName)); err != nil {
+	if err := d.RemoveService(ctx, serviceConfig.ContainerName); err != nil {
 		return err
 	}
 
@@ -95,7 +95,7 @@ func getServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.SecretReferen
 		}
 	}
 
-	spec.Name = GetServiceId(serviceConfig.ContainerName)
+	spec.Name = serviceConfig.ContainerName
 
 	return spec
 }

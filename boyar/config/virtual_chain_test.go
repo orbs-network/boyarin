@@ -6,7 +6,7 @@ import (
 )
 
 func Test_getVcidFromServiceName(t *testing.T) {
-	require.EqualValues(t, 42, GetVcidFromServiceName("orbs-network-chain-42-stack"))
-	require.EqualValues(t, -1, GetVcidFromServiceName("orbs-network-signer-service-stack"))
-	require.EqualValues(t, -1, GetVcidFromServiceName("http-api-reverse-proxy-stack"))
+	require.EqualValues(t, 42, GetVcidFromServiceName("chain-42"))
+	require.EqualValues(t, -1, GetVcidFromServiceName("signer"))
+	require.EqualValues(t, -1, GetVcidFromServiceName("http-api-reverse-proxy"))
 }

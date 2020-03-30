@@ -35,7 +35,7 @@ func GetVcidFromServiceName(serviceName string) int64 {
 		return -1
 	}
 
-	result, err := strconv.ParseInt(tokens[len(tokens)-2], 10, 0)
+	result, err := strconv.ParseInt(tokens[len(tokens)-1], 10, 0)
 	if err != nil {
 		return -1
 	}

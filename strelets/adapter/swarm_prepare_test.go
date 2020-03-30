@@ -34,7 +34,7 @@ func Test_getVirtualChainServiceSpec(t *testing.T) {
 
 	spec := getVirtualChainServiceSpec(serviceConfig, secrets, mounts, networkConfig)
 
-	require.EqualValues(t, spec.Name, containerName+"-stack")
+	require.EqualValues(t, spec.Name, containerName)
 
 	require.EqualValues(t, spec.TaskTemplate, swarm.TaskSpec{
 		ContainerSpec: &swarm.ContainerSpec{

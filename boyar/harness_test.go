@@ -40,14 +40,14 @@ func (conf configFile) String() string {
 func getJSONConfig(t *testing.T, conf configFile) config.MutableNodeConfiguration {
 	contents, err := ioutil.ReadFile(configPath + "/" + conf.String())
 	require.NoError(t, err)
-	source, err := config.NewStringConfigurationSource(string(contents), helpers.LocalEthEndpoint(), fakeKeyPairPath) // ethereum endpoint is optional
+	source, err := config.NewStringConfigurationSource(string(contents), helpers.LocalEthEndpoint(), fakeKeyPairPath, false) // ethereum endpoint is optional
 	require.NoError(t, err)
 	return source
 }
 
 func assertAllChainedCached(t *testing.T, cfg config.MutableNodeConfiguration, cache *Cache) {
 	for _, chain := range cfg.Chains() {
-		chainId := cfg.PrefixedContainerName(chain.GetContainerName())
+		chainId := cfg.NamespacedContainerName(chain.GetContainerName())
 
 		if chain.Disabled {
 			assert.False(t, cache.vChains.CheckNewValue(chainId, removed), "cache should remember chain was removed")

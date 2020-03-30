@@ -19,7 +19,7 @@ func getTestJSONConfig() string {
 const fakeKeyPair = "./test/fake-key-pair.json"
 
 func Test_StringConfigurationSource(t *testing.T) {
-	source, err := NewStringConfigurationSource(getTestJSONConfig(), "", fakeKeyPair)
+	source, err := NewStringConfigurationSource(getTestJSONConfig(), "", fakeKeyPair, false)
 	require.NoError(t, err)
 
 	require.NotEmpty(t, source.Hash())
@@ -53,7 +53,7 @@ func Test_StringConfigurationSource(t *testing.T) {
 }
 
 func Test_StringConfigurationSourceFromEmptyConfig(t *testing.T) {
-	cfg, err := NewStringConfigurationSource("{}", "", fakeKeyPair)
+	cfg, err := NewStringConfigurationSource("{}", "", fakeKeyPair, false)
 	require.NoError(t, err)
 
 	require.NotEmpty(t, cfg.Hash())
@@ -63,7 +63,7 @@ func Test_StringConfigurationSourceFromEmptyConfig(t *testing.T) {
 }
 
 func Test_StringConfigurationSourceWithOverrides(t *testing.T) {
-	source, err := NewStringConfigurationSource(getTestJSONConfig(), "http://some.ethereum.node", fakeKeyPair)
+	source, err := NewStringConfigurationSource(getTestJSONConfig(), "http://some.ethereum.node", fakeKeyPair, false)
 	require.NoError(t, err)
 
 	require.Equal(t, "http://some.ethereum.node", source.EthereumEndpoint())
@@ -72,7 +72,7 @@ func Test_StringConfigurationSourceWithOverrides(t *testing.T) {
 }
 
 func Test_StringConfigurationSourceWithSigner(t *testing.T) {
-	source, err := NewStringConfigurationSource(getTestJSONConfig(), "http://some.ethereum.node", fakeKeyPair)
+	source, err := NewStringConfigurationSource(getTestJSONConfig(), "http://some.ethereum.node", fakeKeyPair, false)
 	require.NoError(t, err)
 
 	require.NotNil(t, source.Services())
@@ -80,5 +80,17 @@ func Test_StringConfigurationSourceWithSigner(t *testing.T) {
 	require.NotNil(t, source.Services().Signer.DockerConfig)
 	require.NotNil(t, source.Services().Signer.Config)
 
-	require.Equal(t, "http://cfc9e5-signer-service-stack:7777", source.Chains()[0].Config["signer-endpoint"])
+	require.Equal(t, "http://signer:7777", source.Chains()[0].Config["signer-endpoint"])
+}
+
+func Test_StringConfigurationSourceWithSignerWithNamespace(t *testing.T) {
+	source, err := NewStringConfigurationSource(getTestJSONConfig(), "http://some.ethereum.node", fakeKeyPair, true)
+	require.NoError(t, err)
+
+	require.NotNil(t, source.Services())
+	require.NotNil(t, source.Services().Signer)
+	require.NotNil(t, source.Services().Signer.DockerConfig)
+	require.NotNil(t, source.Services().Signer.Config)
+
+	require.Equal(t, "http://cfc9e5-signer:7777", source.Chains()[0].Config["signer-endpoint"])
 }

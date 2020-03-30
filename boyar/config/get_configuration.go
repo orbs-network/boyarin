@@ -9,7 +9,7 @@ import (
 )
 
 func GetConfiguration(flags *Flags) (NodeConfiguration, error) {
-	config, err := NewUrlConfigurationSource(flags.ConfigUrl, flags.EthereumEndpoint, flags.KeyPairConfigPath)
+	config, err := NewUrlConfigurationSource(flags.ConfigUrl, flags.EthereumEndpoint, flags.KeyPairConfigPath, flags.WithNamespace)
 
 	if err != nil {
 		return nil, err

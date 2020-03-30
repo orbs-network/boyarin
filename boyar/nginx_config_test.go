@@ -16,13 +16,13 @@ location ~^/$ { return 200 '{"Status":"OK","Description":"ORBS blockchain node",
 location / { error_page 404 = @error404; }
 location @error404 { return 404 '{"Status":"Not found","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 location @error502 { return 502 '{"Status":"Bad gateway","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
-set $vc42 cfc9e5-chain-42-stack;
+set $vc42 chain-42;
 location ~ ^/vchains/42(/?)(.*) {
 	proxy_pass http://$vc42:8080/$2;
 	error_page 502 = @error502;
 }
-location /services/signer-service/status {
-	alias /opt/orbs/status/signer-service/status.json;
+location /services/signer/status {
+	alias /opt/orbs/status/signer/status.json;
 }
 location /services/management-service/status {
 	alias /opt/orbs/status/management-service/status.json;
@@ -41,18 +41,18 @@ location ~^/$ { return 200 '{"Status":"OK","Description":"ORBS blockchain node",
 location / { error_page 404 = @error404; }
 location @error404 { return 404 '{"Status":"Not found","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 location @error502 { return 502 '{"Status":"Bad gateway","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
-set $vc42 cfc9e5-chain-42-stack;
+set $vc42 chain-42;
 location ~ ^/vchains/42(/?)(.*) {
 	proxy_pass http://$vc42:8080/$2;
 	error_page 502 = @error502;
 }
-set $vc1991 cfc9e5-chain-1991-stack;
+set $vc1991 chain-1991;
 location ~ ^/vchains/1991(/?)(.*) {
 	proxy_pass http://$vc1991:8080/$2;
 	error_page 502 = @error502;
 }
-location /services/signer-service/status {
-	alias /opt/orbs/status/signer-service/status.json;
+location /services/signer/status {
+	alias /opt/orbs/status/signer/status.json;
 }
 location /services/management-service/status {
 	alias /opt/orbs/status/management-service/status.json;
@@ -74,13 +74,13 @@ location ~^/$ { return 200 '{"Status":"OK","Description":"ORBS blockchain node",
 location / { error_page 404 = @error404; }
 location @error404 { return 404 '{"Status":"Not found","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 location @error502 { return 502 '{"Status":"Bad gateway","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
-set $vc42 cfc9e5-chain-42-stack;
+set $vc42 chain-42;
 location ~ ^/vchains/42(/?)(.*) {
 	proxy_pass http://$vc42:8080/$2;
 	error_page 502 = @error502;
 }
-location /services/signer-service/status {
-	alias /opt/orbs/status/signer-service/status.json;
+location /services/signer/status {
+	alias /opt/orbs/status/signer/status.json;
 }
 location /services/management-service/status {
 	alias /opt/orbs/status/management-service/status.json;
@@ -96,13 +96,13 @@ location ~^/$ { return 200 '{"Status":"OK","Description":"ORBS blockchain node",
 location / { error_page 404 = @error404; }
 location @error404 { return 404 '{"Status":"Not found","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 location @error502 { return 502 '{"Status":"Bad gateway","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
-set $vc42 cfc9e5-chain-42-stack;
+set $vc42 chain-42;
 location ~ ^/vchains/42(/?)(.*) {
 	proxy_pass http://$vc42:8080/$2;
 	error_page 502 = @error502;
 }
-location /services/signer-service/status {
-	alias /opt/orbs/status/signer-service/status.json;
+location /services/signer/status {
+	alias /opt/orbs/status/signer/status.json;
 }
 location /services/management-service/status {
 	alias /opt/orbs/status/management-service/status.json;

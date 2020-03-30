@@ -2,7 +2,6 @@ package helpers
 
 import (
 	"github.com/orbs-network/scribe/log"
-	"github.com/stretchr/testify/require"
 	"net"
 	"os"
 	"strings"
@@ -69,23 +68,6 @@ func SkipUnlessSwarmIsEnabled(t *testing.T) {
 	if os.Getenv("ENABLE_SWARM") != "true" {
 		t.Skip("skipping test, docker swarm is disabled")
 	}
-}
-
-func SkipOnCI(t *testing.T) {
-	if os.Getenv("CI") != "" {
-		t.Skip("skipped on CI because of flakiness")
-	}
-}
-
-func WaitForBlock(t *testing.T, getMetrics func() (map[string]interface{}, error), targetBlockHeight int, timeout time.Duration) {
-	require.Truef(t, Eventually(timeout, func() bool {
-		blockHeight, err := GetBlockHeight(getMetrics)
-		if err != nil {
-			return false
-		}
-
-		return blockHeight >= targetBlockHeight
-	}), "expected block height to reach %d", targetBlockHeight)
 }
 
 func DefaultTestLogger() log.Logger {

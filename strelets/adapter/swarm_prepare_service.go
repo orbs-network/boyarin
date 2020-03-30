@@ -3,14 +3,13 @@ package adapter
 import (
 	"context"
 	"fmt"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/swarm"
 	"time"
 )
 
 func (d *dockerSwarmOrchestrator) RunService(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) error {
-	serviceName := GetServiceId(serviceConfig.ContainerName)
-
-	if err := d.RemoveService(ctx, serviceName); err != nil {
+	if err := d.RemoveService(ctx, GetServiceId(serviceConfig.ContainerName)); err != nil {
 		return err
 	}
 
@@ -36,7 +35,12 @@ func (d *dockerSwarmOrchestrator) RunService(ctx context.Context, serviceConfig 
 		secrets = append(secrets, getSecretReference(serviceConfig.ContainerName, config.keysSecretId, "keyPair", "keys.json"))
 	}
 
-	spec := getServiceSpec(serviceConfig, secrets, networks)
+	mounts, err := d.provisionServiceVolumes(ctx, serviceConfig.ContainerName, ORBS_STATUS_TARGET)
+	if err != nil {
+		return err
+	}
+
+	spec := getServiceSpec(serviceConfig, secrets, networks, mounts)
 
 	return d.create(ctx, spec, serviceConfig.ImageName)
 }
@@ -61,13 +65,13 @@ func (d *dockerSwarmOrchestrator) storeServiceConfiguration(ctx context.Context,
 	return secrets, nil
 }
 
-func getServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.SecretReference, networks []swarm.NetworkAttachmentConfig) swarm.ServiceSpec {
+func getServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.SecretReference, networks []swarm.NetworkAttachmentConfig, mounts []mount.Mount) swarm.ServiceSpec {
 	restartDelay := time.Duration(10 * time.Second)
 	replicas := uint64(1)
 
 	spec := swarm.ServiceSpec{
 		TaskTemplate: swarm.TaskSpec{
-			ContainerSpec: getServiceContainerSpec(serviceConfig.ImageName, serviceConfig.Executable, secrets),
+			ContainerSpec: getServiceContainerSpec(serviceConfig.ImageName, serviceConfig.Executable, secrets, mounts),
 			RestartPolicy: &swarm.RestartPolicy{
 				Delay: &restartDelay,
 			},
@@ -96,7 +100,7 @@ func getServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.SecretReferen
 	return spec
 }
 
-func getServiceContainerSpec(imageName string, executable string, secrets []*swarm.SecretReference) *swarm.ContainerSpec {
+func getServiceContainerSpec(imageName string, executable string, secrets []*swarm.SecretReference, mounts []mount.Mount) *swarm.ContainerSpec {
 	command := []string{
 		executable,
 	}
@@ -110,5 +114,6 @@ func getServiceContainerSpec(imageName string, executable string, secrets []*swa
 		Command: command,
 		Secrets: secrets,
 		Sysctls: GetSysctls(),
+		Mounts:  mounts,
 	}
 }

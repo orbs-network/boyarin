@@ -45,7 +45,7 @@ func (d *dockerSwarmOrchestrator) RunVirtualChain(ctx context.Context, serviceCo
 		getSecretReference(serviceConfig.ContainerName, config.networkSecretId, "network", "network.json"),
 	}
 
-	mounts, err := d.provisionVolumes(ctx, serviceConfig.NodeAddress, serviceConfig.Id,
+	mounts, err := d.provisionVchainVolumes(ctx, serviceConfig.NodeAddress, serviceConfig.Id,
 		defaultValue(serviceConfig.BlocksVolumeSize, 100), defaultValue(serviceConfig.LogsVolumeSize, 2))
 	if err != nil {
 		return fmt.Errorf("failed to provision volumes: %s", err)

@@ -18,8 +18,11 @@ type AppConfig struct {
 }
 
 type ServiceConfig struct {
-	Id            uint32
-	NodeAddress   string
+	// vchain only
+	Id          uint32
+	NodeAddress string
+
+	// common
 	ImageName     string
 	ContainerName string
 	Executable    string

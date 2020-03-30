@@ -1,6 +1,7 @@
 package adapter
 
 import (
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -26,7 +27,11 @@ func Test_getServiceSpec(t *testing.T) {
 		{Target: "signer"},
 	}
 
-	spec := getServiceSpec(serviceConfig, secrets, networkConfig)
+	mounts := []mount.Mount{
+		{Source: "/tmp/a", Target: "/tmp/b"},
+	}
+
+	spec := getServiceSpec(serviceConfig, secrets, networkConfig, mounts)
 
 	require.EqualValues(t, spec.Name, containerName+"-stack")
 
@@ -39,6 +44,7 @@ func Test_getServiceSpec(t *testing.T) {
 			},
 			Secrets: secrets,
 			Sysctls: GetSysctls(),
+			Mounts:  mounts,
 		},
 		RestartPolicy: &swarm.RestartPolicy{
 			Condition: "",

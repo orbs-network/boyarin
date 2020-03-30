@@ -39,14 +39,14 @@ func verifySource(t *testing.T, source NodeConfiguration) {
 }
 
 func Test_parseStringConfig(t *testing.T) {
-	source, err := parseStringConfig(getJSONConfig(), "", fakeKeyPair)
+	source, err := parseStringConfig(getJSONConfig(), "", fakeKeyPair, false)
 
 	require.NoError(t, err)
 	verifySource(t, source)
 }
 
 func TestNewStringConfigurationSource(t *testing.T) {
-	source, err := NewStringConfigurationSource(getJSONConfig(), "", fakeKeyPair)
+	source, err := NewStringConfigurationSource(getJSONConfig(), "", fakeKeyPair, false)
 
 	require.NoError(t, err)
 	verifySource(t, source)
@@ -59,7 +59,7 @@ func TestNewUrlConfigurationSource(t *testing.T) {
 	server.Start()
 	defer server.Shutdown()
 
-	source, err := NewUrlConfigurationSource(server.Url(), "", fakeKeyPair)
+	source, err := NewUrlConfigurationSource(server.Url(), "", fakeKeyPair, false)
 
 	require.NoError(t, err)
 	verifySource(t, source)

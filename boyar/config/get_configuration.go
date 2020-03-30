@@ -9,7 +9,7 @@ import (
 )
 
 func GetConfiguration(flags *Flags) (NodeConfiguration, error) {
-	config, err := NewUrlConfigurationSource(flags.ConfigUrl, flags.EthereumEndpoint, flags.KeyPairConfigPath)
+	config, err := NewUrlConfigurationSource(flags.ConfigUrl, flags.EthereumEndpoint, flags.KeyPairConfigPath, flags.WithNamespace)
 
 	if err != nil {
 		return nil, err
@@ -33,11 +33,6 @@ func GetConfiguration(flags *Flags) (NodeConfiguration, error) {
 			return nil, fmt.Errorf("failed to retrive topology from Ethereum: %s", err)
 		}
 		config.SetFederationNodes(federationNodes)
-	}
-
-	// for testing only
-	if flags.WithNamespace {
-		config.WithNamespace()
 	}
 
 	if err := config.VerifyConfig(); err != nil {

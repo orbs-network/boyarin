@@ -15,7 +15,7 @@ func Bootstrap(ctx context.Context, flags *config.Flags, logger log.Logger) (*co
 		return nil, err
 	}
 
-	cfg, err := config.NewStringConfigurationSource(string(data), flags.EthereumEndpoint, flags.KeyPairConfigPath)
+	cfg, err := config.NewStringConfigurationSource(string(data), flags.EthereumEndpoint, flags.KeyPairConfigPath, flags.WithNamespace)
 	if err != nil {
 		return nil, err
 	}
@@ -38,11 +38,6 @@ func Bootstrap(ctx context.Context, flags *config.Flags, logger log.Logger) (*co
 		LogFilePath: flags.LogFilePath,
 
 		WithNamespace: flags.WithNamespace,
-	}
-
-	// for testing only
-	if newFlags.WithNamespace {
-		cfg.WithNamespace()
 	}
 
 	coreBoyar := NewCoreBoyarService(logger)

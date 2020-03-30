@@ -22,7 +22,6 @@ type NodeConfiguration interface {
 	Services() Services
 
 	NamespacedContainerName(name string) string
-	WithNamespace() MutableNodeConfiguration
 
 	VerifyConfig() error
 	Hash() string
@@ -145,9 +144,4 @@ func (c *nodeConfigurationContainer) NamespacedContainerName(name string) string
 	}
 
 	return name
-}
-
-func (c *nodeConfigurationContainer) WithNamespace() MutableNodeConfiguration {
-	c.withNamespace = true
-	return c
 }

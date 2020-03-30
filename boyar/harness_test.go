@@ -40,7 +40,7 @@ func (conf configFile) String() string {
 func getJSONConfig(t *testing.T, conf configFile) config.MutableNodeConfiguration {
 	contents, err := ioutil.ReadFile(configPath + "/" + conf.String())
 	require.NoError(t, err)
-	source, err := config.NewStringConfigurationSource(string(contents), helpers.LocalEthEndpoint(), fakeKeyPairPath) // ethereum endpoint is optional
+	source, err := config.NewStringConfigurationSource(string(contents), helpers.LocalEthEndpoint(), fakeKeyPairPath, false) // ethereum endpoint is optional
 	require.NoError(t, err)
 	return source
 }

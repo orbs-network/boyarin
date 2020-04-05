@@ -17,7 +17,7 @@
         "Pull":   false
       },
       "Config": {
-        "ethereum-endpoint": "http://ethereum:8545",
+        "ethereum-endpoint": "http://ethereum-client:8545",
         "genesis-validator-addresses": ["dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173"]
       }
     }
@@ -34,7 +34,7 @@
         "api": "v1"
       }
     },
-    "ethereum": {
+    "ethereum-client": {
       "InternalHttpPort": 8545,
       "InternalPort": 30303,
       "ExternalPort": 30303,

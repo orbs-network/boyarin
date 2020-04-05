@@ -11,12 +11,12 @@ type Service struct {
 type Services struct {
 	Signer     *Service `json:"signer"`
 	Management *Service `json:"management-service"`
-	Ethereum   *Service `json:"ethereum"`
+	Ethereum   *Service `json:"ethereum-client"`
 }
 
 const SIGNER = "signer"
 const MANAGEMENT = "management-service"
-const ETHEREUM = "ethereum"
+const ETHEREUM = "ethereum-client"
 
 var SIGNER_SERVICE_CONFIG = ServiceConfig{
 	Name:                   SIGNER,

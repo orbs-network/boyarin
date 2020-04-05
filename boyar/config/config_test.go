@@ -16,6 +16,15 @@ func getTestJSONConfig() string {
 	return string(contents)
 }
 
+func getTestJSONConfigWithEthereum() string {
+	contents, err := ioutil.ReadFile("./test/configWithEthereum.json")
+	if err != nil {
+		panic(err)
+	}
+
+	return string(contents)
+}
+
 const fakeKeyPair = "./test/fake-key-pair.json"
 
 func Test_StringConfigurationSource(t *testing.T) {
@@ -93,4 +102,14 @@ func Test_StringConfigurationSourceWithSignerWithNamespace(t *testing.T) {
 	require.NotNil(t, source.Services().Signer.Config)
 
 	require.Equal(t, "http://cfc9e5-signer:7777", source.Chains()[0].Config["signer-endpoint"])
+}
+
+func Test_StringConfigurationSourceWithEthereum(t *testing.T) {
+	source, err := NewStringConfigurationSource(getTestJSONConfigWithEthereum(), "", fakeKeyPair, false)
+	require.NoError(t, err)
+
+	require.NotNil(t, source.Services())
+	require.NotNil(t, source.Services().Ethereum)
+	require.NotNil(t, source.Services().Ethereum.DockerConfig)
+	require.NotNil(t, source.Services().Ethereum.Config)
 }

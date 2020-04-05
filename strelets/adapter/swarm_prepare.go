@@ -32,6 +32,15 @@ func (d *dockerSwarmOrchestrator) RunVirtualChain(ctx context.Context, serviceCo
 		networks = append(networks, proxyNetwork)
 	}
 
+	if serviceConfig.ServicesNetworkEnabled {
+		servicesNetwork, err := d.getNetwork(ctx, SHARED_SERVICES_NETWORK)
+		if err != nil {
+			return err
+		}
+
+		networks = append(networks, servicesNetwork)
+	}
+
 	config, err := d.storeVirtualChainConfiguration(ctx, serviceConfig.ContainerName, appConfig)
 	if err != nil {
 		return err

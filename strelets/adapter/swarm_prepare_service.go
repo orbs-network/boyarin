@@ -23,6 +23,15 @@ func (d *dockerSwarmOrchestrator) RunService(ctx context.Context, serviceConfig 
 		networks = append(networks, signerNetwork)
 	}
 
+	if serviceConfig.ServicesNetworkEnabled {
+		servicesNetwork, err := d.getNetwork(ctx, SHARED_SERVICES_NETWORK)
+		if err != nil {
+			return err
+		}
+
+		networks = append(networks, servicesNetwork)
+	}
+
 	config, err := d.storeServiceConfiguration(ctx, serviceConfig.ContainerName, appConfig)
 	if err != nil {
 		return err

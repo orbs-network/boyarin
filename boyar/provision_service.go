@@ -49,7 +49,8 @@ func (b *boyar) provisionService(ctx context.Context, cfg config.ServiceConfig, 
 				InternalPort:  service.InternalPort,
 				ExternalPort:  service.ExternalPort,
 
-				SignerNetworkEnabled: cfg.SignerNetworkEnabled,
+				SignerNetworkEnabled:   cfg.SignerNetworkEnabled,
+				ServicesNetworkEnabled: cfg.ServicesNetworkEnabled,
 
 				LimitedMemory:  service.DockerConfig.Resources.Limits.Memory,
 				LimitedCPU:     service.DockerConfig.Resources.Limits.CPUs,

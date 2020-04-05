@@ -31,6 +31,7 @@ type ServiceConfig struct {
 	ExternalPort int
 
 	SignerNetworkEnabled    bool
+	ServicesNetworkEnabled  bool
 	HTTPProxyNetworkEnabled bool
 
 	LimitedMemory  int64

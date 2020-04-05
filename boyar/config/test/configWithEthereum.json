@@ -1,0 +1,51 @@
+{
+  "network": [
+    {"address":"dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173","ip":"192.168.1.14"}
+  ],
+  "orchestrator": {
+    "storage-driver": "local"
+  },
+  "chains": [
+    {
+      "Id":        42,
+      "InternalHttpPort": 8080,
+      "InternalPort": 4400,
+      "ExternalPort": 4400,
+      "DockerConfig": {
+        "Image":  "orbsnetwork/node",
+        "Tag":    "experimental",
+        "Pull":   false
+      },
+      "Config": {
+        "ethereum-endpoint": "http://localhost:8545",
+        "genesis-validator-addresses": ["dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173"]
+      }
+    }
+  ],
+  "services": {
+    "signer": {
+      "InternalPort": 7777,
+      "DockerConfig": {
+        "Image":  "orbsnetwork/signer",
+        "Tag":    "experimental",
+        "Pull":   false
+      },
+      "Config": {
+        "api": "v1"
+      }
+    },
+    "ethereum": {
+      "InternalHttpPort": 8545,
+      "InternalPort": 30303,
+      "ExternalPort": 30303,
+      "DockerConfig": {
+        "Image":  "orbsnetwork/ethereum-light-client-service",
+        "Tag":    "latest",
+        "Pull":   false
+      },
+      "Config": {
+        "api": "v1"
+      }
+    }
+  }
+}

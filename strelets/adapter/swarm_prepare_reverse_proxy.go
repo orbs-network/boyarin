@@ -59,7 +59,7 @@ func (d *dockerSwarmOrchestrator) RunReverseProxy(ctx context.Context, config *R
 
 	var mounts []mount.Mount
 	for _, nodeService := range config.Services {
-		if ms, err := d.provisionServiceVolumes(ctx, nodeService.ServiceName, getNginxStatusMountPath(nodeService.Name)); err != nil {
+		if ms, err := d.provisionStatusVolume(ctx, nodeService.ServiceName, getNginxStatusMountPath(nodeService.Name)); err != nil {
 			return err
 		} else {
 			mounts = append(mounts, ms...)

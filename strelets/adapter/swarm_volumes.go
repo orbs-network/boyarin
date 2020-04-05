@@ -13,6 +13,7 @@ import (
 const ORBS_BLOCKS_TARGET = "/usr/local/var/orbs"
 const ORBS_LOGS_TARGET = "/opt/orbs/logs"
 const ORBS_STATUS_TARGET = "/opt/orbs/status"
+const ORBS_CACHE_TARGET = "/opt/orbs/cache"
 
 const REXRAY_EBS_DRIVER = "rexray/ebs"
 const LOCAL_DRIVER = "local"
@@ -41,11 +42,25 @@ func getStatusVolumeName(serviceName string) string {
 	return serviceName + "-status"
 }
 
-func (d *dockerSwarmOrchestrator) provisionServiceVolumes(ctx context.Context, serviceName string, mountTarget string) (mounts []mount.Mount, err error) {
+func getCacheVolumeName(serviceName string) string {
+	return serviceName + "-cache"
+}
+
+func (d *dockerSwarmOrchestrator) provisionStatusVolume(ctx context.Context, serviceName string, mountTarget string) (mounts []mount.Mount, err error) {
 	if statusMount, err := d.provisionVolume(ctx, getStatusVolumeName(serviceName), mountTarget, 0, d.options); err != nil {
 		return mounts, err
 	} else {
 		mounts = append(mounts, statusMount)
+	}
+
+	return mounts, nil
+}
+
+func (d *dockerSwarmOrchestrator) provisionCacheVolume(ctx context.Context, serviceName string, mountTarget string) (mounts []mount.Mount, err error) {
+	if cacheMount, err := d.provisionVolume(ctx, getCacheVolumeName(serviceName), mountTarget, 0, d.options); err != nil {
+		return mounts, err
+	} else {
+		mounts = append(mounts, cacheMount)
 	}
 
 	return mounts, nil

@@ -35,9 +35,15 @@ func (d *dockerSwarmOrchestrator) RunService(ctx context.Context, serviceConfig 
 		secrets = append(secrets, getSecretReference(serviceConfig.ContainerName, config.keysSecretId, "keyPair", "keys.json"))
 	}
 
-	mounts, err := d.provisionServiceVolumes(ctx, serviceConfig.ContainerName, ORBS_STATUS_TARGET)
+	mounts, err := d.provisionStatusVolume(ctx, serviceConfig.ContainerName, ORBS_STATUS_TARGET)
 	if err != nil {
 		return err
+	}
+
+	if cacheMounts, err := d.provisionCacheVolume(ctx, serviceConfig.ContainerName, ORBS_CACHE_TARGET); err != nil {
+		return err
+	} else {
+		mounts = append(mounts, cacheMounts...)
 	}
 
 	spec := getServiceSpec(serviceConfig, secrets, networks, mounts)

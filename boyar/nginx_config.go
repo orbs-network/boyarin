@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/version"
+	"sort"
 	"strings"
 	"text/template"
 )
@@ -80,6 +81,7 @@ ssl_certificate_key /var/run/secrets/ssl-key;
 	for serviceConfig, _ := range cfg.Services().AsMap() {
 		services = append(services, serviceConfig.Name)
 	}
+	sort.Strings(services)
 
 	err := TplNginxConf.Execute(&sb, nginxTemplateParams{
 		Chains:     transformedChains,

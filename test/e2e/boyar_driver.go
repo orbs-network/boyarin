@@ -135,19 +135,27 @@ func SetupDynamicBoyarDependencies(t *testing.T, keyPair KeyConfig, genesisValid
 
 func SetupDynamicBoyarDepencenciesForNetwork(t *testing.T, keyPair KeyConfig,
 	topology []interface{}, genesisValidators []string, httpPort int, vChains <-chan []VChainArgument) (*config.Flags, func()) {
+	return SetupConfigServer(t, keyPair, func() *string {
+		configStr := configJson(t, topology, genesisValidators, httpPort, []VChainArgument{})
+		go func() {
+			for currentChains := range vChains {
+				configStr = configJson(t, topology, genesisValidators, httpPort, currentChains)
+				fmt.Println(configStr)
+			}
+		}()
 
+		return &configStr
+	})
+}
+
+func SetupConfigServer(t *testing.T, keyPair KeyConfig, configBuilder func() *string) (*config.Flags, func()) {
 	keyPairJson, err := json.Marshal(keyPair)
 	require.NoError(t, err)
 	file := TempFile(t, keyPairJson)
 
-	configStr := configJson(t, topology, genesisValidators, httpPort, []VChainArgument{})
-	go func() {
-		for currentChains := range vChains {
-			configStr = configJson(t, topology, genesisValidators, httpPort, currentChains)
-			fmt.Println(configStr)
-		}
-	}()
-	ts := serveConfig(&configStr)
+	configStr := configBuilder()
+
+	ts := serveConfig(configStr)
 	flags := &config.Flags{
 		Timeout:           time.Minute,
 		ConfigUrl:         ts.URL,

@@ -21,9 +21,6 @@ location ~ ^/vchains/42(/?)(.*) {
 	proxy_pass http://$vc42:8080/$2;
 	error_page 502 = @error502;
 }
-location /services/ethereum-client/status {
-	alias /opt/orbs/status/ethereum-client/status.json;
-}
 location /services/management-service/status {
 	alias /opt/orbs/status/management-service/status.json;
 }
@@ -54,9 +51,6 @@ location ~ ^/vchains/1991(/?)(.*) {
 	proxy_pass http://$vc1991:8080/$2;
 	error_page 502 = @error502;
 }
-location /services/ethereum-client/status {
-	alias /opt/orbs/status/ethereum-client/status.json;
-}
 location /services/management-service/status {
 	alias /opt/orbs/status/management-service/status.json;
 }
@@ -85,9 +79,6 @@ location ~ ^/vchains/42(/?)(.*) {
 	proxy_pass http://$vc42:8080/$2;
 	error_page 502 = @error502;
 }
-location /services/ethereum-client/status {
-	alias /opt/orbs/status/ethereum-client/status.json;
-}
 location /services/management-service/status {
 	alias /opt/orbs/status/management-service/status.json;
 }
@@ -109,9 +100,6 @@ set $vc42 chain-42;
 location ~ ^/vchains/42(/?)(.*) {
 	proxy_pass http://$vc42:8080/$2;
 	error_page 502 = @error502;
-}
-location /services/ethereum-client/status {
-	alias /opt/orbs/status/ethereum-client/status.json;
 }
 location /services/management-service/status {
 	alias /opt/orbs/status/management-service/status.json;

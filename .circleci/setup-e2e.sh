@@ -12,7 +12,8 @@ ORBS_NODE_DOCKER_IMAGE=${ORBS_NODE_DOCKER_IMAGE:-"727534866935.dkr.ecr.us-west-2
 
 docker pull orbsnetwork/node:experimental
 docker pull orbsnetwork/signer:experimental
-docker pull orbsnetwork/management-service:G-0-N # FIXME replace with experimental
+docker pull orbsnetworkstaging/management-service:v100.0.0
+docker pull orbsnetwork/ethereum-light-client-service:latest
 
 docker swarm init
 

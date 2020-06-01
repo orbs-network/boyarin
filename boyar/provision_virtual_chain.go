@@ -58,6 +58,7 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 
 					SignerNetworkEnabled:    true,
 					HTTPProxyNetworkEnabled: true,
+					ServicesNetworkEnabled:  true,
 
 					LimitedMemory:  chain.DockerConfig.Resources.Limits.Memory,
 					LimitedCPU:     chain.DockerConfig.Resources.Limits.CPUs,

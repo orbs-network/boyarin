@@ -11,8 +11,8 @@
       "InternalPort": 8080,
       "ExternalPort": 7666,
       "DockerConfig": {
-        "Image":  "orbsnetwork/management-service",
-        "Tag":    "latest",
+        "Image":  "orbsnetworkstaging/management-service",
+        "Tag":    "v100.0.0",
         "Pull":   true
       },
       "Config": {

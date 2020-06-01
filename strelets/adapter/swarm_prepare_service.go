@@ -23,6 +23,15 @@ func (d *dockerSwarmOrchestrator) RunService(ctx context.Context, serviceConfig 
 		networks = append(networks, signerNetwork)
 	}
 
+	if serviceConfig.ServicesNetworkEnabled {
+		servicesNetwork, err := d.getNetwork(ctx, SHARED_SERVICES_NETWORK)
+		if err != nil {
+			return err
+		}
+
+		networks = append(networks, servicesNetwork)
+	}
+
 	config, err := d.storeServiceConfiguration(ctx, serviceConfig.ContainerName, appConfig)
 	if err != nil {
 		return err
@@ -35,9 +44,15 @@ func (d *dockerSwarmOrchestrator) RunService(ctx context.Context, serviceConfig 
 		secrets = append(secrets, getSecretReference(serviceConfig.ContainerName, config.keysSecretId, "keyPair", "keys.json"))
 	}
 
-	mounts, err := d.provisionServiceVolumes(ctx, serviceConfig.ContainerName, ORBS_STATUS_TARGET)
+	mounts, err := d.provisionStatusVolume(ctx, serviceConfig.ContainerName, ORBS_STATUS_TARGET)
 	if err != nil {
 		return err
+	}
+
+	if cacheMounts, err := d.provisionCacheVolume(ctx, serviceConfig.ContainerName, ORBS_CACHE_TARGET); err != nil {
+		return err
+	} else {
+		mounts = append(mounts, cacheMounts...)
 	}
 
 	spec := getServiceSpec(serviceConfig, secrets, networks, mounts)

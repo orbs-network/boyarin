@@ -41,13 +41,14 @@ func TestE2EBootstrapWithDefaultConfig(t *testing.T) {
       "InternalPort": 8080,
       "ExternalPort": 7666,
       "DockerConfig": {
-        "Image":  "orbsnetwork/management-service",
-        "Tag":    "G-0-N",
+        "Image":  "orbsnetworkstaging/management-service",
+        "Tag":    "v100.0.0",
         "Pull":   true
       },
       "Config": {
         "EthereumGenesisContract": "0x2384723487623784638272348",
         "EthereumEndpoint": "http://eth.orbs.com",
+		"DockerNamespace":"orbsnetworkstaging",
 		"boyarLegacyBootstrap": "%s"
       }
     }

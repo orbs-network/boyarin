@@ -34,7 +34,7 @@ jobs:
     steps:
       - checkout
       - run: ./.circleci/set-aws-credentials.sh
-      - run: ./build-binaries.sh
+      - run: ./build-to-s3.sh
 
   test-e2e:
     machine: true

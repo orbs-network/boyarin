@@ -29,6 +29,10 @@ To remove all containers: `docker rm -f $(docker ps -aq)`
 
 `./build-binaries.sh && ./test.e2e.sh`
 
+In case you ever need to regenerate the SSL certificate:
+
+`openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 10000 -nodes`
+
 ## CLI options
 
 `--log` path to log file, otherwise will log to stdout

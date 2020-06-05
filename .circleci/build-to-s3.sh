@@ -2,6 +2,12 @@
 
 GITHASH=$(./.circleci/hash.sh)
 
+echo "Testing S3 access.."
+aws s3 ls s3://boyar-dev/releases
+aws s3 ls
+
+exit 0
+
 echo "Building Boyar for git commit ${GITHASH}.."
 ./build-binaries.sh
 

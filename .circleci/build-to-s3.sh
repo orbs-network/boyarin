@@ -1,6 +1,8 @@
-#!/bin/bash -e
+#!/bin/bash -xe
 
 GITHASH=$(./.circleci/hash.sh)
+
+ls -lh ~/.aws
 
 echo "Testing S3 access.."
 aws s3 ls

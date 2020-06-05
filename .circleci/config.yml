@@ -84,4 +84,3 @@ workflows:
       - dev-build:
           requires:
             - test
-            - test-e2e

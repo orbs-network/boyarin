@@ -41,8 +41,8 @@ func Test_getVirtualChainServiceSpec(t *testing.T) {
 			Image: "orbsnetwork/node:experimental",
 			Command: []string{
 				"/opt/orbs/orbs-node",
-				"--silent",
-				"--log", "/opt/orbs/logs/node.log",
+				// "--silent",
+				// "--log", "/opt/orbs/logs/node.log",
 				"--config", "/var/run/secrets/some-secret.json",
 			},
 			Secrets: secrets,

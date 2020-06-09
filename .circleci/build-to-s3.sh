@@ -2,6 +2,8 @@
 
 GITHASH=$(./.circleci/hash.sh)
 
+export BUILD_FLAG="$BUILD_FLAG netgo osusergo" # allows static linking, further reading https://github.com/golang/go/issues/30419
+
 echo "Building Boyar for git commit ${GITHASH}.."
 ./build-binaries.sh
 

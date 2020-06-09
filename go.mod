@@ -44,6 +44,7 @@ require (
 	golang.org/x/text v0.3.2 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gotest.tools v2.2.0+incompatible // indirect
+	gotest.tools/gotestsum v0.4.2 // indirect
 )
 
 // Docker v19.03.5

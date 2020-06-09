@@ -22,12 +22,12 @@ func getVolumeName(nodeAddress string, virtualChainId uint32, postfix string) st
 	return fmt.Sprintf("%s-%d-%s", nodeAddress, virtualChainId, postfix)
 }
 
-func getVolumeNameForLogs(virtualChainId uint32) string {
-	return fmt.Sprintf("vchain-%d-logs", virtualChainId)
-}
+// func getVolumeNameForLogs(virtualChainId uint32) string {
+// 	return fmt.Sprintf("vchain-%d-logs", virtualChainId)
+// }
 
 func (d *dockerSwarmOrchestrator) provisionVchainVolumes(ctx context.Context, nodeAddress string, virtualChainId uint32, blocksVolumeSize int, logsVolumeSize int) (mounts []mount.Mount, err error) {
-	if logsMount, err := d.provisionVolume(ctx, getVolumeNameForLogs(virtualChainId), ORBS_LOGS_TARGET, logsVolumeSize, OrchestratorOptions{}); err != nil {
+	if logsMount, err := d.provisionVolume(ctx, getVolumeName(nodeAddress, virtualChainId, "logs"), ORBS_LOGS_TARGET, logsVolumeSize, OrchestratorOptions{}); err != nil {
 		return mounts, err
 	} else {
 		mounts = append(mounts, logsMount)

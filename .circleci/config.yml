@@ -28,6 +28,13 @@ jobs:
       - store_test_results: # upload test results for display in Test Summary
           path: /tmp/test-results
 
+  dev-build:
+    docker:
+      - image: itamararjuan/golang_with_node_aws
+    steps:
+      - checkout
+      - run: ./.circleci/set-aws-credentials.sh
+      - run: ./.circleci/build-to-s3.sh
 
   test-e2e:
     machine: true
@@ -54,10 +61,10 @@ jobs:
       - run:
           name: run tests
           environment:
-            ENABLE_ETHEREUM: 'true'
+            ENABLE_ETHEREUM: "true"
             ETHEREUM_PRIVATE_KEY: 7a16631b19e5a7d121f13c3ece279c10c996ff14d8bebe609bf1eca41211b291
             ETHEREUM_ENDPOINT: http://127.0.0.1:7545
-            ENABLE_SWARM: 'true'
+            ENABLE_SWARM: "true"
           command: |
             export LOCAL_IP=$(python -c "import socket; print socket.gethostbyname(socket.gethostname())")
             PACKAGE_NAMES=$(go list ./... | circleci tests split --split-by=timings --timings-type=classname)
@@ -74,3 +81,6 @@ workflows:
     jobs:
       - test
       - test-e2e
+      - dev-build:
+          requires:
+            - test

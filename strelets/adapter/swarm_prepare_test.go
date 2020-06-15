@@ -39,11 +39,17 @@ func Test_getVirtualChainServiceSpec(t *testing.T) {
 	require.EqualValues(t, spec.TaskTemplate, swarm.TaskSpec{
 		ContainerSpec: &swarm.ContainerSpec{
 			Image: "orbsnetwork/node:experimental",
+			// Command: []string{
+			// 	"/opt/orbs/orbs-node",
+			// 	// "--silent",
+			// 	// "--log", "/opt/orbs/logs/node.log",
+			// 	"--config", "/var/run/secrets/some-secret.json",
+			// },
+
 			Command: []string{
-				"/opt/orbs/orbs-node",
-				// "--silent",
-				// "--log", "/opt/orbs/logs/node.log",
-				"--config", "/var/run/secrets/some-secret.json",
+				"/bin/bash",
+				"-c",
+				"\"/opt/orbs/orbs-node --config /var/run/secrets/some-secret.json | tee /opt/orbs/logs/node.log\"",
 			},
 			Secrets: secrets,
 			Sysctls: GetSysctls(),

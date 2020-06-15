@@ -94,7 +94,7 @@ func getContainerSpec(imageName string, secrets []*swarm.SecretReference, mounts
 	command := []string{
 		"/bin/bash",
 		"-c",
-		"\"" + strings.Join(subcommand, " ") + "\"",
+		strings.Join(subcommand, " "),
 	}
 
 	return &swarm.ContainerSpec{

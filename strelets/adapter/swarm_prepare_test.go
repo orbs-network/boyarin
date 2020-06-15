@@ -49,7 +49,7 @@ func Test_getVirtualChainServiceSpec(t *testing.T) {
 			Command: []string{
 				"/bin/bash",
 				"-c",
-				"\"/opt/orbs/orbs-node --config /var/run/secrets/some-secret.json | tee /opt/orbs/logs/node.log\"",
+				"/opt/orbs/orbs-node --config /var/run/secrets/some-secret.json | tee /opt/orbs/logs/node.log",
 			},
 			Secrets: secrets,
 			Sysctls: GetSysctls(),

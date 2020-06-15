@@ -3,9 +3,11 @@ package adapter
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/swarm"
-	"time"
 )
 
 func (d *dockerSwarmOrchestrator) RunVirtualChain(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) error {
@@ -76,15 +78,23 @@ func getSecretReference(containerName string, secretId string, secretName string
 }
 
 func getContainerSpec(imageName string, secrets []*swarm.SecretReference, mounts []mount.Mount) *swarm.ContainerSpec {
-	command := []string{
-		"/opt/orbs/orbs-node",
-	}
 
 	// "--silent",
 	// "--log", "/opt/orbs/logs/node.log",
+	subcommand := []string{
+		"/opt/orbs/orbs-node",
+	}
 
 	for _, secret := range secrets {
-		command = append(command, "--config", "/var/run/secrets/"+secret.File.Name)
+		subcommand = append(subcommand, "--config /var/run/secrets/"+secret.File.Name)
+	}
+
+	subcommand = append(subcommand, "| tee /opt/orbs/logs/node.log")
+
+	command := []string{
+		"/bin/bash",
+		"-c",
+		"\"" + strings.Join(subcommand, " ") + "\"",
 	}
 
 	return &swarm.ContainerSpec{

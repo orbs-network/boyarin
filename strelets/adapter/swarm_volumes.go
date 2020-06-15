@@ -27,7 +27,7 @@ func getVolumeNameForLogs(virtualChainId uint32) string {
 }
 
 func (d *dockerSwarmOrchestrator) provisionVchainVolumes(ctx context.Context, nodeAddress string, virtualChainId uint32, blocksVolumeSize int, logsVolumeSize int) (mounts []mount.Mount, err error) {
-	if logsMount, err := d.provisionVolume(ctx, getVolumeNameForLogs(virtualChainId), ORBS_LOGS_TARGET, logsVolumeSize, OrchestratorOptions{}); err != nil {
+	if logsMount, err := d.provisionVolume(ctx, getVolumeNameForLogs(virtualChainId), ORBS_LOGS_TARGET, logsVolumeSize, d.options); err != nil {
 		return mounts, err
 	} else {
 		mounts = append(mounts, logsMount)

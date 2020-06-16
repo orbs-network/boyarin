@@ -118,6 +118,10 @@ func getVolumeDriverOptions(volumeName string, orchestratorOptions OrchestratorO
 		driverOptions[k] = v
 	}
 
+	fmt.Println("Allocating driver options for a volume")
+	fmt.Println("orch options: ", orchestratorOptions)
+	fmt.Println("volume name", volumeName)
+
 	// Only enable size option for supported drivers
 	switch driver {
 	case REXRAY_EBS_DRIVER:
@@ -140,6 +144,8 @@ func getVolumeDriverOptions(volumeName string, orchestratorOptions OrchestratorO
 			os.MkdirAll(volumeName, 0755)
 		}
 	}
+
+	fmt.Println("about to return the following volume options", volumeName, driver, driverOptions)
 
 	return volumeName, driver, driverOptions
 }

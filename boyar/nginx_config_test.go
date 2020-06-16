@@ -18,7 +18,7 @@ location @error404 { return 404 '{"Status":"Not found","Description":"ORBS block
 location @error502 { return 502 '{"Status":"Bad gateway","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 set $vc42 chain-42;
 location ~ ^/monitor/vchain/42/logs {
-	alias /var/efs/vchain-42-logs/node.log
+	alias /var/efs/vchain-42-logs/node.log;
 	access_log off;
 }
 location ~ ^/vchains/42(/?)(.*) {
@@ -47,7 +47,7 @@ location @error404 { return 404 '{"Status":"Not found","Description":"ORBS block
 location @error502 { return 502 '{"Status":"Bad gateway","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 set $vc42 chain-42;
 location ~ ^/monitor/vchain/42/logs {
-	alias /var/efs/vchain-42-logs/node.log
+	alias /var/efs/vchain-42-logs/node.log;
 	access_log off;
 }
 location ~ ^/vchains/42(/?)(.*) {
@@ -56,7 +56,7 @@ location ~ ^/vchains/42(/?)(.*) {
 }
 set $vc1991 chain-1991;
 location ~ ^/monitor/vchain/1991/logs {
-	alias /var/efs/vchain-1991-logs/node.log
+	alias /var/efs/vchain-1991-logs/node.log;
 	access_log off;
 }
 location ~ ^/vchains/1991(/?)(.*) {
@@ -88,7 +88,7 @@ location @error404 { return 404 '{"Status":"Not found","Description":"ORBS block
 location @error502 { return 502 '{"Status":"Bad gateway","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 set $vc42 chain-42;
 location ~ ^/monitor/vchain/42/logs {
-	alias /var/efs/vchain-42-logs/node.log
+	alias /var/efs/vchain-42-logs/node.log;
 	access_log off;
 }
 location ~ ^/vchains/42(/?)(.*) {
@@ -114,7 +114,7 @@ location @error404 { return 404 '{"Status":"Not found","Description":"ORBS block
 location @error502 { return 502 '{"Status":"Bad gateway","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 set $vc42 chain-42;
 location ~ ^/monitor/vchain/42/logs {
-	alias /var/efs/vchain-42-logs/node.log
+	alias /var/efs/vchain-42-logs/node.log;
 	access_log off;
 }
 location ~ ^/vchains/42(/?)(.*) {

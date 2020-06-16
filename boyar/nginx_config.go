@@ -40,7 +40,7 @@ location @error502 { return 502 '{{DefaultResponse "Bad gateway"}}'; }
 {{- range .Chains }}
 set $vc{{.Id}} {{.ServiceId}};
 location ~ ^/monitor/vchain/{{.Id}}/logs {
-	alias /var/efs/vchain-{{.Id}}-logs/node.log
+	alias /var/efs/vchain-{{.Id}}-logs/node.log;
 	access_log off;
 }
 location ~ ^/vchains/{{.Id}}(/?)(.*) {

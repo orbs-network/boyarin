@@ -17,6 +17,10 @@ location / { error_page 404 = @error404; }
 location @error404 { return 404 '{"Status":"Not found","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 location @error502 { return 502 '{"Status":"Bad gateway","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 set $vc42 chain-42;
+location ~ ^/monitor/vchain/42/logs {
+	alias /var/efs/vchain-42-logs/node.log
+	access_log off;
+}
 location ~ ^/vchains/42(/?)(.*) {
 	proxy_pass http://$vc42:8080/$2;
 	error_page 502 = @error502;
@@ -42,11 +46,19 @@ location / { error_page 404 = @error404; }
 location @error404 { return 404 '{"Status":"Not found","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 location @error502 { return 502 '{"Status":"Bad gateway","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 set $vc42 chain-42;
+location ~ ^/monitor/vchain/42/logs {
+	alias /var/efs/vchain-42-logs/node.log
+	access_log off;
+}
 location ~ ^/vchains/42(/?)(.*) {
 	proxy_pass http://$vc42:8080/$2;
 	error_page 502 = @error502;
 }
 set $vc1991 chain-1991;
+location ~ ^/monitor/vchain/1991/logs {
+	alias /var/efs/vchain-1991-logs/node.log
+	access_log off;
+}
 location ~ ^/vchains/1991(/?)(.*) {
 	proxy_pass http://$vc1991:8080/$2;
 	error_page 502 = @error502;
@@ -75,6 +87,10 @@ location / { error_page 404 = @error404; }
 location @error404 { return 404 '{"Status":"Not found","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 location @error502 { return 502 '{"Status":"Bad gateway","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 set $vc42 chain-42;
+location ~ ^/monitor/vchain/42/logs {
+	alias /var/efs/vchain-42-logs/node.log
+	access_log off;
+}
 location ~ ^/vchains/42(/?)(.*) {
 	proxy_pass http://$vc42:8080/$2;
 	error_page 502 = @error502;
@@ -97,6 +113,10 @@ location / { error_page 404 = @error404; }
 location @error404 { return 404 '{"Status":"Not found","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 location @error502 { return 502 '{"Status":"Bad gateway","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 set $vc42 chain-42;
+location ~ ^/monitor/vchain/42/logs {
+	alias /var/efs/vchain-42-logs/node.log
+	access_log off;
+}
 location ~ ^/vchains/42(/?)(.*) {
 	proxy_pass http://$vc42:8080/$2;
 	error_page 502 = @error502;

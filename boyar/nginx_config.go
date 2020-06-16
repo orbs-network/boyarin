@@ -39,6 +39,10 @@ location @error404 { return 404 '{{DefaultResponse "Not found"}}'; }
 location @error502 { return 502 '{{DefaultResponse "Bad gateway"}}'; }
 {{- range .Chains }}
 set $vc{{.Id}} {{.ServiceId}};
+location ~ ^/monitor/vchain/{{.Id}}/logs {
+	alias /var/efs/vchain-{{.Id}}-logs/node.log
+	access_log off;
+}
 location ~ ^/vchains/{{.Id}}(/?)(.*) {
 	proxy_pass http://$vc{{.Id}}:{{.Port}}/$2;
 	error_page 502 = @error502;

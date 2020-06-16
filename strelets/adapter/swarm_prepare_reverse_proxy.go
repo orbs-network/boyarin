@@ -66,6 +66,15 @@ func (d *dockerSwarmOrchestrator) RunReverseProxy(ctx context.Context, config *R
 		}
 	}
 
+	logsMount := mount.Mount{
+		Type:     mount.TypeBind,
+		Source:   "/var/efs",
+		Target:   "/var/efs",
+		ReadOnly: false,
+	}
+
+	mounts = append(mounts, logsMount)
+
 	spec := getNginxServiceSpec(config.ContainerName, httpPort, sslPort, storedSecrets, networks, mounts)
 	return d.create(ctx, spec, "")
 }

@@ -11,6 +11,7 @@ func Test_getNginxConfig(t *testing.T) {
 
 	require.EqualValues(t, `server {
 access_log off;
+error_log off;
 resolver 127.0.0.11 ipv6=off;
 listen 80;
 location ~^/$ { return 200 '{"Status":"OK","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
@@ -37,6 +38,7 @@ func Test_getNginxConfigWithDisabledChains(t *testing.T) {
 
 	require.EqualValues(t, `server {
 access_log off;
+error_log off;
 resolver 127.0.0.11 ipv6=off;
 listen 80;
 location ~^/$ { return 200 '{"Status":"OK","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
@@ -71,6 +73,7 @@ func Test_getNginxConfigWithSSL(t *testing.T) {
 
 	require.EqualValues(t, `server {
 access_log off;
+error_log off;
 resolver 127.0.0.11 ipv6=off;
 listen 80;
 location ~^/$ { return 200 '{"Status":"OK","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
@@ -91,9 +94,9 @@ location /services/signer/status {
 }
 server {
 access_log off;
+error_log off;
 resolver 127.0.0.11 ipv6=off;
-listen 443;
-ssl on;
+listen 443 ssl;
 ssl_certificate /var/run/secrets/ssl-cert;
 ssl_certificate_key /var/run/secrets/ssl-key;
 location ~^/$ { return 200 '{"Status":"OK","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }

@@ -52,6 +52,7 @@ location /services/{{$service}}/status {
 {{- end -}} {{- /* define "locations" */ -}}
 server {
 access_log off;
+error_log off;
 resolver 127.0.0.11 ipv6=off;
 listen 80;
 {{ template "locations" .}}
@@ -59,9 +60,9 @@ listen 80;
 {{- if .SslEnabled }}
 server {
 access_log off;
+error_log off;
 resolver 127.0.0.11 ipv6=off;
-listen 443;
-ssl on;
+listen 443 ssl;
 ssl_certificate /var/run/secrets/ssl-cert;
 ssl_certificate_key /var/run/secrets/ssl-key;
 {{template "locations" .}}

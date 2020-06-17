@@ -51,12 +51,14 @@ location /services/{{$service}}/status {
 {{- end }}
 {{- end -}} {{- /* define "locations" */ -}}
 server {
+access_log off;
 resolver 127.0.0.11 ipv6=off;
 listen 80;
 {{ template "locations" .}}
 }
 {{- if .SslEnabled }}
 server {
+access_log off;
 resolver 127.0.0.11 ipv6=off;
 listen 443;
 ssl on;

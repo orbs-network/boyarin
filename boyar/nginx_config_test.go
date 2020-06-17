@@ -10,6 +10,7 @@ func Test_getNginxConfig(t *testing.T) {
 	cfg := getJSONConfig(t, ConfigWithSingleChain)
 
 	require.EqualValues(t, `server {
+access_log off;
 resolver 127.0.0.11 ipv6=off;
 listen 80;
 location ~^/$ { return 200 '{"Status":"OK","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
@@ -35,6 +36,7 @@ func Test_getNginxConfigWithDisabledChains(t *testing.T) {
 	cfg := getJSONConfig(t, Config)
 
 	require.EqualValues(t, `server {
+access_log off;
 resolver 127.0.0.11 ipv6=off;
 listen 80;
 location ~^/$ { return 200 '{"Status":"OK","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
@@ -68,6 +70,7 @@ func Test_getNginxConfigWithSSL(t *testing.T) {
 	})
 
 	require.EqualValues(t, `server {
+access_log off;
 resolver 127.0.0.11 ipv6=off;
 listen 80;
 location ~^/$ { return 200 '{"Status":"OK","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
@@ -87,6 +90,7 @@ location /services/signer/status {
 }
 }
 server {
+access_log off;
 resolver 127.0.0.11 ipv6=off;
 listen 443;
 ssl on;

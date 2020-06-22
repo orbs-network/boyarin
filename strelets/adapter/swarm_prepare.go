@@ -89,7 +89,7 @@ func getContainerSpec(imageName string, secrets []*swarm.SecretReference, mounts
 		subcommand = append(subcommand, "--config /var/run/secrets/"+secret.File.Name)
 	}
 
-	subcommand = append(subcommand, "| tee /opt/orbs/logs/node.log")
+	subcommand = append(subcommand, "| multilog t s16777215 n3 '!tai64nlocal' /opt/orbs/logs 2>&1")
 
 	command := []string{
 		"/bin/bash",

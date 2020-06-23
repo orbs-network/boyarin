@@ -1,6 +1,6 @@
 #!/bin/bash -xe
 
-docker build --build-arg git_commit=$(git rev-parse HEAD) -f Dockerfile.build -t orbs:build .
+docker build --build-arg git_commit=$(./.circleci/hash.sh) -f Dockerfile.build -t orbs:build .
 
 [ "$(docker ps -a | grep orbs_build)" ] && docker rm -f orbs_build
 

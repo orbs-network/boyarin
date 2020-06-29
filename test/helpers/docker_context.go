@@ -16,13 +16,9 @@ import (
 const DOCKER_API_VERSION = "1.40"
 
 func restartSwarm(t *testing.T, ctx context.Context) {
-	client, err := dockerClient.NewClientWithOpts(dockerClient.WithVersion(DOCKER_API_VERSION))
-	if err != nil {
-		t.Errorf("could not connect to docker: %s", err)
-		t.FailNow()
-	}
+	client := DockerClient(t)
 
-	err = client.SwarmLeave(ctx, true)
+	err := client.SwarmLeave(ctx, true)
 	require.NoError(t, err)
 	fmt.Println("left swarm")
 
@@ -38,11 +34,7 @@ func removeAllDockerNetworks(t *testing.T) {
 	fmt.Println("Removing all docker networks")
 
 	ctx := context.Background()
-	client, err := dockerClient.NewClientWithOpts(dockerClient.WithVersion(DOCKER_API_VERSION))
-	if err != nil {
-		t.Errorf("could not connect to docker: %s", err)
-		t.FailNow()
-	}
+	client := DockerClient(t)
 
 	RequireEventually(t, time.Minute, func(t TestingT) {
 		networks, err := client.NetworkList(ctx, types.NetworkListOptions{
@@ -111,11 +103,7 @@ func removeAllServices(t *testing.T) {
 	fmt.Println("Removing all swarm services")
 
 	ctx := context.Background()
-	client, err := dockerClient.NewClientWithOpts(dockerClient.WithVersion(DOCKER_API_VERSION))
-	if err != nil {
-		t.Errorf("could not connect to docker: %s", err)
-		t.FailNow()
-	}
+	client := DockerClient(t)
 
 	services, err := client.ServiceList(ctx, types.ServiceListOptions{})
 	require.NoError(t, err)
@@ -169,8 +157,6 @@ func removeAllServices(t *testing.T) {
 }
 
 func InitSwarmEnvironment(t *testing.T, ctx context.Context) {
-	//SkipUnlessSwarmIsEnabled(t)
-
 	removeAllServices(t)
 	removeAllDockerVolumes(t)
 	removeAllDockerNetworks(t)
@@ -178,4 +164,14 @@ func InitSwarmEnvironment(t *testing.T, ctx context.Context) {
 	restartSwarm(t, ctx)
 
 	LogSwarmServices(t, ctx)
+}
+
+func DockerClient(t TestingT) *dockerClient.Client {
+	client, err := dockerClient.NewClientWithOpts(dockerClient.WithVersion(DOCKER_API_VERSION))
+	if err != nil {
+		t.Errorf("could not connect to docker: %s", err)
+		t.FailNow()
+	}
+
+	return client
 }

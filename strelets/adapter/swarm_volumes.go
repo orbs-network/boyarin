@@ -26,44 +26,20 @@ func getServiceVolumeName(nodeAddress string, serviceName string, postfix string
 	return fmt.Sprintf("%s-%s-%s", nodeAddress, serviceName, postfix)
 }
 
-func (d *dockerSwarmOrchestrator) provisionVchainVolume(ctx context.Context, nodeAddress string, virtualChainId uint32, blocksVolumeSize int) (mounts []mount.Mount, err error) {
-	if blocksMount, err := d.provisionVolume(ctx, getVchainVolumeName(nodeAddress, virtualChainId, "blocks"), ORBS_BLOCKS_TARGET, blocksVolumeSize, d.options); err != nil {
-		return mounts, err
-	} else {
-		mounts = append(mounts, blocksMount)
-	}
-
-	return mounts, nil
+func (d *dockerSwarmOrchestrator) provisionVchainVolume(ctx context.Context, nodeAddress string, virtualChainId uint32, blocksVolumeSize int) (mount.Mount, error) {
+	return d.provisionVolume(ctx, getVchainVolumeName(nodeAddress, virtualChainId, "blocks"), ORBS_BLOCKS_TARGET, blocksVolumeSize, d.options)
 }
 
-func (d *dockerSwarmOrchestrator) provisionLogsVolume(ctx context.Context, nodeAddress string, serviceName string, logsVolumeSize int) (mounts []mount.Mount, err error) {
-	if logsMount, err := d.provisionVolume(ctx, getServiceVolumeName(nodeAddress, serviceName, "logs"), ORBS_LOGS_TARGET, logsVolumeSize, OrchestratorOptions{}); err != nil {
-		return mounts, err
-	} else {
-		mounts = append(mounts, logsMount)
-	}
-
-	return mounts, nil
+func (d *dockerSwarmOrchestrator) provisionLogsVolume(ctx context.Context, nodeAddress string, serviceName string, logsVolumeSize int) (mount.Mount, error) {
+	return d.provisionVolume(ctx, getServiceVolumeName(nodeAddress, serviceName, "logs"), ORBS_LOGS_TARGET, logsVolumeSize, OrchestratorOptions{})
 }
 
-func (d *dockerSwarmOrchestrator) provisionStatusVolume(ctx context.Context, nodeAddress string, serviceName string, mountTarget string) (mounts []mount.Mount, err error) {
-	if statusMount, err := d.provisionVolume(ctx, getServiceVolumeName(nodeAddress, serviceName, "status"), mountTarget, 0, d.options); err != nil {
-		return mounts, err
-	} else {
-		mounts = append(mounts, statusMount)
-	}
-
-	return mounts, nil
+func (d *dockerSwarmOrchestrator) provisionStatusVolume(ctx context.Context, nodeAddress string, serviceName string, mountTarget string) (mount.Mount, error) {
+	return d.provisionVolume(ctx, getServiceVolumeName(nodeAddress, serviceName, "status"), mountTarget, 0, d.options)
 }
 
-func (d *dockerSwarmOrchestrator) provisionCacheVolume(ctx context.Context, nodeAddress string, serviceName string) (mounts []mount.Mount, err error) {
-	if cacheMount, err := d.provisionVolume(ctx, getServiceVolumeName(nodeAddress, serviceName, "cache"), ORBS_CACHE_TARGET, 0, d.options); err != nil {
-		return mounts, err
-	} else {
-		mounts = append(mounts, cacheMount)
-	}
-
-	return mounts, nil
+func (d *dockerSwarmOrchestrator) provisionCacheVolume(ctx context.Context, nodeAddress string, serviceName string) (mount.Mount, error) {
+	return d.provisionVolume(ctx, getServiceVolumeName(nodeAddress, serviceName, "cache"), ORBS_CACHE_TARGET, 0, d.options)
 }
 
 func (d *dockerSwarmOrchestrator) provisionVolume(ctx context.Context, volumeName string, target string, maxSizeInGb int, orchestratorOptions OrchestratorOptions) (mount.Mount, error) {

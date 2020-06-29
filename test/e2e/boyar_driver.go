@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/services"
 	"github.com/orbs-network/boyarin/strelets/adapter"
@@ -250,6 +251,19 @@ func AssertServiceUp(t helpers.TestingT, ctx context.Context, serviceName string
 	}
 
 	require.True(t, ok, "service should be up")
+}
+
+func AssertVolumeExists(t helpers.TestingT, ctx context.Context, volume string) {
+	client := helpers.DockerClient(t)
+
+	res, err := client.VolumeList(ctx, filters.NewArgs(filters.KeyValuePair{
+		Key:   "name",
+		Value: volume,
+	}))
+	require.NoError(t, err)
+
+	require.Len(t, res.Volumes, 1)
+	require.Equal(t, volume, res.Volumes[0].Name)
 }
 
 func AssertServiceDown(t helpers.TestingT, ctx context.Context, serviceName string) {

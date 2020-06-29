@@ -37,9 +37,13 @@ location ~^/$ { return 200 '{{DefaultResponse "OK"}}'; }
 location / { error_page 404 = @error404; }
 location @error404 { return 404 '{{DefaultResponse "Not found"}}'; }
 location @error502 { return 502 '{{DefaultResponse "Bad gateway"}}'; }
+location ~ ^/boyar/logs {
+	alias /var/efs/boyar/current;
+	access_log off;
+}
 {{- range .Chains }}
 set $vc{{.Id}} {{.ServiceId}};
-location ~ ^/monitor/vchain/{{.Id}}/logs {
+location ~ ^/vchains/{{.Id}}/logs {
 	alias /var/efs/vchain-{{.Id}}-logs/current;
 	access_log off;
 }

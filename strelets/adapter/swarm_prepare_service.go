@@ -3,9 +3,11 @@ package adapter
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/swarm"
-	"time"
 )
 
 func (d *dockerSwarmOrchestrator) RunService(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) error {
@@ -47,6 +49,12 @@ func (d *dockerSwarmOrchestrator) RunService(ctx context.Context, serviceConfig 
 	mounts, err := d.provisionStatusVolume(ctx, serviceConfig.ContainerName, ORBS_STATUS_TARGET)
 	if err != nil {
 		return err
+	}
+
+	if logsMount, err := d.provisionVolume(ctx, "signer-logs", "/opt/orbs/logs", 1, d.options); err != nil {
+		return err
+	} else {
+		mounts = append(mounts, logsMount)
 	}
 
 	if cacheMounts, err := d.provisionCacheVolume(ctx, serviceConfig.ContainerName, ORBS_CACHE_TARGET); err != nil {
@@ -116,12 +124,20 @@ func getServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.SecretReferen
 }
 
 func getServiceContainerSpec(imageName string, executable string, secrets []*swarm.SecretReference, mounts []mount.Mount) *swarm.ContainerSpec {
-	command := []string{
+	subcommand := []string{
 		executable,
 	}
 
 	for _, secret := range secrets {
-		command = append(command, "--config", "/run/secrets/"+secret.File.Name)
+		subcommand = append(subcommand, "--config", "/run/secrets/"+secret.File.Name)
+	}
+
+	subcommand = append(subcommand, "| multilog t s16777215 n3 '!tai64nlocal' /opt/orbs/logs 2>&1")
+
+	command := []string{
+		"/bin/sh",
+		"-c",
+		strings.Join(subcommand, " "),
 	}
 
 	return &swarm.ContainerSpec{

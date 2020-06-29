@@ -35,12 +35,13 @@ func Test_getServiceSpec(t *testing.T) {
 
 	require.EqualValues(t, spec.Name, containerName)
 
-	require.EqualValues(t, spec.TaskTemplate, swarm.TaskSpec{
+	require.EqualValues(t, swarm.TaskSpec{
 		ContainerSpec: &swarm.ContainerSpec{
 			Image: "orbs:signer",
 			Command: []string{
-				"/opt/orbs/orbs-signer",
-				"--config", "/run/secrets/some-secret.json",
+				"/bin/sh",
+				"-c",
+				"/opt/orbs/orbs-signer --config /run/secrets/some-secret.json | multilog t s16777215 n3 '!tai64nlocal' /opt/orbs/logs 2>&1",
 			},
 			Secrets: secrets,
 			Sysctls: GetSysctls(),
@@ -54,7 +55,7 @@ func Test_getServiceSpec(t *testing.T) {
 			Limits:       &swarm.Resources{},
 			Reservations: &swarm.Resources{},
 		},
-	})
+	}, spec.TaskTemplate)
 
 	require.Nil(t, spec.EndpointSpec)
 

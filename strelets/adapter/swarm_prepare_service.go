@@ -10,6 +10,10 @@ import (
 	"github.com/docker/docker/api/types/swarm"
 )
 
+func getVolumeNameServiceForLogs(name string) string {
+	return fmt.Sprintf("%s-logs", name)
+}
+
 func (d *dockerSwarmOrchestrator) RunService(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) error {
 	if err := d.RemoveService(ctx, serviceConfig.ContainerName); err != nil {
 		return err
@@ -51,7 +55,7 @@ func (d *dockerSwarmOrchestrator) RunService(ctx context.Context, serviceConfig 
 		return err
 	}
 
-	if logsMount, err := d.provisionVolume(ctx, "signer-logs", "/opt/orbs/logs", 1, d.options); err != nil {
+	if logsMount, err := d.provisionVolume(ctx, getVolumeNameServiceForLogs(serviceConfig.Name), "/opt/orbs/logs", 1, d.options); err != nil {
 		return err
 	} else {
 		mounts = append(mounts, logsMount)

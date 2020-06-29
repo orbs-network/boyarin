@@ -44,6 +44,7 @@ func (b *boyar) provisionService(ctx context.Context, cfg config.ServiceConfig, 
 
 			serviceConfig := &adapter.ServiceConfig{
 				ImageName:     imageName,
+				Name:          cfg.Name,
 				ContainerName: fullServiceName,
 				Executable:    cfg.Executable,
 				InternalPort:  service.InternalPort,

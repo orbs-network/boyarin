@@ -41,6 +41,10 @@ location ~ ^/boyar/logs {
 	alias /var/efs/boyar/current;
 	access_log off;
 }
+location ~ ^/signer/logs {
+	alias /var/efs/signer-logs/current;
+	access_log off;
+}
 {{- range .Chains }}
 set $vc{{.Id}} {{.ServiceId}};
 location ~ ^/vchains/{{.Id}}/logs {

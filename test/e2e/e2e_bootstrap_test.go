@@ -13,6 +13,8 @@ import (
 )
 
 func TestE2EBootstrapWithDefaultConfig(t *testing.T) {
+	// FIXME remove or rewrite later
+	t.Skip("left just in case we want to integrate with ganache")
 	helpers.SkipUnlessSwarmIsEnabled(t)
 
 	vc1 := VChainArgument{Id: 42}

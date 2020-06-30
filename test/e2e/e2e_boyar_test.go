@@ -14,7 +14,7 @@ const PublicKey = "cfc9e5189223aedce9543be0ef419f89aaa69e8b"
 const PrivateKey = "c30bf9e301a19c319818b34a75901fd8f067b676a834eeb4169ec887dd03d2a8"
 
 func TestE2ERunSingleVirtualChain(t *testing.T) {
-	helpers.SkipUnlessSwarmIsEnabled(t)
+	//helpers.SkipUnlessSwarmIsEnabled(t)
 
 	vc1 := VChainArgument{Id: 42}
 	helpers.WithContextAndShutdown(func(ctx context.Context) (waiter govnr.ShutdownWaiter) {

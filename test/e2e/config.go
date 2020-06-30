@@ -50,15 +50,24 @@ type KeyConfig struct {
 	NodePrivateKey string `json:"node-private-key,omitempty"` // Very important to omit empty value to produce a valid config
 }
 
-func serveConfig(configStr *string) *httptest.Server {
+type managementServiceConfig struct {
+	managementConfig       *string
+	vchainManagementConfig *string
+}
+
+func serveConfig(serviceConfig *managementServiceConfig) *httptest.Server {
 	l, err := net.Listen("tcp", fmt.Sprintf("%s:0", helpers.LocalIP()))
 	if err != nil {
 		panic(err)
 	}
 
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//fmt.Println("configuration requested")
-		_, _ = fmt.Fprint(w, *configStr)
+	handler := http.NewServeMux()
+	handler.HandleFunc("/node/management", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprint(w, *serviceConfig.managementConfig)
+	})
+
+	handler.HandleFunc("/vchains/any/management", func(w http.ResponseWriter, request *http.Request) {
+		_, _ = fmt.Fprint(w, *serviceConfig.vchainManagementConfig)
 	})
 
 	server := &httptest.Server{
@@ -73,42 +82,53 @@ func serveConfig(configStr *string) *httptest.Server {
 }
 
 func SetupDynamicBoyarDependencies(t *testing.T, keyPair KeyConfig, genesisValidators []string, vChains <-chan []VChainArgument) (*config.Flags, func()) {
-	return SetupDynamicBoyarDepencenciesForNetwork(t, keyPair, []interface{}{
+	return SetupDynamicBoyarDepencenciesForNetwork(t, keyPair, genesisValidators, []interface{}{
 		map[string]interface{}{
-			"address": keyPair.NodeAddress,
-			"ip":      "127.0.0.1",
+			"OrbsAddress": keyPair.NodeAddress,
+			"Ip":          "127.0.0.1",
 		},
 	}, 80, vChains)
 }
 
-func SetupDynamicBoyarDepencenciesForNetwork(t *testing.T, keyPair KeyConfig,
+func SetupDynamicBoyarDepencenciesForNetwork(t *testing.T, keyPair KeyConfig, genesisValidators []string,
 	topology []interface{}, httpPort int, vChains <-chan []VChainArgument) (*config.Flags, func()) {
-	return SetupConfigServer(t, keyPair, func() *string {
-		managementUrl := "!!!DOES_NOT_EXIST"
+	return SetupConfigServer(t, keyPair, func(managementUrl string, vchainManagementUrl string) (*string, *string) {
+		configStr := managementConfigJson(managementUrl, vchainManagementUrl, httpPort, []VChainArgument{})
+		managementStr := "{}"
 
-		configStr := configJson(t, topology, managementUrl, httpPort, []VChainArgument{})
 		go func() {
 			for currentChains := range vChains {
-				configStr = configJson(t, topology, managementUrl, httpPort, currentChains)
+				configStr = managementConfigJson(managementUrl, vchainManagementUrl, httpPort, currentChains)
+				managementStr = vchainManagementConfig(currentChains, topology, genesisValidators)
 				fmt.Println(configStr)
 			}
 		}()
 
-		return &configStr
+		return &configStr, &managementStr
 	})
 }
 
-func SetupConfigServer(t *testing.T, keyPair KeyConfig, configBuilder func() *string) (*config.Flags, func()) {
+func SetupConfigServer(t *testing.T, keyPair KeyConfig, configBuilder func(managementUrl string, vchainManagementUrl string) (*string, *string)) (*config.Flags, func()) {
 	keyPairJson, err := json.Marshal(keyPair)
 	require.NoError(t, err)
 	file := TempFile(t, keyPairJson)
 
-	configStr := configBuilder()
+	cfg := &managementServiceConfig{}
 
-	ts := serveConfig(configStr)
+	ts := serveConfig(cfg)
+
+	managementUrl := ts.URL + "/node/management"
+	vchainsManagentUrl := ts.URL + "/vchains/any/management"
+
+	managementStr, vchainsManagementStr := configBuilder(managementUrl, vchainsManagentUrl)
+	fmt.Println(*managementStr, *vchainsManagementStr)
+
+	cfg.managementConfig = managementStr
+	cfg.vchainManagementConfig = vchainsManagementStr
+
 	flags := &config.Flags{
 		Timeout:           time.Minute,
-		ConfigUrl:         ts.URL,
+		ConfigUrl:         managementUrl,
 		KeyPairConfigPath: file.Name(),
 		PollingInterval:   500 * time.Millisecond,
 		WithNamespace:     true,
@@ -124,7 +144,7 @@ func SetupBoyarDependenciesForNetwork(t *testing.T, keyPair KeyConfig, topology 
 	vChainsChannel := make(chan []VChainArgument, 1)
 	vChainsChannel <- vChains
 	close(vChainsChannel)
-	return SetupDynamicBoyarDepencenciesForNetwork(t, keyPair, topology, httpPort, vChainsChannel)
+	return SetupDynamicBoyarDepencenciesForNetwork(t, keyPair, genesisValidators, topology, httpPort, vChainsChannel)
 }
 
 func SetupBoyarDependencies(t *testing.T, keyPair KeyConfig, genesisValidators []string, vChains ...VChainArgument) (*config.Flags, func()) {

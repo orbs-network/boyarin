@@ -31,7 +31,7 @@ func (vc VChainArgument) ExternalPort() int {
 	return port + vc.Id
 }
 
-func configJson(t *testing.T, topology []interface{}, managementUrl string, httpPort int, vChains []VChainArgument) string {
+func managementConfigJson(nodeManagementUrl string, vchainManagementFileUrl string, httpPort int, vChains []VChainArgument) string {
 	chains := make([]interface{}, len(vChains))
 	model := map[string]interface{}{
 		"network": []string{},
@@ -39,7 +39,7 @@ func configJson(t *testing.T, topology []interface{}, managementUrl string, http
 			"max-reload-time-delay": "1s",
 			"http-port":             httpPort,
 			"DynamicManagementConfig": map[string]interface{}{
-				"Url":          "http://localhost:7666/node/management",
+				"Url":          nodeManagementUrl,
 				"ReadInterval": "1m",
 				"ResetTimeout": "30m",
 			},
@@ -57,14 +57,13 @@ func configJson(t *testing.T, topology []interface{}, managementUrl string, http
 		},
 	}
 	for i, id := range vChains {
-		chains[i] = VChainConfig(id, managementUrl)
+		chains[i] = VChainConfig(id, vchainManagementFileUrl)
 	}
-	jsonStr, err := json.MarshalIndent(model, "", "    ")
-	require.NoError(t, err)
+	jsonStr, _ := json.MarshalIndent(model, "", "    ")
 	return string(jsonStr)
 }
 
-func VChainConfig(vc VChainArgument, managementUrl string) map[string]interface{} {
+func VChainConfig(vc VChainArgument, managementFileUrl string) map[string]interface{} {
 	return map[string]interface{}{
 		"Id":               vc.Id,
 		"InternalHttpPort": 8080,
@@ -78,8 +77,7 @@ func VChainConfig(vc VChainArgument, managementUrl string) map[string]interface{
 		},
 		"Config": map[string]interface{}{
 			"active-consensus-algo": 2,
-			"management-file":       managementUrl,
-			//"genesis-validator-addresses": genesisValidators,
+			"management-file-path":  managementFileUrl,
 			//"lean-helix-show-debug":                             true,
 			//"logger-full-log":                                   true,
 
@@ -89,7 +87,7 @@ func VChainConfig(vc VChainArgument, managementUrl string) map[string]interface{
 	}
 }
 
-func VChainManagementConfig(vc VChainArgument, topology interface{}, genesisValidator []string) map[string]interface{} {
+func vchainManagementConfig(vcArgument []VChainArgument, topology interface{}, genesisValidator []string) string {
 	var committee []map[string]interface{}
 	for _, validator := range genesisValidator {
 		committee = append(committee, map[string]interface{}{
@@ -100,45 +98,50 @@ func VChainManagementConfig(vc VChainArgument, topology interface{}, genesisVali
 	}
 
 	chains := make(map[string]interface{})
-	chains[fmt.Sprintf("%d", vc.Id)] = map[string]interface{}{
-		"VirtualChainId":  vc.Id,
-		"GenesisRefTime":  0,
-		"CurrentTopology": topology,
-		"CommitteeEvents": []interface{}{
-			map[string]interface{}{
-				"RefTime":   0,
-				"Committee": committee,
-			},
-		},
-		"SubscriptionEvents": []interface{}{
-			map[string]interface{}{
-				"RefTime": 0,
-				"Data": map[string]interface{}{
-					"Status":       "active",
-					"Tier":         "B0",
-					"RolloutGroup": "main",
-					"IdentityType": 0,
-					"Params":       make(map[string]interface{}),
+	for _, vc := range vcArgument {
+		chains[fmt.Sprintf("%d", vc.Id)] = map[string]interface{}{
+			"VirtualChainId":  vc.Id,
+			"GenesisRefTime":  0,
+			"CurrentTopology": topology,
+			"CommitteeEvents": []interface{}{
+				map[string]interface{}{
+					"RefTime":   0,
+					"Committee": committee,
 				},
 			},
-		},
-		"ProtocolVersionEvents": []interface{}{
-			map[string]interface{}{
-				"RefTime": 0,
-				"Data": map[string]interface{}{
-					"RolloutGroup": "main",
-					"Version":      1,
+			"SubscriptionEvents": []interface{}{
+				map[string]interface{}{
+					"RefTime": 0,
+					"Data": map[string]interface{}{
+						"Status":       "active",
+						"Tier":         "B0",
+						"RolloutGroup": "main",
+						"IdentityType": 0,
+						"Params":       make(map[string]interface{}),
+					},
 				},
 			},
-		},
+			"ProtocolVersionEvents": []interface{}{
+				map[string]interface{}{
+					"RefTime": 0,
+					"Data": map[string]interface{}{
+						"RolloutGroup": "main",
+						"Version":      1,
+					},
+				},
+			},
+		}
 	}
 
-	return map[string]interface{}{
+	result := map[string]interface{}{
 		"CurrentRefTime":   1592834480,
 		"PageStartRefTime": 0,
 		"PageEndRefTime":   1592834480,
 		"VirtualChains":    chains,
 	}
+
+	rawJSON, _ := json.MarshalIndent(result, "", "    ")
+	return string(rawJSON)
 }
 
 func TempFile(t *testing.T, keyPairJson []byte) *os.File {

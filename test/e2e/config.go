@@ -1,21 +1,13 @@
 package e2e
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar/config"
-	"github.com/orbs-network/boyarin/services"
 	"github.com/orbs-network/boyarin/test/helpers"
-	"github.com/orbs-network/govnr"
-	"github.com/orbs-network/scribe/log"
-	"github.com/stretchr/testify/require"
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"testing"
-	"time"
 )
 
 var NETWORK_KEY_CONFIG = []KeyConfig{
@@ -81,86 +73,6 @@ func serveConfig(serviceConfig *managementServiceConfig) *httptest.Server {
 	return server
 }
 
-func SetupDynamicBoyarDependencies(t *testing.T, keyPair KeyConfig, genesisValidators []string, vChains <-chan []VChainArgument) (*config.Flags, func()) {
-	return SetupDynamicBoyarDepencenciesForNetwork(t, keyPair, genesisValidators, []interface{}{
-		map[string]interface{}{
-			"OrbsAddress": keyPair.NodeAddress,
-			"Ip":          "127.0.0.1",
-		},
-	}, 80, vChains)
-}
-
-func SetupDynamicBoyarDepencenciesForNetwork(t *testing.T, keyPair KeyConfig, genesisValidators []string,
-	topology []interface{}, httpPort int, vChains <-chan []VChainArgument) (*config.Flags, func()) {
-	return SetupConfigServer(t, keyPair, func(managementUrl string, vchainManagementUrl string) (*string, *string) {
-		configStr := managementConfigJson(managementUrl, vchainManagementUrl, httpPort, []VChainArgument{})
-		managementStr := "{}"
-
-		go func() {
-			for currentChains := range vChains {
-				configStr = managementConfigJson(managementUrl, vchainManagementUrl, httpPort, currentChains)
-				managementStr = vchainManagementConfig(currentChains, topology, genesisValidators)
-				fmt.Println(configStr)
-			}
-		}()
-
-		return &configStr, &managementStr
-	})
-}
-
-func SetupConfigServer(t *testing.T, keyPair KeyConfig, configBuilder func(managementUrl string, vchainManagementUrl string) (*string, *string)) (*config.Flags, func()) {
-	keyPairJson, err := json.Marshal(keyPair)
-	require.NoError(t, err)
-	file := TempFile(t, keyPairJson)
-
-	cfg := &managementServiceConfig{}
-
-	ts := serveConfig(cfg)
-
-	managementUrl := ts.URL + "/node/management"
-	vchainsManagentUrl := ts.URL + "/vchains/any/management"
-
-	managementStr, vchainsManagementStr := configBuilder(managementUrl, vchainsManagentUrl)
-	fmt.Println(*managementStr, *vchainsManagementStr)
-
-	cfg.managementConfig = managementStr
-	cfg.vchainManagementConfig = vchainsManagementStr
-
-	flags := &config.Flags{
-		Timeout:           time.Minute,
-		ConfigUrl:         managementUrl,
-		KeyPairConfigPath: file.Name(),
-		PollingInterval:   500 * time.Millisecond,
-		WithNamespace:     true,
-	}
-	cleanup := func() {
-		defer os.Remove(file.Name())
-		defer ts.Close()
-	}
-	return flags, cleanup
-}
-
-func SetupBoyarDependenciesForNetwork(t *testing.T, keyPair KeyConfig, topology []interface{}, genesisValidators []string, httpPort int, vChains ...VChainArgument) (*config.Flags, func()) {
-	vChainsChannel := make(chan []VChainArgument, 1)
-	vChainsChannel <- vChains
-	close(vChainsChannel)
-	return SetupDynamicBoyarDepencenciesForNetwork(t, keyPair, genesisValidators, topology, httpPort, vChainsChannel)
-}
-
-func SetupBoyarDependencies(t *testing.T, keyPair KeyConfig, genesisValidators []string, vChains ...VChainArgument) (*config.Flags, func()) {
-	vChainsChannel := make(chan []VChainArgument, 1)
-	vChainsChannel <- vChains
-	close(vChainsChannel)
-	return SetupDynamicBoyarDependencies(t, keyPair, genesisValidators, vChainsChannel)
-}
-
-func InProcessBoyar(t *testing.T, ctx context.Context, logger log.Logger, flags *config.Flags) govnr.ShutdownWaiter {
-	logger.Info("starting in-process boyar")
-	waiter, err := services.Execute(ctx, flags, logger)
-	require.NoError(t, err)
-	return waiter
-}
-
 // Every vc is on the same shared network -
 // a quirk of the shared networks that WILL stop working if shared network name becomes unique
 func buildTopology(keyPairs []KeyConfig, vcId int) (topology []interface{}) {
@@ -173,4 +85,132 @@ func buildTopology(keyPairs []KeyConfig, vcId int) (topology []interface{}) {
 	}
 
 	return
+}
+
+type VChainArgument struct {
+	Id       int
+	Disabled bool
+	BasePort int
+}
+
+const basePort = 6000
+
+func (vc VChainArgument) ExternalPort() int {
+	port := basePort
+	if vc.BasePort != 0 {
+		port = vc.BasePort
+	}
+
+	return port + vc.Id
+}
+
+func managementConfigJson(nodeManagementUrl string, vchainManagementFileUrl string, httpPort int, vChains []VChainArgument) string {
+	var chains []map[string]interface{}
+	for _, vc := range vChains {
+		chains = append(chains, map[string]interface{}{
+			"Id":               vc.Id,
+			"InternalHttpPort": 8080,
+			"InternalPort":     4400,
+			"ExternalPort":     vc.ExternalPort(),
+			"Disabled":         vc.Disabled,
+			"DockerConfig": map[string]interface{}{
+				"Image": "orbsnetwork/node",
+				"Tag":   "experimental",
+				"Pull":  false,
+			},
+			"Config": map[string]interface{}{
+				"active-consensus-algo": 2,
+				"management-file-path":  vchainManagementFileUrl,
+				//"lean-helix-show-debug":                             true,
+				//"logger-full-log":                                   true,
+
+				// in case we want to enable benchmark consensus
+				//"benchmark-consensus-constant-leader":               genesisValidators[1],
+			},
+		})
+	}
+
+	model := map[string]interface{}{
+		"network": []string{},
+		"orchestrator": map[string]interface{}{
+			"max-reload-time-delay": "1s",
+			"http-port":             httpPort,
+			"DynamicManagementConfig": map[string]interface{}{
+				"Url":          nodeManagementUrl,
+				"ReadInterval": "1m",
+				"ResetTimeout": "30m",
+			},
+		},
+		"chains": chains,
+		"services": map[string]interface{}{
+			"signer": map[string]interface{}{
+				"InternalPort": 7777,
+				"DockerConfig": map[string]interface{}{
+					"Image": "orbsnetwork/signer",
+					"Tag":   "experimental",
+					"Pull":  false,
+				},
+			},
+		},
+	}
+
+	jsonStr, _ := json.MarshalIndent(model, "", "    ")
+	return string(jsonStr)
+}
+
+func vchainManagementConfig(vcArgument []VChainArgument, topology interface{}, genesisValidator []string) string {
+	var committee []map[string]interface{}
+	for _, validator := range genesisValidator {
+		committee = append(committee, map[string]interface{}{
+			"OrbsAddress":  validator,
+			"Weight":       1000,
+			"IdentityType": 0,
+		})
+	}
+
+	chains := make(map[string]interface{})
+	for _, vc := range vcArgument {
+		chains[fmt.Sprintf("%d", vc.Id)] = map[string]interface{}{
+			"VirtualChainId":  vc.Id,
+			"GenesisRefTime":  0,
+			"CurrentTopology": topology,
+			"CommitteeEvents": []interface{}{
+				map[string]interface{}{
+					"RefTime":   0,
+					"Committee": committee,
+				},
+			},
+			"SubscriptionEvents": []interface{}{
+				map[string]interface{}{
+					"RefTime": 0,
+					"Data": map[string]interface{}{
+						"Status":       "active",
+						"Tier":         "B0",
+						"RolloutGroup": "main",
+						"IdentityType": 0,
+						"Params":       make(map[string]interface{}),
+					},
+				},
+			},
+			"ProtocolVersionEvents": []interface{}{
+				map[string]interface{}{
+					"RefTime": 0,
+					"Data": map[string]interface{}{
+						"RolloutGroup": "main",
+						"Version":      1,
+					},
+				},
+			},
+		}
+	}
+
+	result := map[string]interface{}{
+		"CurrentRefTime":   1592834480,
+		"PageStartRefTime": 0,
+		"PageEndRefTime":   1592834480,
+		"VirtualChains":    chains,
+	}
+
+	rawJSON, _ := json.MarshalIndent(result, "", "    ")
+	return string(rawJSON)
 }

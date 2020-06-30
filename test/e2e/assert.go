@@ -95,3 +95,16 @@ func AssertManagementServiceUp(t helpers.TestingT, port int) {
 	err = json.Unmarshal(body, &config)
 	require.NoError(t, err)
 }
+
+func GetVChainMetrics(t helpers.TestingT, port int, vc VChainArgument) JsonMap {
+	metrics := make(map[string]interface{})
+	resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/vchains/%d/metrics", port, vc.Id))
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+	err = json.Unmarshal(body, &metrics)
+	require.NoError(t, err)
+	return JsonMap{value: metrics}
+}

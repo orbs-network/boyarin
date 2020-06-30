@@ -15,6 +15,7 @@ type ReverseProxyConfigService struct {
 
 type ReverseProxyConfig struct {
 	ContainerName string
+	NodeAddress   string
 
 	HTTPPort uint32
 	SSLPort  uint32
@@ -59,10 +60,10 @@ func (d *dockerSwarmOrchestrator) RunReverseProxy(ctx context.Context, config *R
 
 	var mounts []mount.Mount
 	for _, nodeService := range config.Services {
-		if ms, err := d.provisionStatusVolume(ctx, nodeService.ServiceName, getNginxStatusMountPath(nodeService.Name)); err != nil {
+		if statusMount, err := d.provisionStatusVolume(ctx, config.NodeAddress, nodeService.ServiceName, getNginxStatusMountPath(nodeService.Name)); err != nil {
 			return err
 		} else {
-			mounts = append(mounts, ms...)
+			mounts = append(mounts, statusMount)
 		}
 	}
 

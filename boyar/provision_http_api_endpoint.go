@@ -21,6 +21,7 @@ func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
 
 		config := &adapter.ReverseProxyConfig{
 			ContainerName: b.config.NamespacedContainerName(adapter.PROXY_CONTAINER_NAME),
+			NodeAddress:   string(b.config.NodeAddress()),
 			NginxConfig:   getNginxConfig(b.config),
 			HTTPPort:      b.config.OrchestratorOptions().HTTPPort,
 			SSLPort:       b.config.OrchestratorOptions().SSLPort,

@@ -62,7 +62,7 @@ func (d *dockerSwarmOrchestrator) RunVirtualChain(ctx context.Context, serviceCo
 	}
 
 	vcidAsString := fmt.Sprintf("%d", serviceConfig.Id)
-	if logsMount, err := d.provisionLogsVolume(ctx, serviceConfig.NodeAddress, vcidAsString, defaultValue(serviceConfig.LogsVolumeSize, 2)); err != nil {
+	if logsMount, err := d.provisionLogsVolume(ctx, serviceConfig.NodeAddress, vcidAsString, ORBS_LOGS_TARGET, defaultValue(serviceConfig.LogsVolumeSize, 2)); err != nil {
 		return fmt.Errorf("failed to provision volumes: %s", err)
 	} else {
 		mounts = append(mounts, logsMount)

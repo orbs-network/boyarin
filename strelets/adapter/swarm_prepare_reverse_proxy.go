@@ -2,6 +2,7 @@ package adapter
 
 import (
 	"context"
+	"fmt"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/swarm"
 	"path"
@@ -65,16 +66,13 @@ func (d *dockerSwarmOrchestrator) RunReverseProxy(ctx context.Context, config *R
 		} else {
 			mounts = append(mounts, statusMount)
 		}
-	}
 
-	logsMount := mount.Mount{
-		Type:     mount.TypeBind,
-		Source:   "/var/efs",
-		Target:   "/var/efs",
-		ReadOnly: false,
+		if logsMount, err := d.provisionLogsVolume(ctx, config.NodeAddress, nodeService.ServiceName, getNginxLogsMountPath(nodeService.Name), 0); err != nil {
+			return fmt.Errorf("failed to provision volumes: %s", err)
+		} else {
+			mounts = append(mounts, logsMount)
+		}
 	}
-
-	mounts = append(mounts, logsMount)
 
 	spec := getNginxServiceSpec(config.ContainerName, httpPort, sslPort, storedSecrets, networks, mounts)
 	return d.create(ctx, spec, "")
@@ -143,4 +141,8 @@ func getNginxServiceSpec(namespace string, httpPort uint32, sslPort uint32, stor
 
 func getNginxStatusMountPath(simpleName string) string {
 	return path.Join(ORBS_STATUS_TARGET, simpleName)
+}
+
+func getNginxLogsMountPath(simpleName string) string {
+	return path.Join(ORBS_LOGS_TARGET, simpleName)
 }

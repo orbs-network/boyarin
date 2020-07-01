@@ -30,8 +30,8 @@ func (d *dockerSwarmOrchestrator) provisionVchainVolume(ctx context.Context, nod
 	return d.provisionVolume(ctx, getVchainVolumeName(nodeAddress, virtualChainId, "blocks"), ORBS_BLOCKS_TARGET, blocksVolumeSize, d.options)
 }
 
-func (d *dockerSwarmOrchestrator) provisionLogsVolume(ctx context.Context, nodeAddress string, serviceName string, logsVolumeSize int) (mount.Mount, error) {
-	return d.provisionVolume(ctx, getServiceVolumeName(nodeAddress, serviceName, "logs"), ORBS_LOGS_TARGET, logsVolumeSize, OrchestratorOptions{})
+func (d *dockerSwarmOrchestrator) provisionLogsVolume(ctx context.Context, nodeAddress string, serviceName string, mountTarget string, logsVolumeSize int) (mount.Mount, error) {
+	return d.provisionVolume(ctx, getServiceVolumeName(nodeAddress, serviceName, "logs"), mountTarget, logsVolumeSize, OrchestratorOptions{})
 }
 
 func (d *dockerSwarmOrchestrator) provisionStatusVolume(ctx context.Context, nodeAddress string, serviceName string, mountTarget string) (mount.Mount, error) {

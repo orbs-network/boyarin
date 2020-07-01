@@ -3,16 +3,10 @@ package adapter
 import (
 	"context"
 	"fmt"
-	"strings"
-	"time"
-
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/swarm"
+	"time"
 )
-
-func getVolumeNameServiceForLogs(name string) string {
-	return fmt.Sprintf("%s-logs", name)
-}
 
 func (d *dockerSwarmOrchestrator) RunService(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) error {
 	if err := d.RemoveService(ctx, serviceConfig.ContainerName); err != nil {
@@ -50,21 +44,23 @@ func (d *dockerSwarmOrchestrator) RunService(ctx context.Context, serviceConfig 
 		secrets = append(secrets, getSecretReference(serviceConfig.ContainerName, config.keysSecretId, "keyPair", "keys.json"))
 	}
 
-	mounts, err := d.provisionStatusVolume(ctx, serviceConfig.ContainerName, ORBS_STATUS_TARGET)
-	if err != nil {
+	var mounts []mount.Mount
+	if statusMount, err := d.provisionStatusVolume(ctx, serviceConfig.NodeAddress, serviceConfig.ContainerName, ORBS_STATUS_TARGET); err != nil {
 		return err
+	} else {
+		mounts = append(mounts, statusMount)
 	}
 
-	if logsMount, err := d.provisionVolume(ctx, getVolumeNameServiceForLogs(serviceConfig.Name), "/opt/orbs/logs", 1, d.options); err != nil {
+	if cacheMount, err := d.provisionCacheVolume(ctx, serviceConfig.NodeAddress, serviceConfig.ContainerName); err != nil {
 		return err
+	} else {
+		mounts = append(mounts, cacheMount)
+	}
+
+	if logsMount, err := d.provisionLogsVolume(ctx, serviceConfig.NodeAddress, serviceConfig.ContainerName, defaultValue(serviceConfig.LogsVolumeSize, 2)); err != nil {
+		return fmt.Errorf("failed to provision volumes: %s", err)
 	} else {
 		mounts = append(mounts, logsMount)
-	}
-
-	if cacheMounts, err := d.provisionCacheVolume(ctx, serviceConfig.ContainerName, ORBS_CACHE_TARGET); err != nil {
-		return err
-	} else {
-		mounts = append(mounts, cacheMounts...)
 	}
 
 	spec := getServiceSpec(serviceConfig, secrets, networks, mounts)
@@ -128,20 +124,12 @@ func getServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.SecretReferen
 }
 
 func getServiceContainerSpec(imageName string, executable string, secrets []*swarm.SecretReference, mounts []mount.Mount) *swarm.ContainerSpec {
-	subcommand := []string{
+	command := []string{
 		executable,
 	}
 
 	for _, secret := range secrets {
-		subcommand = append(subcommand, "--config", "/run/secrets/"+secret.File.Name)
-	}
-
-	subcommand = append(subcommand, "| multilog t s16777215 n3 '!tai64nlocal' /opt/orbs/logs 2>&1")
-
-	command := []string{
-		"/bin/sh",
-		"-c",
-		strings.Join(subcommand, " "),
+		command = append(command, "--config", "/run/secrets/"+secret.File.Name)
 	}
 
 	return &swarm.ContainerSpec{

@@ -39,9 +39,7 @@ func Test_getServiceSpec(t *testing.T) {
 		ContainerSpec: &swarm.ContainerSpec{
 			Image: "orbs:signer",
 			Command: []string{
-				"/bin/sh",
-				"-c",
-				"/opt/orbs/orbs-signer --config /run/secrets/some-secret.json | multilog t s16777215 n3 '!tai64nlocal' /opt/orbs/logs 2>&1",
+				"/opt/orbs/orbs-signer", "--config", "/run/secrets/some-secret.json",
 			},
 			Secrets: secrets,
 			Sysctls: GetSysctls(),

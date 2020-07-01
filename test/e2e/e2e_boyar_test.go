@@ -30,9 +30,20 @@ func TestE2ERunSingleVirtualChain(t *testing.T) {
 		waiter = InProcessBoyar(t, ctx, logger, flags)
 
 		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
+			AssertVolumeExists(t, ctx, "cfc9e5189223aedce9543be0ef419f89aaa69e8b-42-blocks")
+			AssertVolumeExists(t, ctx, "cfc9e5189223aedce9543be0ef419f89aaa69e8b-42-logs")
+			AssertVolumeExists(t, ctx, "cfc9e5189223aedce9543be0ef419f89aaa69e8b-42-status")
+			AssertVolumeExists(t, ctx, "cfc9e5189223aedce9543be0ef419f89aaa69e8b-cfc9e5-management-service-status")
+			AssertVolumeExists(t, ctx, "cfc9e5189223aedce9543be0ef419f89aaa69e8b-cfc9e5-signer-cache")
+			AssertVolumeExists(t, ctx, "cfc9e5189223aedce9543be0ef419f89aaa69e8b-cfc9e5-signer-logs")
+			AssertVolumeExists(t, ctx, "cfc9e5189223aedce9543be0ef419f89aaa69e8b-cfc9e5-signer-status")
+		})
+
+		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
 			AssertVchainUp(t, 80, PublicKey, vc1)
 			AssertServiceUp(t, ctx, "cfc9e5-signer")
 		})
+
 		return
 	})
 }

@@ -3,11 +3,9 @@ package adapter
 import (
 	"context"
 	"fmt"
-	"strings"
-	"time"
-
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/swarm"
+	"time"
 )
 
 func (d *dockerSwarmOrchestrator) RunVirtualChain(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) error {
@@ -54,10 +52,26 @@ func (d *dockerSwarmOrchestrator) RunVirtualChain(ctx context.Context, serviceCo
 		getSecretReference(serviceConfig.ContainerName, config.networkSecretId, "network", "network.json"),
 	}
 
-	mounts, err := d.provisionVchainVolumes(ctx, serviceConfig.NodeAddress, serviceConfig.Id,
-		defaultValue(serviceConfig.BlocksVolumeSize, 100), defaultValue(serviceConfig.LogsVolumeSize, 2))
+	var mounts []mount.Mount
+	vchainMaount, err := d.provisionVchainVolume(ctx, serviceConfig.NodeAddress, serviceConfig.Id,
+		defaultValue(serviceConfig.BlocksVolumeSize, 100))
 	if err != nil {
 		return fmt.Errorf("failed to provision volumes: %s", err)
+	} else {
+		mounts = append(mounts, vchainMaount)
+	}
+
+	vcidAsString := fmt.Sprintf("%d", serviceConfig.Id)
+	if logsMount, err := d.provisionLogsVolume(ctx, serviceConfig.NodeAddress, vcidAsString, defaultValue(serviceConfig.LogsVolumeSize, 2)); err != nil {
+		return fmt.Errorf("failed to provision volumes: %s", err)
+	} else {
+		mounts = append(mounts, logsMount)
+	}
+
+	if statusMount, err := d.provisionStatusVolume(ctx, serviceConfig.NodeAddress, vcidAsString, ORBS_STATUS_TARGET); err != nil {
+		return fmt.Errorf("failed to provision volumes: %s", err)
+	} else {
+		mounts = append(mounts, statusMount)
 	}
 
 	spec := getVirtualChainServiceSpec(serviceConfig, secrets, mounts, networks)
@@ -78,23 +92,14 @@ func getSecretReference(containerName string, secretId string, secretName string
 }
 
 func getContainerSpec(imageName string, secrets []*swarm.SecretReference, mounts []mount.Mount) *swarm.ContainerSpec {
-
-	// "--silent",
-	// "--log", "/opt/orbs/logs/node.log",
-	subcommand := []string{
+	command := []string{
 		"/opt/orbs/orbs-node",
+		"--silent",
+		"--log", "/opt/orbs/logs/node.log",
 	}
 
 	for _, secret := range secrets {
-		subcommand = append(subcommand, "--config /var/run/secrets/"+secret.File.Name)
-	}
-
-	subcommand = append(subcommand, "| multilog t s16777215 n3 '!tai64nlocal' /opt/orbs/logs 2>&1")
-
-	command := []string{
-		"/bin/bash",
-		"-c",
-		strings.Join(subcommand, " "),
+		command = append(command, "--config", "/var/run/secrets/"+secret.File.Name)
 	}
 
 	return &swarm.ContainerSpec{

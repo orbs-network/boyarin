@@ -43,6 +43,8 @@ func (b *boyar) provisionService(ctx context.Context, cfg config.ServiceConfig, 
 			}
 
 			serviceConfig := &adapter.ServiceConfig{
+				NodeAddress: string(b.config.NodeAddress()),
+
 				ImageName:     imageName,
 				Name:          cfg.Name,
 				ContainerName: fullServiceName,

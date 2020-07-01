@@ -18,16 +18,18 @@ const ORBS_CACHE_TARGET = "/opt/orbs/cache"
 const REXRAY_EBS_DRIVER = "rexray/ebs"
 const LOCAL_DRIVER = "local"
 
-func getVchainVolumeName(nodeAddress string, virtualChainId uint32, postfix string) string {
-	return fmt.Sprintf("%s-%d-%s", nodeAddress, virtualChainId, postfix)
+// FIXME remove node address
+func getVchainVolumeName(nodeAddress string, serviceName string, postfix string) string {
+	return fmt.Sprintf("%s-%s", serviceName, postfix)
 }
 
+// FIXME remove node address
 func getServiceVolumeName(nodeAddress string, serviceName string, postfix string) string {
-	return fmt.Sprintf("%s-%s-%s", nodeAddress, serviceName, postfix)
+	return fmt.Sprintf("%s-%s", serviceName, postfix)
 }
 
-func (d *dockerSwarmOrchestrator) provisionVchainVolume(ctx context.Context, nodeAddress string, virtualChainId uint32, blocksVolumeSize int) (mount.Mount, error) {
-	return d.provisionVolume(ctx, getVchainVolumeName(nodeAddress, virtualChainId, "blocks"), ORBS_BLOCKS_TARGET, blocksVolumeSize, d.options)
+func (d *dockerSwarmOrchestrator) provisionVchainVolume(ctx context.Context, nodeAddress string, serviceName string, blocksVolumeSize int) (mount.Mount, error) {
+	return d.provisionVolume(ctx, getVchainVolumeName(nodeAddress, serviceName, "blocks"), ORBS_BLOCKS_TARGET, blocksVolumeSize, d.options)
 }
 
 func (d *dockerSwarmOrchestrator) provisionLogsVolume(ctx context.Context, nodeAddress string, serviceName string, mountTarget string, logsVolumeSize int) (mount.Mount, error) {

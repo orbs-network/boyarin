@@ -94,7 +94,7 @@ func getContainerSpec(imageName string, secrets []*swarm.SecretReference, mounts
 	command := []string{
 		"/opt/orbs/orbs-node",
 		"--silent",
-		"--log", "/opt/orbs/logs/node.log",
+		"--log", "/opt/orbs/logs/current",
 	}
 
 	for _, secret := range secrets {

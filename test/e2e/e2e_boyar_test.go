@@ -30,6 +30,7 @@ func TestE2ERunSingleVirtualChain(t *testing.T) {
 		waiter = InProcessBoyar(t, ctx, logger, flags)
 
 		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
+			// FIXME revert names to 6793835316A8e5f0F7409241f8250E1F817bAb3F-7777-blocks
 			AssertVolumeExists(t, ctx, "cfc9e5-chain-42-blocks")
 			AssertVolumeExists(t, ctx, "cfc9e5-chain-42-logs")
 			AssertVolumeExists(t, ctx, "cfc9e5-chain-42-status")
@@ -44,9 +45,8 @@ func TestE2ERunSingleVirtualChain(t *testing.T) {
 			AssertVchainUp(t, 80, PublicKey, vc1)
 			AssertServiceUp(t, ctx, "cfc9e5-signer")
 
-			AssertStatusExists(t, 80, "signer")
-			// FIXME add status for vchain
-			// FIXME add logs for vchain
+			AssertServiceStatusExists(t, 80, "signer")
+			AssertVchainLogsExist(t, 80, vc1)
 		})
 
 		return

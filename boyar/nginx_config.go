@@ -38,17 +38,17 @@ location / { error_page 404 = @error404; }
 location @error404 { return 404 '{{DefaultResponse "Not found"}}'; }
 location @error502 { return 502 '{{DefaultResponse "Bad gateway"}}'; }
 location ~ ^/boyar/logs {
-	alias /var/efs/boyar/current;
+	alias /opt/orbs/logs/boyar/current;
 	access_log off;
 }
 location ~ ^/signer/logs {
-	alias /var/efs/signer-logs/current;
+	alias /opt/orbs/logs/signer/current;
 	access_log off;
 }
 {{- range .Chains }}
 set $vc{{.Id}} {{.ServiceId}};
 location ~ ^/vchains/{{.Id}}/logs {
-	alias /var/efs/vchain-{{.Id}}-logs/current;
+	alias /opt/orbs/logs/chain-{{.Id}}/current;
 	access_log off;
 }
 location ~ ^/vchains/{{.Id}}(/?)(.*) {

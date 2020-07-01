@@ -19,16 +19,16 @@ location / { error_page 404 = @error404; }
 location @error404 { return 404 '{"Status":"Not found","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 location @error502 { return 502 '{"Status":"Bad gateway","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 location ~ ^/boyar/logs {
-	alias /var/efs/boyar/current;
+	alias /opt/orbs/logs/boyar/current;
 	access_log off;
 }
 location ~ ^/signer/logs {
-	alias /var/efs/signer-logs/current;
+	alias /opt/orbs/logs/signer/current;
 	access_log off;
 }
 set $vc42 chain-42;
 location ~ ^/vchains/42/logs {
-	alias /var/efs/vchain-42-logs/current;
+	alias /opt/orbs/logs/chain-42/current;
 	access_log off;
 }
 location ~ ^/vchains/42(/?)(.*) {
@@ -58,16 +58,16 @@ location / { error_page 404 = @error404; }
 location @error404 { return 404 '{"Status":"Not found","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 location @error502 { return 502 '{"Status":"Bad gateway","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 location ~ ^/boyar/logs {
-	alias /var/efs/boyar/current;
+	alias /opt/orbs/logs/boyar/current;
 	access_log off;
 }
 location ~ ^/signer/logs {
-	alias /var/efs/signer-logs/current;
+	alias /opt/orbs/logs/signer/current;
 	access_log off;
 }
 set $vc42 chain-42;
 location ~ ^/vchains/42/logs {
-	alias /var/efs/vchain-42-logs/current;
+	alias /opt/orbs/logs/chain-42/current;
 	access_log off;
 }
 location ~ ^/vchains/42(/?)(.*) {
@@ -76,7 +76,7 @@ location ~ ^/vchains/42(/?)(.*) {
 }
 set $vc1991 chain-1991;
 location ~ ^/vchains/1991/logs {
-	alias /var/efs/vchain-1991-logs/current;
+	alias /opt/orbs/logs/chain-1991/current;
 	access_log off;
 }
 location ~ ^/vchains/1991(/?)(.*) {
@@ -109,16 +109,16 @@ location / { error_page 404 = @error404; }
 location @error404 { return 404 '{"Status":"Not found","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 location @error502 { return 502 '{"Status":"Bad gateway","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 location ~ ^/boyar/logs {
-	alias /var/efs/boyar/current;
+	alias /opt/orbs/logs/boyar/current;
 	access_log off;
 }
 location ~ ^/signer/logs {
-	alias /var/efs/signer-logs/current;
+	alias /opt/orbs/logs/signer/current;
 	access_log off;
 }
 set $vc42 chain-42;
 location ~ ^/vchains/42/logs {
-	alias /var/efs/vchain-42-logs/current;
+	alias /opt/orbs/logs/vchain-42/current;
 	access_log off;
 }
 location ~ ^/vchains/42(/?)(.*) {
@@ -144,16 +144,16 @@ location / { error_page 404 = @error404; }
 location @error404 { return 404 '{"Status":"Not found","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 location @error502 { return 502 '{"Status":"Bad gateway","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 location ~ ^/boyar/logs {
-	alias /var/efs/boyar/current;
+	alias /opt/orbs/logs/boyar/current;
 	access_log off;
 }
 location ~ ^/signer/logs {
-	alias /var/efs/signer-logs/current;
+	alias /opt/orbs/logs/signer-logs/current;
 	access_log off;
 }
 set $vc42 chain-42;
 location ~ ^/vchains/42/logs {
-	alias /var/efs/vchain-42-logs/current;
+	alias /opt/orbs/logs/vchain-42-logs/current;
 	access_log off;
 }
 location ~ ^/vchains/42(/?)(.*) {

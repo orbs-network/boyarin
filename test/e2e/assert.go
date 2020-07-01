@@ -108,3 +108,15 @@ func GetVChainMetrics(t helpers.TestingT, port int, vc VChainArgument) JsonMap {
 	require.NoError(t, err)
 	return JsonMap{value: metrics}
 }
+
+func AssertStatusExists(t helpers.TestingT, port int, service string) {
+	status := make(map[string]interface{})
+	resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/services/%s/status", port, service))
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+	err = json.Unmarshal(body, &status)
+	require.NoError(t, err)
+}

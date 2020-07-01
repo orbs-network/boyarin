@@ -11,7 +11,7 @@ import (
 )
 
 func TestE2ERunFullNetwork(t *testing.T) {
-	//helpers.SkipUnlessSwarmIsEnabled(t)
+	helpers.SkipUnlessSwarmIsEnabled(t)
 
 	helpers.WithContext(func(ctx context.Context) {
 		helpers.InitSwarmEnvironment(t, ctx)

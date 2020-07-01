@@ -37,6 +37,7 @@ func SetupDynamicBoyarDepencenciesForNetwork(t *testing.T, keyPair KeyConfig, ge
 				configStr = managementConfigJson(managementUrl, vchainManagementUrl, httpPort, currentChains)
 				managementStr = vchainManagementConfig(currentChains, topology, genesisValidators)
 				fmt.Println(configStr)
+				fmt.Println(managementStr)
 			}
 		}()
 

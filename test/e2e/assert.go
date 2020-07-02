@@ -108,3 +108,37 @@ func GetVChainMetrics(t helpers.TestingT, port int, vc VChainArgument) JsonMap {
 	require.NoError(t, err)
 	return JsonMap{value: metrics}
 }
+
+func AssertServiceStatusExists(t helpers.TestingT, port int, service string) {
+	status := make(map[string]interface{})
+	resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/services/%s/status", port, service))
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+	err = json.Unmarshal(body, &status)
+	require.NoError(t, err)
+}
+
+func AssertVchainStatusExists(t helpers.TestingT, port int, vc VChainArgument) {
+	status := make(map[string]interface{})
+	resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/vchains/%d/status", port, vc.Id))
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+	err = json.Unmarshal(body, &status)
+	require.NoError(t, err)
+}
+
+func AssertVchainLogsExist(t helpers.TestingT, port int, vc VChainArgument) {
+	resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/vchains/%d/logs", port, vc.Id))
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+	require.NotEmpty(t, body)
+}

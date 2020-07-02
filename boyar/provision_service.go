@@ -46,6 +46,7 @@ func (b *boyar) provisionService(ctx context.Context, cfg config.ServiceConfig, 
 				NodeAddress: string(b.config.NodeAddress()),
 
 				ImageName:     imageName,
+				Name:          cfg.Name,
 				ContainerName: fullServiceName,
 				Executable:    cfg.Executable,
 				InternalPort:  service.InternalPort,

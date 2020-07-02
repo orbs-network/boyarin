@@ -22,6 +22,7 @@ func SetupDynamicBoyarDependencies(t *testing.T, keyPair KeyConfig, genesisValid
 		map[string]interface{}{
 			"OrbsAddress": keyPair.NodeAddress,
 			"Ip":          "127.0.0.1",
+			"Port":        4400,
 		},
 	}, 80, vChains)
 }

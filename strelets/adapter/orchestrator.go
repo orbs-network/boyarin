@@ -21,6 +21,7 @@ type ServiceConfig struct {
 	// vchain only
 	Id          uint32
 	NodeAddress string
+	Name		string
 
 	// common
 	ImageName     string

@@ -57,7 +57,7 @@ func (d *dockerSwarmOrchestrator) RunService(ctx context.Context, serviceConfig 
 		mounts = append(mounts, cacheMount)
 	}
 
-	if logsMount, err := d.provisionLogsVolume(ctx, serviceConfig.NodeAddress, serviceConfig.ContainerName, defaultValue(serviceConfig.LogsVolumeSize, 2)); err != nil {
+	if logsMount, err := d.provisionLogsVolume(ctx, serviceConfig.NodeAddress, serviceConfig.ContainerName, ORBS_LOGS_TARGET, defaultValue(serviceConfig.LogsVolumeSize, 2)); err != nil {
 		return fmt.Errorf("failed to provision volumes: %s", err)
 	} else {
 		mounts = append(mounts, logsMount)

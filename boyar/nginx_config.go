@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar/config"
+	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/version"
 	"sort"
 	"strings"
@@ -16,14 +17,22 @@ func getDefaultNginxResponse(status string) string {
 }
 
 type nginxTemplateChainParams struct {
-	Id        config.VirtualChainId
-	ServiceId string
-	Port      int
+	Id           config.VirtualChainId
+	ServiceId    string
+	Port         int
+	LogsVolume   string
+	StatusVolume string
+}
+
+type nginxTemplateServiceParams struct {
+	ServiceId    string
+	LogsVolume   string
+	StatusVolume string
 }
 
 type nginxTemplateParams struct {
 	Chains     []nginxTemplateChainParams
-	Services   []string
+	Services   []nginxTemplateServiceParams
 	SslEnabled bool
 }
 
@@ -41,14 +50,14 @@ location ~ ^/boyar/logs {
 	alias /opt/orbs/logs/boyar/current;
 	access_log off;
 }
-location ~ ^/signer/logs {
-	alias /opt/orbs/logs/signer/current;
-	access_log off;
-}
 {{- range .Chains }}
 set $vc{{.Id}} {{.ServiceId}};
 location ~ ^/vchains/{{.Id}}/logs {
-	alias /opt/orbs/logs/chain-{{.Id}}/current;
+	alias {{.LogsVolume}}/current;
+	access_log off;
+}
+location ~ ^/vchains/{{.Id}}/status {
+	alias {{.StatusVolume}}/status.json;
 	access_log off;
 }
 location ~ ^/vchains/{{.Id}}(/?)(.*) {
@@ -56,9 +65,12 @@ location ~ ^/vchains/{{.Id}}(/?)(.*) {
 	error_page 502 = @error502;
 }
 {{- end }} {{- /* range .Chains */ -}}
-{{- range $i, $service := .Services }}
-location /services/{{$service}}/status {
-	alias /opt/orbs/status/{{$service}}/status.json;
+{{- range .Services }}
+location /services/{{.ServiceId}}/logs {
+	alias {{.LogsVolume}}/current;
+}
+location /services/{{.ServiceId}}/status {
+	alias {{.StatusVolume}}/status.json;
 }
 {{- end }}
 {{- end -}} {{- /* define "locations" */ -}}
@@ -84,19 +96,29 @@ ssl_certificate_key /var/run/secrets/ssl-key;
 
 	for _, chain := range cfg.Chains() {
 		if !chain.Disabled {
+			containerName := cfg.NamespacedContainerName(chain.GetContainerName())
 			transformedChains = append(transformedChains, nginxTemplateChainParams{
-				Id:        chain.Id,
-				ServiceId: cfg.NamespacedContainerName(chain.GetContainerName()),
-				Port:      chain.InternalHttpPort,
+				Id:           chain.Id,
+				ServiceId:    containerName,
+				Port:         chain.InternalHttpPort,
+				LogsVolume:   adapter.GetNginxLogsMountPath(chain.GetContainerName()),
+				StatusVolume: adapter.GetNginxStatusMountPath(chain.GetContainerName()),
 			})
 		}
 	}
 
-	var services []string
+	var services []nginxTemplateServiceParams
 	for serviceConfig, _ := range cfg.Services().AsMap() {
-		services = append(services, serviceConfig.Name)
+		services = append(services, nginxTemplateServiceParams{
+			ServiceId:    serviceConfig.Name,
+			LogsVolume:   adapter.GetNginxLogsMountPath(serviceConfig.Name),
+			StatusVolume: adapter.GetNginxStatusMountPath(serviceConfig.Name),
+		})
 	}
-	sort.Strings(services)
+
+	sort.Slice(services, func(i, j int) bool {
+		return services[i].ServiceId < services[j].ServiceId
+	})
 
 	err := TplNginxConf.Execute(&sb, nginxTemplateParams{
 		Chains:     transformedChains,

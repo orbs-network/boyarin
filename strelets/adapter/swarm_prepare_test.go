@@ -42,7 +42,7 @@ func Test_getVirtualChainServiceSpec(t *testing.T) {
 			Command: []string{
 				"/opt/orbs/orbs-node",
 				"--silent",
-				"--log", "/opt/orbs/logs/node.log",
+				"--log", "/opt/orbs/logs/current",
 				"--config", "/var/run/secrets/some-secret.json",
 			},
 			Secrets: secrets,

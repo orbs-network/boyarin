@@ -18,30 +18,28 @@ const ORBS_CACHE_TARGET = "/opt/orbs/cache"
 const REXRAY_EBS_DRIVER = "rexray/ebs"
 const LOCAL_DRIVER = "local"
 
-// FIXME remove node address
-func getVchainVolumeName(nodeAddress string, serviceName string, postfix string) string {
+func getVchainVolumeName(nodeAddress string, vcId uint32, postfix string) string {
+	return fmt.Sprintf("%s-%d-%s", nodeAddress, vcId, postfix)
+}
+
+func getServiceVolumeName(serviceName string, postfix string) string {
 	return fmt.Sprintf("%s-%s", serviceName, postfix)
 }
 
-// FIXME remove node address
-func getServiceVolumeName(nodeAddress string, serviceName string, postfix string) string {
-	return fmt.Sprintf("%s-%s", serviceName, postfix)
-}
-
-func (d *dockerSwarmOrchestrator) provisionVchainVolume(ctx context.Context, nodeAddress string, serviceName string, blocksVolumeSize int) (mount.Mount, error) {
-	return d.provisionVolume(ctx, getVchainVolumeName(nodeAddress, serviceName, "blocks"), ORBS_BLOCKS_TARGET, blocksVolumeSize, d.options)
+func (d *dockerSwarmOrchestrator) provisionVchainVolume(ctx context.Context, nodeAddress string, vcId uint32, blocksVolumeSize int) (mount.Mount, error) {
+	return d.provisionVolume(ctx, getVchainVolumeName(nodeAddress, vcId, "blocks"), ORBS_BLOCKS_TARGET, blocksVolumeSize, d.options)
 }
 
 func (d *dockerSwarmOrchestrator) provisionLogsVolume(ctx context.Context, nodeAddress string, serviceName string, mountTarget string, logsVolumeSize int) (mount.Mount, error) {
-	return d.provisionVolume(ctx, getServiceVolumeName(nodeAddress, serviceName, "logs"), mountTarget, logsVolumeSize, OrchestratorOptions{})
+	return d.provisionVolume(ctx, getServiceVolumeName(serviceName, "logs"), mountTarget, logsVolumeSize, OrchestratorOptions{})
 }
 
 func (d *dockerSwarmOrchestrator) provisionStatusVolume(ctx context.Context, nodeAddress string, serviceName string, mountTarget string) (mount.Mount, error) {
-	return d.provisionVolume(ctx, getServiceVolumeName(nodeAddress, serviceName, "status"), mountTarget, 0, d.options)
+	return d.provisionVolume(ctx, getServiceVolumeName(serviceName, "status"), mountTarget, 0, d.options)
 }
 
 func (d *dockerSwarmOrchestrator) provisionCacheVolume(ctx context.Context, nodeAddress string, serviceName string) (mount.Mount, error) {
-	return d.provisionVolume(ctx, getServiceVolumeName(nodeAddress, serviceName, "cache"), ORBS_CACHE_TARGET, 0, d.options)
+	return d.provisionVolume(ctx, getServiceVolumeName(serviceName, "cache"), ORBS_CACHE_TARGET, 0, d.options)
 }
 
 func (d *dockerSwarmOrchestrator) provisionVolume(ctx context.Context, volumeName string, target string, maxSizeInGb int, orchestratorOptions OrchestratorOptions) (mount.Mount, error) {

@@ -76,7 +76,7 @@ func getReverseProxyServices(cfg config.NodeConfiguration) (services []adapter.R
 		})
 	}
 
-	// FIXME chains seem to be empty
+	// both services and vchains use the same volumes for logs and status
 	for _, vchain := range cfg.Chains() {
 		services = append(services, adapter.ReverseProxyConfigService{
 			Name:        vchain.GetContainerName(),

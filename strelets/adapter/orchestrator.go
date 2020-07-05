@@ -21,7 +21,7 @@ type ServiceConfig struct {
 	// vchain only
 	Id          uint32
 	NodeAddress string
-	Name		string
+	Name        string
 
 	// common
 	ImageName     string
@@ -39,9 +39,6 @@ type ServiceConfig struct {
 	LimitedCPU     float64
 	ReservedMemory int64
 	ReservedCPU    float64
-
-	BlocksVolumeSize int
-	LogsVolumeSize   int
 }
 
 type ContainerStatus struct {

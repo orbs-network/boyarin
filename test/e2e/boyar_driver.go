@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-const DEFAULT_VCHAIN_TIMEOUT = 60 * time.Second
+const DEFAULT_VCHAIN_TIMEOUT = 90 * time.Second
 
 func SetupDynamicBoyarDependencies(t *testing.T, keyPair KeyConfig, genesisValidators []string, vChains <-chan []VChainArgument) (*config.Flags, func()) {
 	return SetupDynamicBoyarDepencenciesForNetwork(t, keyPair, genesisValidators, []interface{}{

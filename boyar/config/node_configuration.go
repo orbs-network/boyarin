@@ -3,14 +3,13 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/orbs-network/boyarin/boyar/topology"
 	"github.com/orbs-network/boyarin/crypto"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"time"
 )
 
 type NodeConfiguration interface {
-	FederationNodes() []*topology.FederationNode
+	FederationNodes() []*FederationNode
 	Chains() []*VirtualChain
 	OrchestratorOptions() adapter.OrchestratorOptions
 	KeyConfigPath() string
@@ -30,7 +29,7 @@ type NodeConfiguration interface {
 type MutableNodeConfiguration interface {
 	NodeConfiguration
 
-	SetFederationNodes(federationNodes []*topology.FederationNode) MutableNodeConfiguration
+	SetFederationNodes(federationNodes []*FederationNode) MutableNodeConfiguration
 	SetEthereumEndpoint(ethereumEndpoint string) MutableNodeConfiguration
 	SetOrchestratorOptions(options adapter.OrchestratorOptions) MutableNodeConfiguration
 	SetSSLOptions(options adapter.SSLOptions) MutableNodeConfiguration
@@ -38,7 +37,7 @@ type MutableNodeConfiguration interface {
 
 type nodeConfiguration struct {
 	Chains              []*VirtualChain             `json:"chains"`
-	FederationNodes     []*topology.FederationNode  `json:"network"`
+	FederationNodes     []*FederationNode           `json:"network"`
 	OrchestratorOptions adapter.OrchestratorOptions `json:"orchestrator"`
 	Services            Services                    `json:"services"`
 }
@@ -55,7 +54,7 @@ func (c *nodeConfigurationContainer) Chains() []*VirtualChain {
 	return c.value.Chains
 }
 
-func (c *nodeConfigurationContainer) FederationNodes() []*topology.FederationNode {
+func (c *nodeConfigurationContainer) FederationNodes() []*FederationNode {
 	return c.value.FederationNodes
 }
 
@@ -80,7 +79,7 @@ func (c *nodeConfigurationContainer) SSLOptions() adapter.SSLOptions {
 	return c.sslOptions
 }
 
-func (c *nodeConfigurationContainer) SetFederationNodes(federationNodes []*topology.FederationNode) MutableNodeConfiguration {
+func (c *nodeConfigurationContainer) SetFederationNodes(federationNodes []*FederationNode) MutableNodeConfiguration {
 	c.value.FederationNodes = federationNodes
 	return c
 }

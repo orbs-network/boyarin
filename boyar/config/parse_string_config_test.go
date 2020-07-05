@@ -1,7 +1,6 @@
 package config
 
 import (
-	"github.com/orbs-network/boyarin/boyar/topology"
 	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
@@ -19,7 +18,7 @@ func getJSONConfig() string {
 }
 
 func verifySource(t *testing.T, source NodeConfiguration) {
-	require.EqualValues(t, []*topology.FederationNode{
+	require.EqualValues(t, []*FederationNode{
 		{
 			Address: "dfc06c5be24a67adee80b35ab4f147bb1a35c55ff85eda69f40ef827bddec173",
 			IP:      "192.168.1.14",

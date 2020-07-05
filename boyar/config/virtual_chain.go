@@ -3,7 +3,6 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/orbs-network/boyarin/boyar/topology"
 	"strconv"
 	"strings"
 )
@@ -18,7 +17,7 @@ type VirtualChain struct {
 
 type VirtualChainConfig struct {
 	VirtualChain *VirtualChain
-	Topology     []*topology.FederationNode
+	Topology     []*FederationNode
 	NodeAddress  NodeAddress
 
 	KeyPairConfig []byte `json:"-"` // Prevents key leak via log
@@ -60,4 +59,10 @@ func (c *VirtualChain) GetSerializedConfig() []byte {
 
 func (id VirtualChainId) String() string {
 	return strconv.Itoa(int(id))
+}
+
+type FederationNode struct {
+	Address string `json:"address"`
+	IP      string `json:"ip"`
+	Port    int    `json:"port"`
 }

@@ -4,7 +4,6 @@ import (
 	"github.com/orbs-network/scribe/log"
 	"net"
 	"os"
-	"strings"
 	"testing"
 	"time"
 )

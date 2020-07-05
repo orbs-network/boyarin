@@ -25,7 +25,7 @@ func main() {
 	timeoutPtr := flag.Duration("timeout", 10*time.Minute, "timeout for provisioning all virtual chains (duration: 1s, 1m, 1h, etc)")
 
 	ethereumEndpointPtr := flag.String("ethereum-endpoint", "", "Ethereum endpoint")
-	topologyContractAddressPtr := flag.String("topology-contract-address", "", "Ethereum address for topology contract")
+	flag.String("topology-contract-address", "", "legacy parameter, will be removed in future versions")
 
 	loggerHttpEndpointPtr := flag.String("logger-http-endpoint", "", "Logz.io http endpoint")
 	logFilePath := flag.String("log", "", "path to log file")
@@ -50,19 +50,18 @@ func main() {
 	}
 
 	flags := &config.Flags{
-		ConfigUrl:               *configUrlPtr,
-		KeyPairConfigPath:       *keyPairConfigPathPtr,
-		LogFilePath:             *logFilePath,
-		PollingInterval:         *pollingIntervalPtr,
-		Timeout:                 *timeoutPtr,
-		MaxReloadTimeDelay:      *maxReloadTimePtr,
-		EthereumEndpoint:        *ethereumEndpointPtr,
-		TopologyContractAddress: *topologyContractAddressPtr,
-		LoggerHttpEndpoint:      *loggerHttpEndpointPtr,
-		OrchestratorOptions:     *orchestratorOptionsPtr,
-		SSLCertificatePath:      *sslCertificatePathPtr,
-		SSLPrivateKeyPath:       *sslPrivateKeyPtr,
-		ManagementConfig:        *managementConfig,
+		ConfigUrl:           *configUrlPtr,
+		KeyPairConfigPath:   *keyPairConfigPathPtr,
+		LogFilePath:         *logFilePath,
+		PollingInterval:     *pollingIntervalPtr,
+		Timeout:             *timeoutPtr,
+		MaxReloadTimeDelay:  *maxReloadTimePtr,
+		EthereumEndpoint:    *ethereumEndpointPtr,
+		LoggerHttpEndpoint:  *loggerHttpEndpointPtr,
+		OrchestratorOptions: *orchestratorOptionsPtr,
+		SSLCertificatePath:  *sslCertificatePathPtr,
+		SSLPrivateKeyPath:   *sslPrivateKeyPtr,
+		ManagementConfig:    *managementConfig,
 	}
 
 	if *help {

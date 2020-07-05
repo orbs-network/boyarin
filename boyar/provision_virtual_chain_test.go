@@ -3,7 +3,7 @@ package boyar
 import (
 	"context"
 	"fmt"
-	"github.com/orbs-network/boyarin/boyar/topology"
+	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/stretchr/testify/assert"
@@ -13,10 +13,10 @@ import (
 )
 
 func Test_getNetworkConfigJSON(t *testing.T) {
-	var nodes []*topology.FederationNode
+	var nodes []*config.FederationNode
 
 	for i, address := range helpers.NodeAddresses() {
-		nodes = append(nodes, &topology.FederationNode{
+		nodes = append(nodes, &config.FederationNode{
 			Address: address,
 			IP:      fmt.Sprintf("10.0.0.%d", i+1),
 			Port:    4400 + i,

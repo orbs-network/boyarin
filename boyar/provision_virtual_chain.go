@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar/config"
-	"github.com/orbs-network/boyarin/boyar/topology"
 	"github.com/orbs-network/boyarin/log_types"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/utils"
@@ -91,7 +90,7 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 	return utils.AggregateErrors(errors)
 }
 
-func getNetworkConfigJSON(nodes []*topology.FederationNode) []byte {
+func getNetworkConfigJSON(nodes []*config.FederationNode) []byte {
 	jsonMap := make(map[string]interface{})
 
 	// A workaround for tests because range does not preserve key order over iteration
@@ -105,8 +104,8 @@ func getNetworkConfigJSON(nodes []*topology.FederationNode) []byte {
 	return json
 }
 
-func overrideTopologyPort(nodes []*topology.FederationNode, gossipPort int) []*topology.FederationNode {
-	var newTopology []*topology.FederationNode
+func overrideTopologyPort(nodes []*config.FederationNode, gossipPort int) []*config.FederationNode {
+	var newTopology []*config.FederationNode
 
 	for _, node := range nodes {
 		// Need this override for more flexibility in network config and also for local testing
@@ -115,7 +114,7 @@ func overrideTopologyPort(nodes []*topology.FederationNode, gossipPort int) []*t
 			port = gossipPort
 		}
 
-		newTopology = append(newTopology, &topology.FederationNode{
+		newTopology = append(newTopology, &config.FederationNode{
 			Port:    port,
 			Address: node.Address,
 			IP:      node.IP,

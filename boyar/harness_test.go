@@ -3,7 +3,6 @@ package boyar
 import (
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar/config"
-	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
@@ -40,7 +39,7 @@ func (conf configFile) String() string {
 func getJSONConfig(t *testing.T, conf configFile) config.MutableNodeConfiguration {
 	contents, err := ioutil.ReadFile(configPath + "/" + conf.String())
 	require.NoError(t, err)
-	source, err := config.NewStringConfigurationSource(string(contents), helpers.LocalEthEndpoint(), fakeKeyPairPath, false) // ethereum endpoint is optional
+	source, err := config.NewStringConfigurationSource(string(contents), "http://localhost:7545", fakeKeyPairPath, false) // ethereum endpoint is optional
 	require.NoError(t, err)
 	return source
 }

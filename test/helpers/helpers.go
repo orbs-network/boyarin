@@ -4,16 +4,9 @@ import (
 	"github.com/orbs-network/scribe/log"
 	"net"
 	"os"
-	"strings"
 	"testing"
 	"time"
 )
-
-func LocalEthEndpoint() string {
-	endpoint := os.Getenv("ETHEREUM_ENDPOINT")
-	endpoint = strings.Replace(endpoint, "localhost", LocalIP(), 1)
-	return endpoint
-}
 
 func LocalIP() string {
 	if localIp := os.Getenv("LOCAL_IP"); localIp != "" {

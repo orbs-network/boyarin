@@ -39,30 +39,9 @@ if ! [ -x "$(command -v gotestsum)" ]; then
   GO111MODULE=off go get gotest.tools/gotestsum
 fi
 
-nc -z 127.0.0.1 7545
-if [ "$?" -eq 0 ] ; then
-  echo "Assuming Ganache for this test is running at 127.0.0.1 7545 (port 7545 is open)"
-else
-  if ! [ -x "$(command -v ganache-cli)" ]; then
-    echo "ganache-cli not installed"
-    if ! [ -x "$(command -v npm)" ]; then
-      echo "npm not installed"
-      exit 1
-    fi
-    echo "instaling ganache-cli"
-    npm install -g ganache-cli
-  fi
-  echo "running ganache-cli for this test"
-  ganache-cli -m 'pet talent sugar must audit chief biology trash change wheat educate bone' -h 0.0.0.0  -i 5777 -p 7545 & # run ganache in the background
-fi
-
 .circleci/setup-e2e.sh
 
 export ENABLE_SWARM=true
-export ENABLE_ETHEREUM=true
-export ETHEREUM_PRIVATE_KEY=7a16631b19e5a7d121f13c3ece279c10c996ff14d8bebe609bf1eca41211b291
-export ETHEREUM_ENDPOINT=http://localhost:7545
-# export CI=true # some tests are skipped in CI
 
 gotestsum ./... -- -p 1 &
 #go test -p 1 ./... &

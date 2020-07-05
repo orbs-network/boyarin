@@ -41,7 +41,7 @@ In case you ever need to regenerate the SSL certificate:
 
 `--ethereum-endpoint` HTTP endpoint for the Ethereum node
 
-`--topology-contract-address` Ethereum address for topology contract
+`--topology-contract-address` legacy parameter, will be removed later
 
 `--keys` path to address/private key pair in json format (example in `e2e-config/node1/keys.json`)
 
@@ -69,14 +69,6 @@ If both these parameters are present, the node will also start service SSL traff
 
     boyar --config-url https://s3.amazonaws.com/boyar-bootstrap-test/boyar/config.json \
         --keys ./e2e-config/node3/keys.json \
-        --daemonize
-
-### Running as a daemon and fetching topology from Ethereum
-
-    boyar --config-url https://s3.amazonaws.com/boyar-bootstrap-test/boyar/config.json \
-        --keys ./e2e-config/node3/keys.json \
-        --ethereum-endpoint http://localhost:7545 \
-        --topology-contract-address 0x409aa7d40dfcfa3725d722a720ff1ba147df4bec \
         --daemonize
 
 ### Print configuration and exit

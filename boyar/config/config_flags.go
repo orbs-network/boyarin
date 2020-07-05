@@ -13,8 +13,7 @@ type Flags struct {
 	Timeout            time.Duration
 	MaxReloadTimeDelay time.Duration
 
-	EthereumEndpoint        string
-	TopologyContractAddress string
+	EthereumEndpoint string
 
 	LoggerHttpEndpoint string
 	LogFilePath        string

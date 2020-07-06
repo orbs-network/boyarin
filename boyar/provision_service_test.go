@@ -36,7 +36,7 @@ func Test_BoyarSignerOffOn(t *testing.T) {
 	boyarWithoutSigner := NewBoyar(orchestrator, source, cache, helpers.DefaultTestLogger())
 
 	orchestrator.On("GetOverlayNetwork", mock.Anything, mock.Anything, mock.Anything).Return("fake-network-id", nil).Once()
-	orchestrator.On("RunService", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+	orchestrator.On("RunService", mock.Anything, mock.Anything, mock.Anything).Return(nil).Twice() // signer + custom service
 
 	err := boyarWithoutSigner.ProvisionServices(context.Background())
 	require.NoError(t, err)

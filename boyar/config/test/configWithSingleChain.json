@@ -26,6 +26,17 @@
     }
   ],
   "services": {
+    "signer": {
+      "InternalPort": 7777,
+      "DockerConfig": {
+        "Image": "orbsnetwork/signer",
+        "Tag": "another-tag",
+        "Pull": false
+      },
+      "Config": {
+        "api": "v1"
+      }
+    },
     "management-service": {
       "InternalPort": 8080,
       "ExternalPort": 7666,

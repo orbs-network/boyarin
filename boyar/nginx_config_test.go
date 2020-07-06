@@ -93,11 +93,11 @@ location ~ ^/vchains/1991(/?)(.*) {
 	proxy_pass http://$vc1991:8080/$2;
 	error_page 502 = @error502;
 }
-location /services/management-service/logs {
-	alias /opt/orbs/logs/management-service/current;
+location /services/custom-service/logs {
+	alias /opt/orbs/logs/custom-service/current;
 }
-location /services/management-service/status {
-	alias /opt/orbs/status/management-service/status.json;
+location /services/custom-service/status {
+	alias /opt/orbs/status/custom-service/status.json;
 }
 location /services/signer/logs {
 	alias /opt/orbs/logs/signer/current;

@@ -82,6 +82,17 @@
       "Config": {
         "api": "v1"
       }
+    },
+    "custom-service": {
+      "InternalPort": 8080,
+      "ExternalPort": 2000,
+      "DockerConfig": {
+        "Image": "orbsnetwork/custom-service",
+        "Tag": "latest",
+        "Pull": false
+      },
+      "Config": {
+      }
     }
   }
 }

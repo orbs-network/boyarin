@@ -8,9 +8,14 @@ type Service struct {
 	Disabled     bool
 }
 
-type Services struct {
-	Signer     *Service `json:"signer"`
-	Management *Service `json:"management-service"`
+type Services map[string]*Service
+
+func (s Services) Signer() *Service {
+	return s["signer"]
+}
+
+func (s Services) Management() *Service {
+	return s["management-service"]
 }
 
 const SIGNER = "signer"
@@ -32,11 +37,29 @@ var CONFIG_SERVICE_CONFIG = ServiceConfig{
 	ServicesNetworkEnabled: true,
 }
 
-func (s Services) AsMap() map[ServiceConfig]*Service {
-	return map[ServiceConfig]*Service{
-		SIGNER_SERVICE_CONFIG: s.Signer,
-		CONFIG_SERVICE_CONFIG: s.Management,
+func NewServiceConfig(name string) ServiceConfig {
+	return ServiceConfig{
+		Name:                   name,
+		NeedsKeys:              false,
+		Executable:             "/opt/orbs/service",
+		SignerNetworkEnabled:   false,
+		ServicesNetworkEnabled: true,
 	}
+}
+
+func (s Services) AsMap() map[ServiceConfig]*Service {
+	result := map[ServiceConfig]*Service{
+		SIGNER_SERVICE_CONFIG: s.Signer(),
+		CONFIG_SERVICE_CONFIG: s.Management(),
+	}
+
+	for name, service := range s {
+		if name != "signer" && name != "management-service" {
+			result[NewServiceConfig(name)] = service
+		}
+	}
+
+	return result
 }
 
 type ServiceConfig struct {

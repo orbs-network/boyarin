@@ -19,6 +19,7 @@ const (
 	ConfigWithActiveVchains
 	ConfigWithSingleChain
 	ConfigWithSigner
+	ConfigWithCustomService
 )
 
 func (conf configFile) String() string {

@@ -108,11 +108,11 @@ ssl_certificate_key /var/run/secrets/ssl-key;
 	}
 
 	var services []nginxTemplateServiceParams
-	for serviceConfig, _ := range cfg.Services().AsMap() {
+	for serviceName, _ := range cfg.Services() {
 		services = append(services, nginxTemplateServiceParams{
-			ServiceId:    serviceConfig.Name,
-			LogsVolume:   adapter.GetNginxLogsMountPath(serviceConfig.Name),
-			StatusVolume: adapter.GetNginxStatusMountPath(serviceConfig.Name),
+			ServiceId:    serviceName,
+			LogsVolume:   adapter.GetNginxLogsMountPath(serviceName),
+			StatusVolume: adapter.GetNginxStatusMountPath(serviceName),
 		})
 	}
 

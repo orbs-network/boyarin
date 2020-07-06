@@ -32,7 +32,7 @@ func Test_BoyarSignerOffOn(t *testing.T) {
 	cache := NewCache()
 
 	source := getJSONConfig(t, Config)
-	require.EqualValues(t, "experimental", source.Services().Signer.DockerConfig.Tag)
+	require.EqualValues(t, "experimental", source.Services().Signer().DockerConfig.Tag)
 	boyarWithoutSigner := NewBoyar(orchestrator, source, cache, helpers.DefaultTestLogger())
 
 	orchestrator.On("GetOverlayNetwork", mock.Anything, mock.Anything, mock.Anything).Return("fake-network-id", nil).Once()
@@ -43,7 +43,7 @@ func Test_BoyarSignerOffOn(t *testing.T) {
 	orchestrator.AssertExpectations(t)
 
 	sourceWithUpdatedSigner := getJSONConfig(t, ConfigWithSigner)
-	require.EqualValues(t, "another-tag", sourceWithUpdatedSigner.Services().Signer.DockerConfig.Tag)
+	require.EqualValues(t, "another-tag", sourceWithUpdatedSigner.Services().Signer().DockerConfig.Tag)
 
 	orchestrator.On("GetOverlayNetwork", mock.Anything, mock.Anything, mock.Anything).Return("fake-network-id", nil).Once()
 	orchestrator.On("RunService", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()

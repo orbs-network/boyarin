@@ -29,10 +29,11 @@ type NodeConfiguration interface {
 type MutableNodeConfiguration interface {
 	NodeConfiguration
 
-	SetFederationNodes(federationNodes []*FederationNode) MutableNodeConfiguration
+	SetFederationNodes(federationNodes []*FederationNode) MutableNodeConfiguration // FIXME remove
 	SetEthereumEndpoint(ethereumEndpoint string) MutableNodeConfiguration
 	SetOrchestratorOptions(options adapter.OrchestratorOptions) MutableNodeConfiguration
 	SetSSLOptions(options adapter.SSLOptions) MutableNodeConfiguration
+	UpdateDefaultServiceConfig() MutableNodeConfiguration
 }
 
 type nodeConfiguration struct {
@@ -143,4 +144,26 @@ func (c *nodeConfigurationContainer) NamespacedContainerName(name string) string
 	}
 
 	return name
+}
+
+func (c *nodeConfigurationContainer) UpdateDefaultServiceConfig() MutableNodeConfiguration {
+	// this is compatibility layer that provides defaults for the signer and management service
+	// the management service can produce any configuration it desires and override these values if necessary
+
+	for serviceName, service := range c.Services() {
+		switch serviceName {
+		case SIGNER:
+			service.Executable = "/opt/orbs/orbs-signer" // FIXME remove after new version of signer is released
+			service.NeedsKeys = true
+			service.SignerNetworkEnabled = true
+			service.ServicesNetworkEnabled = false
+		default:
+			service.NeedsKeys = false
+			service.Executable = "/opt/orbs/service"
+			service.SignerNetworkEnabled = false
+			service.ServicesNetworkEnabled = true
+		}
+	}
+
+	return c
 }

@@ -69,10 +69,10 @@ func getNginxCompositeConfig(cfg config.NodeConfiguration) *UpdateReverseProxyIn
 }
 
 func getReverseProxyServices(cfg config.NodeConfiguration) (services []adapter.ReverseProxyConfigService) {
-	for serviceConfig, _ := range cfg.Services().AsMap() {
+	for serviceName, _ := range cfg.Services() {
 		services = append(services, adapter.ReverseProxyConfigService{
-			Name:        serviceConfig.Name,
-			ServiceName: cfg.NamespacedContainerName(serviceConfig.Name),
+			Name:        serviceName,
+			ServiceName: cfg.NamespacedContainerName(serviceName),
 		})
 	}
 

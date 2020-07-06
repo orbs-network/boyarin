@@ -29,7 +29,6 @@ type NodeConfiguration interface {
 type MutableNodeConfiguration interface {
 	NodeConfiguration
 
-	SetFederationNodes(federationNodes []*FederationNode) MutableNodeConfiguration // FIXME remove
 	SetEthereumEndpoint(ethereumEndpoint string) MutableNodeConfiguration
 	SetOrchestratorOptions(options adapter.OrchestratorOptions) MutableNodeConfiguration
 	SetSSLOptions(options adapter.SSLOptions) MutableNodeConfiguration
@@ -78,11 +77,6 @@ func (c *nodeConfigurationContainer) OrchestratorOptions() adapter.OrchestratorO
 
 func (c *nodeConfigurationContainer) SSLOptions() adapter.SSLOptions {
 	return c.sslOptions
-}
-
-func (c *nodeConfigurationContainer) SetFederationNodes(federationNodes []*FederationNode) MutableNodeConfiguration {
-	c.value.FederationNodes = federationNodes
-	return c
 }
 
 // FIXME should add more checks

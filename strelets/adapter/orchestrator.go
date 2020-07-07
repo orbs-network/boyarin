@@ -24,15 +24,15 @@ type ServiceConfig struct {
 	Name        string
 
 	// common
-	ImageName     string
-	ContainerName string
-	Executable    string
+	ImageName      string
+	ContainerName  string
+	ExecutablePath string
 
 	InternalPort int
 	ExternalPort int
 
-	SignerNetworkEnabled    bool
-	ServicesNetworkEnabled  bool
+	AllowAccessToSigner     bool
+	AllowAccessToServices   bool
 	HTTPProxyNetworkEnabled bool
 
 	LimitedMemory  int64

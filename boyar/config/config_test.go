@@ -76,9 +76,9 @@ func Test_StringConfigurationSourceWithSigner(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NotNil(t, source.Services())
-	require.NotNil(t, source.Services().Signer)
-	require.NotNil(t, source.Services().Signer.DockerConfig)
-	require.NotNil(t, source.Services().Signer.Config)
+	require.NotNil(t, source.Services().Signer())
+	require.NotNil(t, source.Services().Signer().DockerConfig)
+	require.NotNil(t, source.Services().Signer().Config)
 
 	require.Equal(t, "http://signer:7777", source.Chains()[0].Config["signer-endpoint"])
 }
@@ -88,9 +88,35 @@ func Test_StringConfigurationSourceWithSignerWithNamespace(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NotNil(t, source.Services())
-	require.NotNil(t, source.Services().Signer)
-	require.NotNil(t, source.Services().Signer.DockerConfig)
-	require.NotNil(t, source.Services().Signer.Config)
+	require.NotNil(t, source.Services().Signer())
+	require.NotNil(t, source.Services().Signer().DockerConfig)
+	require.NotNil(t, source.Services().Signer().Config)
 
 	require.Equal(t, "http://cfc9e5-signer:7777", source.Chains()[0].Config["signer-endpoint"])
+}
+
+func Test_StringConfigurationSourceWithCustomService(t *testing.T) {
+	source, err := NewStringConfigurationSource(getTestJSONConfig(), "http://some.ethereum.node", fakeKeyPair, false)
+	require.NoError(t, err)
+
+	require.NotNil(t, source.Services())
+	signer := source.Services().Signer()
+	require.NotNil(t, signer)
+	require.NotNil(t, signer.DockerConfig)
+	require.NotNil(t, signer.Config)
+
+	require.True(t, signer.AllowAccessToSigner)
+	require.False(t, signer.AllowAccessToServices)
+	require.EqualValues(t, "/opt/orbs/orbs-signer", signer.ExecutablePath)
+
+	require.Equal(t, "http://signer:7777", source.Chains()[0].Config["signer-endpoint"])
+
+	customService := source.Services()["service-name"]
+	require.NotNil(t, customService)
+	require.NotNil(t, customService.Config)
+	require.NotNil(t, customService.DockerConfig)
+
+	require.False(t, customService.AllowAccessToSigner)
+	require.True(t, customService.AllowAccessToServices)
+	require.EqualValues(t, "/opt/orbs/service", customService.ExecutablePath)
 }

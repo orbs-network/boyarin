@@ -82,6 +82,17 @@
       "Config": {
         "api": "v1"
       }
+    },
+    "service-name": {
+      "InternalPort": 8080,
+      "ExternalPort": 2000,
+      "DockerConfig": {
+        "Image": "orbsnetwork/service-name",
+        "Tag": "latest",
+        "Pull": false
+      },
+      "Config": {
+      }
     }
   }
 }

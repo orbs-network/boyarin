@@ -36,8 +36,6 @@ func TestE2ERunSingleVirtualChain(t *testing.T) {
 			AssertVolumeExists(t, ctx, "cfc9e5-signer-cache")
 			AssertVolumeExists(t, ctx, "cfc9e5-signer-logs")
 			AssertVolumeExists(t, ctx, "cfc9e5-signer-status")
-			AssertVolumeExists(t, ctx, "cfc9e5-management-service-logs")
-			AssertVolumeExists(t, ctx, "cfc9e5-management-service-status")
 		})
 
 		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
@@ -72,41 +70,6 @@ func TestE2ERunMultipleVirtualChains(t *testing.T) {
 		waiter = InProcessBoyar(t, ctx, logger, flags)
 
 		helpers.RequireEventually(t, 40*time.Second, func(t helpers.TestingT) {
-			AssertVchainUp(t, 80, PublicKey, vc1)
-			AssertVchainUp(t, 80, PublicKey, vc2)
-		})
-		return
-	})
-}
-
-func TestE2EAddVirtualChain(t *testing.T) {
-	helpers.SkipUnlessSwarmIsEnabled(t)
-
-	vc1 := VChainArgument{Id: 42}
-	vc2 := VChainArgument{Id: 45}
-	helpers.WithContextAndShutdown(func(ctx context.Context) (waiter govnr.ShutdownWaiter) {
-		logger := log.GetLogger()
-		helpers.InitSwarmEnvironment(t, ctx)
-		keys := KeyConfig{
-			NodeAddress:    PublicKey,
-			NodePrivateKey: PrivateKey,
-		}
-		vChainsChannel := make(chan []VChainArgument)
-		defer close(vChainsChannel)
-
-		flags, cleanup := SetupDynamicBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), vChainsChannel)
-		defer cleanup()
-		waiter = InProcessBoyar(t, ctx, logger, flags)
-
-		logger.Info(fmt.Sprintf("adding vchain %d", vc1.Id))
-		vChainsChannel <- []VChainArgument{vc1}
-		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
-			AssertVchainUp(t, 80, PublicKey, vc1)
-		})
-
-		logger.Info(fmt.Sprintf("adding vchain %d", vc2.Id))
-		vChainsChannel <- []VChainArgument{vc1, vc2}
-		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
 			AssertVchainUp(t, 80, PublicKey, vc1)
 			AssertVchainUp(t, 80, PublicKey, vc2)
 		})

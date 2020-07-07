@@ -17,8 +17,8 @@ func (b *boyar) ProvisionServices(ctx context.Context) error {
 	}
 
 	var errors []error
-	for serviceCfg, service := range b.config.Services().AsMap() {
-		if err := b.provisionService(ctx, serviceCfg, service); err != nil {
+	for serviceName, service := range b.config.Services() {
+		if err := b.provisionService(ctx, serviceName, service); err != nil {
 			errors = append(errors, err)
 		}
 	}
@@ -26,14 +26,14 @@ func (b *boyar) ProvisionServices(ctx context.Context) error {
 	return utils.AggregateErrors(errors)
 }
 
-func (b *boyar) provisionService(ctx context.Context, cfg config.ServiceConfig, service *config.Service) error {
-	if b.cache.services.CheckNewJsonValue(cfg.Name, service) {
+func (b *boyar) provisionService(ctx context.Context, serviceName string, service *config.Service) error {
+	if b.cache.services.CheckNewJsonValue(serviceName, service) {
 		if service != nil {
-			fullServiceName := b.config.NamespacedContainerName(cfg.Name)
+			fullServiceName := b.config.NamespacedContainerName(serviceName)
 			imageName := service.DockerConfig.FullImageName()
 
 			if service.Disabled {
-				return fmt.Errorf("service %s is disabled even though it should not be, ignored", cfg.Name)
+				return fmt.Errorf("service %s is disabled even though it should not be, ignored", serviceName)
 			}
 
 			if service.DockerConfig.Pull {
@@ -45,15 +45,15 @@ func (b *boyar) provisionService(ctx context.Context, cfg config.ServiceConfig, 
 			serviceConfig := &adapter.ServiceConfig{
 				NodeAddress: string(b.config.NodeAddress()),
 
-				ImageName:     imageName,
-				Name:          cfg.Name,
-				ContainerName: fullServiceName,
-				Executable:    cfg.Executable,
-				InternalPort:  service.InternalPort,
-				ExternalPort:  service.ExternalPort,
+				ImageName:      imageName,
+				Name:           serviceName,
+				ContainerName:  fullServiceName,
+				ExecutablePath: service.ExecutablePath,
+				InternalPort:   service.InternalPort,
+				ExternalPort:   service.ExternalPort,
 
-				SignerNetworkEnabled:   cfg.SignerNetworkEnabled,
-				ServicesNetworkEnabled: cfg.ServicesNetworkEnabled,
+				AllowAccessToSigner:   service.AllowAccessToSigner,
+				AllowAccessToServices: service.AllowAccessToServices,
 
 				LimitedMemory:  service.DockerConfig.Resources.Limits.Memory,
 				LimitedCPU:     service.DockerConfig.Resources.Limits.CPUs,
@@ -63,17 +63,17 @@ func (b *boyar) provisionService(ctx context.Context, cfg config.ServiceConfig, 
 
 			jsonConfig, _ := json.Marshal(service.Config)
 
-			var keyPairConfigJSON = getKeyConfigJson(b.config, !cfg.NeedsKeys)
+			var keyPairConfigJSON = getKeyConfigJson(b.config, !service.InjectNodePrivateKey)
 			appConfig := &adapter.AppConfig{
 				KeyPair: keyPairConfigJSON,
 				Config:  jsonConfig,
 			}
 
 			if err := b.orchestrator.RunService(ctx, serviceConfig, appConfig); err == nil {
-				b.logger.Info("updated service configuration", log.Service(cfg.Name))
+				b.logger.Info("updated service configuration", log.Service(serviceName))
 			} else {
-				b.logger.Error("failed to update service configuration", log.Service(cfg.Name), log.Error(err))
-				b.cache.services.Clear(cfg.Name)
+				b.logger.Error("failed to update service configuration", log.Service(serviceName), log.Error(err))
+				b.cache.services.Clear(serviceName)
 				return err
 			}
 		}

@@ -14,7 +14,7 @@ func (d *dockerSwarmOrchestrator) RunVirtualChain(ctx context.Context, serviceCo
 	}
 
 	var networks []swarm.NetworkAttachmentConfig
-	if serviceConfig.SignerNetworkEnabled {
+	if serviceConfig.AllowAccessToSigner {
 		signerNetwork, err := d.getNetwork(ctx, SHARED_SIGNER_NETWORK)
 		if err != nil {
 			return err
@@ -32,7 +32,7 @@ func (d *dockerSwarmOrchestrator) RunVirtualChain(ctx context.Context, serviceCo
 		networks = append(networks, proxyNetwork)
 	}
 
-	if serviceConfig.ServicesNetworkEnabled {
+	if serviceConfig.AllowAccessToServices {
 		servicesNetwork, err := d.getNetwork(ctx, SHARED_SERVICES_NETWORK)
 		if err != nil {
 			return err

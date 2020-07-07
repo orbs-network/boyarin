@@ -6,43 +6,22 @@ type Service struct {
 	DockerConfig DockerConfig
 	Config       map[string]interface{}
 	Disabled     bool
+
+	InjectNodePrivateKey  bool
+	ExecutablePath        string
+	AllowAccessToSigner   bool
+	AllowAccessToServices bool
 }
 
-type Services struct {
-	Signer     *Service `json:"signer"`
-	Management *Service `json:"management-service"`
+type Services map[string]*Service
+
+func (s Services) Signer() *Service {
+	return s["signer"]
+}
+
+func (s Services) Management() *Service {
+	return s["management-service"]
 }
 
 const SIGNER = "signer"
 const MANAGEMENT = "management-service"
-
-var SIGNER_SERVICE_CONFIG = ServiceConfig{
-	Name:                   SIGNER,
-	NeedsKeys:              true,
-	Executable:             "/opt/orbs/orbs-signer",
-	SignerNetworkEnabled:   true,
-	ServicesNetworkEnabled: false,
-}
-
-var CONFIG_SERVICE_CONFIG = ServiceConfig{
-	Name:                   MANAGEMENT,
-	NeedsKeys:              false,
-	Executable:             "/opt/orbs/service",
-	SignerNetworkEnabled:   false,
-	ServicesNetworkEnabled: true,
-}
-
-func (s Services) AsMap() map[ServiceConfig]*Service {
-	return map[ServiceConfig]*Service{
-		SIGNER_SERVICE_CONFIG: s.Signer,
-		CONFIG_SERVICE_CONFIG: s.Management,
-	}
-}
-
-type ServiceConfig struct {
-	Name                   string
-	NeedsKeys              bool
-	Executable             string
-	SignerNetworkEnabled   bool
-	ServicesNetworkEnabled bool
-}

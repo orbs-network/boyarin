@@ -18,6 +18,7 @@ func parseStringConfig(jsonInput string, ethereumEndpoint string, keyConfigPath 
 
 	cfg.SetEthereumEndpoint(ethereumEndpoint)
 	cfg.SetSignerEndpoint()
+	cfg.UpdateDefaultServiceConfig()
 
 	return cfg, nil
 }

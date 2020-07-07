@@ -29,10 +29,10 @@ type NodeConfiguration interface {
 type MutableNodeConfiguration interface {
 	NodeConfiguration
 
-	SetFederationNodes(federationNodes []*FederationNode) MutableNodeConfiguration
 	SetEthereumEndpoint(ethereumEndpoint string) MutableNodeConfiguration
 	SetOrchestratorOptions(options adapter.OrchestratorOptions) MutableNodeConfiguration
 	SetSSLOptions(options adapter.SSLOptions) MutableNodeConfiguration
+	UpdateDefaultServiceConfig() MutableNodeConfiguration
 }
 
 type nodeConfiguration struct {
@@ -79,11 +79,6 @@ func (c *nodeConfigurationContainer) SSLOptions() adapter.SSLOptions {
 	return c.sslOptions
 }
 
-func (c *nodeConfigurationContainer) SetFederationNodes(federationNodes []*FederationNode) MutableNodeConfiguration {
-	c.value.FederationNodes = federationNodes
-	return c
-}
-
 // FIXME should add more checks
 func (c *nodeConfigurationContainer) VerifyConfig() error {
 	_, err := c.readKeysConfig()
@@ -123,7 +118,7 @@ func (c *nodeConfigurationContainer) SetSSLOptions(options adapter.SSLOptions) M
 }
 
 func (c *nodeConfigurationContainer) SetSignerEndpoint() {
-	if signer := c.Services().Signer; signer != nil { // FIXME this should become mandatory
+	if signer := c.Services().Signer(); signer != nil { // FIXME this should become mandatory
 		value := fmt.Sprintf("http://%s:%d", c.NamespacedContainerName(SIGNER), signer.InternalPort)
 		c.value.overrideValues("signer-endpoint", value)
 	}
@@ -143,4 +138,25 @@ func (c *nodeConfigurationContainer) NamespacedContainerName(name string) string
 	}
 
 	return name
+}
+
+func (c *nodeConfigurationContainer) UpdateDefaultServiceConfig() MutableNodeConfiguration {
+	// this is compatibility layer that provides defaults for the signer and management service
+	// the management service can produce any configuration it desires and override these values if necessary
+
+	for serviceName, service := range c.Services() {
+		switch serviceName {
+		case SIGNER:
+			service.ExecutablePath = "/opt/orbs/orbs-signer" // FIXME remove after new version of signer is released
+			service.InjectNodePrivateKey = true
+			service.AllowAccessToSigner = true
+			service.AllowAccessToServices = false
+		default:
+			service.InjectNodePrivateKey = false
+			service.ExecutablePath = "/opt/orbs/service"
+			service.AllowAccessToServices = true
+		}
+	}
+
+	return c
 }

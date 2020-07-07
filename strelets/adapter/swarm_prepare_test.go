@@ -40,10 +40,8 @@ func Test_getVirtualChainServiceSpec(t *testing.T) {
 		ContainerSpec: &swarm.ContainerSpec{
 			Image: "orbsnetwork/node:experimental",
 			Command: []string{
-				"/opt/orbs/orbs-node",
-				"--silent",
-				"--log", "/opt/orbs/logs/current",
-				"--config", "/var/run/secrets/some-secret.json",
+				"/opt/orbs/service",
+				"--config", "/run/secrets/some-secret.json",
 			},
 			Secrets: secrets,
 			Sysctls: GetSysctls(),

@@ -89,26 +89,6 @@ func getSecretReference(containerName string, secretId string, secretName string
 	}
 }
 
-func getContainerSpec(imageName string, secrets []*swarm.SecretReference, mounts []mount.Mount) *swarm.ContainerSpec {
-	command := []string{
-		"/opt/orbs/orbs-node",
-		"--silent",
-		"--log", "/opt/orbs/logs/current",
-	}
-
-	for _, secret := range secrets {
-		command = append(command, "--config", "/var/run/secrets/"+secret.File.Name)
-	}
-
-	return &swarm.ContainerSpec{
-		Image:   imageName,
-		Command: command,
-		Secrets: secrets,
-		Sysctls: GetSysctls(),
-		Mounts:  mounts,
-	}
-}
-
 func getServiceMode(replicas uint64) swarm.ServiceMode {
 	return swarm.ServiceMode{
 		Replicated: &swarm.ReplicatedService{
@@ -148,7 +128,7 @@ func getVirtualChainServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.S
 
 	spec := swarm.ServiceSpec{
 		TaskTemplate: swarm.TaskSpec{
-			ContainerSpec: getContainerSpec(serviceConfig.ImageName, secrets, mounts),
+			ContainerSpec: getServiceContainerSpec(serviceConfig.ImageName, serviceConfig.ExecutablePath, secrets, mounts),
 			RestartPolicy: &swarm.RestartPolicy{
 				Delay: &restartDelay,
 			},

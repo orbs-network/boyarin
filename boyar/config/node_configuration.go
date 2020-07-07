@@ -154,7 +154,6 @@ func (c *nodeConfigurationContainer) UpdateDefaultServiceConfig() MutableNodeCon
 		default:
 			service.InjectNodePrivateKey = false
 			service.ExecutablePath = "/opt/orbs/service"
-			service.AllowAccessToSigner = false
 			service.AllowAccessToServices = true
 		}
 	}

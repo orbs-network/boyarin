@@ -105,9 +105,9 @@ func Test_StringConfigurationSourceWithCustomService(t *testing.T) {
 	require.NotNil(t, signer.DockerConfig)
 	require.NotNil(t, signer.Config)
 
-	require.True(t, signer.SignerNetworkEnabled)
-	require.False(t, signer.ServicesNetworkEnabled)
-	require.EqualValues(t, "/opt/orbs/orbs-signer", signer.Executable)
+	require.True(t, signer.AllowAccessToSigner)
+	require.False(t, signer.AllowAccessToServices)
+	require.EqualValues(t, "/opt/orbs/orbs-signer", signer.ExecutablePath)
 
 	require.Equal(t, "http://signer:7777", source.Chains()[0].Config["signer-endpoint"])
 
@@ -116,7 +116,7 @@ func Test_StringConfigurationSourceWithCustomService(t *testing.T) {
 	require.NotNil(t, customService.Config)
 	require.NotNil(t, customService.DockerConfig)
 
-	require.False(t, customService.SignerNetworkEnabled)
-	require.True(t, customService.ServicesNetworkEnabled)
-	require.EqualValues(t, "/opt/orbs/service", customService.Executable)
+	require.False(t, customService.AllowAccessToSigner)
+	require.True(t, customService.AllowAccessToServices)
+	require.EqualValues(t, "/opt/orbs/service", customService.ExecutablePath)
 }

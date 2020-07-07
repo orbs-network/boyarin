@@ -147,15 +147,15 @@ func (c *nodeConfigurationContainer) UpdateDefaultServiceConfig() MutableNodeCon
 	for serviceName, service := range c.Services() {
 		switch serviceName {
 		case SIGNER:
-			service.Executable = "/opt/orbs/orbs-signer" // FIXME remove after new version of signer is released
-			service.NeedsKeys = true
-			service.SignerNetworkEnabled = true
-			service.ServicesNetworkEnabled = false
+			service.ExecutablePath = "/opt/orbs/orbs-signer" // FIXME remove after new version of signer is released
+			service.InjectNodePrivateKey = true
+			service.AllowAccessToSigner = true
+			service.AllowAccessToServices = false
 		default:
-			service.NeedsKeys = false
-			service.Executable = "/opt/orbs/service"
-			service.SignerNetworkEnabled = false
-			service.ServicesNetworkEnabled = true
+			service.InjectNodePrivateKey = false
+			service.ExecutablePath = "/opt/orbs/service"
+			service.AllowAccessToSigner = false
+			service.AllowAccessToServices = true
 		}
 	}
 

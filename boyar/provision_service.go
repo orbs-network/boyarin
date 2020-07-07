@@ -45,15 +45,15 @@ func (b *boyar) provisionService(ctx context.Context, serviceName string, servic
 			serviceConfig := &adapter.ServiceConfig{
 				NodeAddress: string(b.config.NodeAddress()),
 
-				ImageName:     imageName,
-				Name:          serviceName,
-				ContainerName: fullServiceName,
-				Executable:    service.Executable,
-				InternalPort:  service.InternalPort,
-				ExternalPort:  service.ExternalPort,
+				ImageName:      imageName,
+				Name:           serviceName,
+				ContainerName:  fullServiceName,
+				ExecutablePath: service.ExecutablePath,
+				InternalPort:   service.InternalPort,
+				ExternalPort:   service.ExternalPort,
 
-				SignerNetworkEnabled:   service.SignerNetworkEnabled,
-				ServicesNetworkEnabled: service.ServicesNetworkEnabled,
+				AllowAccessToSigner:   service.AllowAccessToSigner,
+				AllowAccessToServices: service.AllowAccessToServices,
 
 				LimitedMemory:  service.DockerConfig.Resources.Limits.Memory,
 				LimitedCPU:     service.DockerConfig.Resources.Limits.CPUs,
@@ -63,7 +63,7 @@ func (b *boyar) provisionService(ctx context.Context, serviceName string, servic
 
 			jsonConfig, _ := json.Marshal(service.Config)
 
-			var keyPairConfigJSON = getKeyConfigJson(b.config, !service.NeedsKeys)
+			var keyPairConfigJSON = getKeyConfigJson(b.config, !service.InjectNodePrivateKey)
 			appConfig := &adapter.AppConfig{
 				KeyPair: keyPairConfigJSON,
 				Config:  jsonConfig,

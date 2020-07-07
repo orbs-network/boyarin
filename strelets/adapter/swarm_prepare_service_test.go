@@ -18,9 +18,9 @@ func Test_getServiceSpec(t *testing.T) {
 	replicas := uint64(1)
 
 	serviceConfig := &ServiceConfig{
-		ImageName:     "orbs:signer",
-		ContainerName: containerName,
-		Executable:    "/opt/orbs/orbs-signer",
+		ImageName:      "orbs:signer",
+		ContainerName:  containerName,
+		ExecutablePath: "/opt/orbs/orbs-signer",
 	}
 
 	networkConfig := []swarm.NetworkAttachmentConfig{

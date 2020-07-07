@@ -14,7 +14,7 @@ func (d *dockerSwarmOrchestrator) RunService(ctx context.Context, serviceConfig 
 	}
 
 	var networks []swarm.NetworkAttachmentConfig
-	if serviceConfig.SignerNetworkEnabled {
+	if serviceConfig.AllowAccessToSigner {
 		signerNetwork, err := d.getNetwork(ctx, SHARED_SIGNER_NETWORK)
 		if err != nil {
 			return err
@@ -23,7 +23,7 @@ func (d *dockerSwarmOrchestrator) RunService(ctx context.Context, serviceConfig 
 		networks = append(networks, signerNetwork)
 	}
 
-	if serviceConfig.ServicesNetworkEnabled {
+	if serviceConfig.AllowAccessToServices {
 		servicesNetwork, err := d.getNetwork(ctx, SHARED_SERVICES_NETWORK)
 		if err != nil {
 			return err
@@ -94,7 +94,7 @@ func getServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.SecretReferen
 
 	spec := swarm.ServiceSpec{
 		TaskTemplate: swarm.TaskSpec{
-			ContainerSpec: getServiceContainerSpec(serviceConfig.ImageName, serviceConfig.Executable, secrets, mounts),
+			ContainerSpec: getServiceContainerSpec(serviceConfig.ImageName, serviceConfig.ExecutablePath, secrets, mounts),
 			RestartPolicy: &swarm.RestartPolicy{
 				Delay: &restartDelay,
 			},

@@ -7,10 +7,10 @@ type Service struct {
 	Config       map[string]interface{}
 	Disabled     bool
 
-	NeedsKeys              bool
-	Executable             string
-	SignerNetworkEnabled   bool
-	ServicesNetworkEnabled bool
+	InjectNodePrivateKey  bool
+	ExecutablePath        string
+	AllowAccessToSigner   bool
+	AllowAccessToServices bool
 }
 
 type Services map[string]*Service

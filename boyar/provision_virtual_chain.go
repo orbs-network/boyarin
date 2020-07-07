@@ -55,9 +55,9 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 					InternalPort:  chain.InternalPort,
 					ExternalPort:  chain.ExternalPort,
 
-					SignerNetworkEnabled:    true,
+					AllowAccessToSigner:     true,
 					HTTPProxyNetworkEnabled: true,
-					ServicesNetworkEnabled:  true,
+					AllowAccessToServices:   true,
 
 					LimitedMemory:  chain.DockerConfig.Resources.Limits.Memory,
 					LimitedCPU:     chain.DockerConfig.Resources.Limits.CPUs,

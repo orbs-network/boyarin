@@ -153,10 +153,10 @@ If both these parameters are present, the node will also start service SSL traff
     "service-name": {
       "InternalPort": 8080,
       "ExternalPort": 2000,
-      "NeedsKeys": false, // should pass the keys as a file; **never** set it to true, default false (optional)
-      "Executable": "/opt/orbs/service", // default (optional)
-      "SignerNetworkEnabled": false, // should be able communicate with the signer service, default false (optional)
-      "ServicesNetworkEnabled": true, // should be able to communicate with other services, default true (optional)
+      "InjectNodePrivateKey": false, // should pass private key as a file; **never** set it to true, default false (optional)
+      "ExecutablePath": "/opt/orbs/service", // default (optional)
+      "AllowAccessToSigner": false, // should be able communicate with the signer service, default false (optional)
+      "AllowAccessToServices": true, // should be able to communicate with other services, default true (optional)
 
       "DockerConfig": {
         "Image": "orbsnetwork/service-name",

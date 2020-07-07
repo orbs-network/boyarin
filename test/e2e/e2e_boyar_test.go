@@ -46,6 +46,7 @@ func TestE2ERunSingleVirtualChain(t *testing.T) {
 			AssertVchainLogsExist(t, 80, vc1)
 
 			AssertServiceStatusExists(t, 80, "signer")
+			AssertServiceLogsExist(t, 80, "signer")
 		})
 
 		return

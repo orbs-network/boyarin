@@ -123,7 +123,13 @@ func getServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.SecretReferen
 	return spec
 }
 
+const SERVICE_EXECUTABLE_PATH = "/opt/orbs/service"
+
 func getServiceContainerSpec(imageName string, executable string, secrets []*swarm.SecretReference, mounts []mount.Mount) *swarm.ContainerSpec {
+	if executable == "" {
+		executable = SERVICE_EXECUTABLE_PATH
+	}
+
 	command := []string{
 		executable,
 	}

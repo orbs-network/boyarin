@@ -111,7 +111,7 @@ func Test_StringConfigurationSourceWithCustomService(t *testing.T) {
 
 	require.Equal(t, "http://signer:7777", source.Chains()[0].Config["signer-endpoint"])
 
-	customService := source.Services()["custom-service"]
+	customService := source.Services()["service-name"]
 	require.NotNil(t, customService)
 	require.NotNil(t, customService.Config)
 	require.NotNil(t, customService.DockerConfig)

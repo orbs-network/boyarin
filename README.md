@@ -150,7 +150,7 @@ If both these parameters are present, the node will also start service SSL traff
         "api": "v1"
       }
     },
-    "custom-service": {
+    "service-name": {
       "InternalPort": 8080,
       "ExternalPort": 2000,
       "NeedsKeys": false, // should pass the keys as a file; **never** set it to true, default false (optional)
@@ -159,7 +159,7 @@ If both these parameters are present, the node will also start service SSL traff
       "ServicesNetworkEnabled": true, // should be able to communicate with other services, default true (optional)
 
       "DockerConfig": {
-        "Image": "orbsnetwork/custom-service",
+        "Image": "orbsnetwork/service-name",
         "Tag": "latest",
         "Pull": false
       },

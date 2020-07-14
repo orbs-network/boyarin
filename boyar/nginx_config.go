@@ -36,6 +36,8 @@ type nginxTemplateParams struct {
 	SslEnabled bool
 }
 
+const BOYAR_SERVICE = "boyar"
+
 func getNginxConfig(cfg config.NodeConfiguration) string {
 	var sb strings.Builder
 	var TplNginxConf = template.Must(template.New("").Funcs(template.FuncMap{
@@ -46,10 +48,6 @@ location ~^/$ { return 200 '{{DefaultResponse "OK"}}'; }
 location / { error_page 404 = @error404; }
 location @error404 { return 404 '{{DefaultResponse "Not found"}}'; }
 location @error502 { return 502 '{{DefaultResponse "Bad gateway"}}'; }
-location ~ ^/boyar/logs {
-	alias /opt/orbs/logs/boyar/current;
-	access_log off;
-}
 {{- range .Chains }}
 set $vc{{.Id}} {{.ServiceId}};
 location ~ ^/vchains/{{.Id}}/logs {
@@ -115,6 +113,13 @@ ssl_certificate_key /var/run/secrets/ssl-key;
 			StatusVolume: adapter.GetNginxStatusMountPath(serviceName),
 		})
 	}
+
+	// special case to pass boyar logs from the outside
+	services = append(services, nginxTemplateServiceParams{
+		ServiceId:    BOYAR_SERVICE,
+		LogsVolume:   adapter.GetNginxLogsMountPath(BOYAR_SERVICE),
+		StatusVolume: adapter.GetNginxStatusMountPath(BOYAR_SERVICE),
+	})
 
 	sort.Slice(services, func(i, j int) bool {
 		return services[i].ServiceId < services[j].ServiceId

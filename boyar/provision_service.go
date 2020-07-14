@@ -70,7 +70,8 @@ func (b *boyar) provisionService(ctx context.Context, serviceName string, servic
 			}
 
 			if err := b.orchestrator.RunService(ctx, serviceConfig, appConfig); err == nil {
-				b.logger.Info("updated service configuration", log.Service(serviceName))
+				data, _ := json.Marshal(serviceConfig)
+				b.logger.Info("updated service configuration", log.Service(serviceName), log.String("configuration", string(data)))
 			} else {
 				b.logger.Error("failed to update service configuration", log.Service(serviceName), log.Error(err))
 				b.cache.services.Clear(serviceName)

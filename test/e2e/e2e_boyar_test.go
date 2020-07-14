@@ -36,6 +36,9 @@ func TestE2ERunSingleVirtualChain(t *testing.T) {
 			AssertVolumeExists(t, ctx, "cfc9e5-signer-cache")
 			AssertVolumeExists(t, ctx, "cfc9e5-signer-logs")
 			AssertVolumeExists(t, ctx, "cfc9e5-signer-status")
+
+			AssertVolumeExists(t, ctx, "boyar-logs")
+			AssertVolumeExists(t, ctx, "boyar-status")
 		})
 
 		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {

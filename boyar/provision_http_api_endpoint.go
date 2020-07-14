@@ -84,5 +84,11 @@ func getReverseProxyServices(cfg config.NodeConfiguration) (services []adapter.R
 		})
 	}
 
+	// special case to pass boyar logs from the outside	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     \'
+	services = append(services, adapter.ReverseProxyConfigService{
+		Name:        BOYAR_SERVICE,
+		ServiceName: BOYAR_SERVICE,
+	})
+
 	return
 }

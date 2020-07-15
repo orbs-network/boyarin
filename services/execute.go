@@ -19,7 +19,7 @@ func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) (govnr
 	}
 
 	supervisor := &govnr.TreeSupervisor{}
-	supervisor.Supervise(WatchAndReportServicesStatus(ctx, logger))
+	supervisor.Supervise(WatchAndReportServicesStatus(ctx, logger, flags.StatusFilePath))
 
 	cfgFetcher := NewConfigurationPollService(flags, logger)
 	coreBoyar := NewCoreBoyarService(logger)

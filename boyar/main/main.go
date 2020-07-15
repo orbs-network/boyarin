@@ -30,6 +30,8 @@ func main() {
 	loggerHttpEndpointPtr := flag.String("logger-http-endpoint", "", "Logz.io http endpoint")
 	logFilePath := flag.String("log", "", "path to log file")
 
+	statusFilePath := flag.String("status", "", "path to status file")
+
 	orchestratorOptionsPtr := flag.String("orchestrator-options", "", "allows to override `orchestrator` section of boyar config, takes JSON object as a parameter")
 
 	sslCertificatePathPtr := flag.String("ssl-certificate", "", "SSL certificate")
@@ -53,6 +55,7 @@ func main() {
 		ConfigUrl:           *configUrlPtr,
 		KeyPairConfigPath:   *keyPairConfigPathPtr,
 		LogFilePath:         *logFilePath,
+		StatusFilePath:      *statusFilePath,
 		PollingInterval:     *pollingIntervalPtr,
 		Timeout:             *timeoutPtr,
 		MaxReloadTimeDelay:  *maxReloadTimePtr,

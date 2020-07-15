@@ -37,6 +37,8 @@ In case you ever need to regenerate the SSL certificate:
 
 `--log` path to log file, otherwise will log to stdout
 
+`--status` path to status file
+
 `--config-url` path to Boyar configuration
 
 `--ethereum-endpoint` HTTP endpoint for the Ethereum node

@@ -22,7 +22,7 @@ func TestBoyar_ProvisionHttpAPIEndpointWithNoConfigChanges(t *testing.T) {
 	require.NoError(t, err)
 	orchestrator.AssertExpectations(t)
 
-	require.False(t, cache.nginx.CheckNewJsonValue(getNginxCompositeConfig(cfg)))
+	require.False(t, cache.nginx.CheckNewJsonValue(getNginxConfig(cfg)))
 
 	err = b.ProvisionHttpAPIEndpoint(context.Background())
 	require.NoError(t, err)
@@ -42,10 +42,10 @@ func TestBoyar_ProvisionHttpAPIEndpointReprovisionsIfConfigChanges(t *testing.T)
 	require.NoError(t, err)
 	orchestrator.AssertExpectations(t)
 
-	require.False(t, cache.nginx.CheckNewJsonValue(getNginxCompositeConfig(cfg)))
+	require.False(t, cache.nginx.CheckNewJsonValue(getNginxConfig(cfg)))
 
 	orchestrator.On("RunReverseProxy", mock.Anything, mock.Anything).Return(nil).Once()
-	cfg.Chains()[0].InternalHttpPort = 9125
+	cfg.Chains()[0].Id = 9125
 
 	err = b.ProvisionHttpAPIEndpoint(context.Background())
 	require.NoError(t, err)

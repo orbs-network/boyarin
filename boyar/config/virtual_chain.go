@@ -12,7 +12,7 @@ type VirtualChainId uint32
 type VirtualChain struct {
 	Service
 	Id               VirtualChainId
-	InternalHttpPort int
+	InternalHttpPort int // FIXME should be deprecated as vchain specific
 }
 
 type VirtualChainConfig struct {

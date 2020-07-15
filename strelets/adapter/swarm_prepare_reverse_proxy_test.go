@@ -56,6 +56,16 @@ func Test_getNginxServiceSpec(t *testing.T) {
 			Condition: "",
 			Delay:     &restartDelay,
 		},
+		Resources: &swarm.ResourceRequirements{
+			Limits: &swarm.Resources{
+				NanoCPUs:    1000000000,
+				MemoryBytes: 536870912,
+			},
+			Reservations: &swarm.Resources{
+				NanoCPUs:    0,
+				MemoryBytes: 0,
+			},
+		},
 	}, spec.TaskTemplate)
 
 	require.EqualValues(t, spec.EndpointSpec, &swarm.EndpointSpec{

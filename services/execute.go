@@ -19,7 +19,12 @@ func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) (govnr
 	}
 
 	supervisor := &govnr.TreeSupervisor{}
-	supervisor.Supervise(WatchAndReportServicesStatus(ctx, logger, flags.StatusFilePath))
+
+	if flags.StatusFilePath == "" {
+		logger.Info("status file path is empty, docker service report disabled")
+	} else {
+		supervisor.Supervise(WatchAndReportServicesStatus(ctx, logger, flags.StatusFilePath))
+	}
 
 	cfgFetcher := NewConfigurationPollService(flags, logger)
 	coreBoyar := NewCoreBoyarService(logger)

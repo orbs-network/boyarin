@@ -16,11 +16,6 @@ const SERVICE_STATUS_REPORT_PERIOD = 30 * time.Second
 const SERVICE_STATUS_REPORT_TIMEOUT = 15 * time.Second
 
 func WatchAndReportServicesStatus(ctx context.Context, logger log.Logger, statusFilePath string) govnr.ShutdownWaiter {
-	if statusFilePath == "" {
-		logger.Info("status file path is empty, docker service report disabled")
-		return nil
-	}
-
 	errorHandler := utils.NewLogErrors("service status reporter", logger)
 	return govnr.Forever(ctx, "service status reporter", errorHandler, func() {
 		start := time.Now()

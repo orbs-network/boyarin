@@ -124,6 +124,7 @@ func getNginxServiceSpec(namespace string, httpPort uint32, sslPort uint32, stor
 				Sysctls: GetSysctls(),
 				Mounts:  mounts,
 			},
+			Resources: getResourceRequirements(512, 1, 0, 0), // 512 mb, 1 cpu max
 			RestartPolicy: &swarm.RestartPolicy{
 				Delay: &restartDelay,
 			},

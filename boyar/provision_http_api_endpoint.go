@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/strelets/adapter"
-	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/orbs-network/scribe/log"
 	"io/ioutil"
 )
@@ -13,11 +12,10 @@ import (
 func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
 	b.nginxLock.Lock()
 	defer b.nginxLock.Unlock()
-	// TODO is there a better way to get a loopback interface?
-	nginxConfig := getNginxCompositeConfig(b.config)
 
-	if b.cache.nginx.CheckNewJsonValue(nginxConfig) {
-		sslEnabled := nginxConfig.SSLOptions.SSLCertificatePath != "" && nginxConfig.SSLOptions.SSLPrivateKeyPath != ""
+	if b.cache.nginx.CheckNewJsonValue(getNginxConfig(b.config)) {
+		sslOptions := b.config.SSLOptions()
+		sslEnabled := sslOptions.SSLCertificatePath != "" && sslOptions.SSLPrivateKeyPath != ""
 
 		config := &adapter.ReverseProxyConfig{
 			ContainerName: b.config.NamespacedContainerName(adapter.PROXY_CONTAINER_NAME),
@@ -29,14 +27,14 @@ func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
 		}
 
 		if sslEnabled {
-			if sslCertificate, err := ioutil.ReadFile(nginxConfig.SSLOptions.SSLCertificatePath); err != nil {
-				return fmt.Errorf("could not read SSL certificate from %s: %s", nginxConfig.SSLOptions.SSLCertificatePath, err)
+			if sslCertificate, err := ioutil.ReadFile(sslOptions.SSLCertificatePath); err != nil {
+				return fmt.Errorf("could not read SSL certificate from %s: %s", sslOptions.SSLCertificatePath, err)
 			} else {
 				config.SSLCertificate = sslCertificate
 			}
 
-			if sslPrivateKey, err := ioutil.ReadFile(nginxConfig.SSLOptions.SSLPrivateKeyPath); err != nil {
-				return fmt.Errorf("could not read SSL private key from %s: %s", nginxConfig.SSLOptions.SSLCertificatePath, err)
+			if sslPrivateKey, err := ioutil.ReadFile(sslOptions.SSLPrivateKeyPath); err != nil {
+				return fmt.Errorf("could not read SSL private key from %s: %s", sslOptions.SSLCertificatePath, err)
 			} else {
 				config.SSLPrivateKey = sslPrivateKey
 			}
@@ -51,21 +49,6 @@ func (b *boyar) ProvisionHttpAPIEndpoint(ctx context.Context) error {
 		b.logger.Info("updated http proxy configuration")
 	}
 	return nil
-}
-
-type UpdateReverseProxyInput struct {
-	Chains []*config.VirtualChain
-	IP     string
-
-	SSLOptions adapter.SSLOptions
-}
-
-func getNginxCompositeConfig(cfg config.NodeConfiguration) *UpdateReverseProxyInput {
-	return &UpdateReverseProxyInput{
-		Chains:     cfg.Chains(),
-		IP:         helpers.LocalIP(),
-		SSLOptions: cfg.SSLOptions(),
-	}
 }
 
 func getReverseProxyServices(cfg config.NodeConfiguration) (services []adapter.ReverseProxyConfigService) {

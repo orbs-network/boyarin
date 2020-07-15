@@ -19,7 +19,7 @@ func getDefaultNginxResponse(status string) string {
 type nginxTemplateChainParams struct {
 	Id           config.VirtualChainId
 	ServiceId    string
-	Port         int
+	Port         int // FIXME should be removed because it's always 8080
 	LogsVolume   string
 	StatusVolume string
 }

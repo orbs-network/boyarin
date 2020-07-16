@@ -35,7 +35,8 @@ func Bootstrap(ctx context.Context, flags *config.Flags, logger log.Logger) (*co
 
 		OrchestratorOptions: flags.OrchestratorOptions,
 
-		LogFilePath: flags.LogFilePath,
+		LogFilePath:    flags.LogFilePath,
+		StatusFilePath: flags.StatusFilePath,
 
 		WithNamespace: flags.WithNamespace,
 	}

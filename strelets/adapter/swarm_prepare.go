@@ -131,7 +131,7 @@ func getVirtualChainServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.S
 
 	spec := swarm.ServiceSpec{
 		TaskTemplate: swarm.TaskSpec{
-			ContainerSpec: getServiceContainerSpec(serviceConfig.ImageName, serviceConfig.ExecutablePath, secrets, mounts),
+			ContainerSpec: getVirtualChainContainerSpec(serviceConfig.ImageName, serviceConfig.ExecutablePath, secrets, mounts),
 			RestartPolicy: &swarm.RestartPolicy{
 				Delay: &restartDelay,
 			},
@@ -173,4 +173,27 @@ func defaultValue(value, defaultV int) int {
 	}
 
 	return defaultV
+}
+
+func getVirtualChainContainerSpec(imageName string, executable string, secrets []*swarm.SecretReference, mounts []mount.Mount) *swarm.ContainerSpec {
+	if executable == "" {
+		executable = SERVICE_EXECUTABLE_PATH
+	}
+
+	command := []string{
+		executable,
+		"--silent",
+	}
+
+	for _, secret := range secrets {
+		command = append(command, "--config", "/run/secrets/"+secret.File.Name)
+	}
+
+	return &swarm.ContainerSpec{
+		Image:   imageName,
+		Command: command,
+		Secrets: secrets,
+		Sysctls: GetSysctls(),
+		Mounts:  mounts,
+	}
 }

@@ -40,8 +40,8 @@ const BOYAR_SERVICE = "boyar"
 
 func getNginxConfig(cfg config.NodeConfiguration) string {
 	var sb strings.Builder
-	var TplNginxConf = template.Must(template.New("").Funcs(template.FuncMap{
-		"DefaultResponse": getDefaultNginxResponse,
+	var tplNginxConf = template.Must(template.New("").Funcs(template.FuncMap{
+		"DefaultResponse": getDefaultNginxResponse, "CORS": getCORS,
 	}).Parse(`{{ "" -}}
 {{- define "locations" -}}
 location ~^/$ { return 200 '{{DefaultResponse "OK"}}'; }
@@ -55,6 +55,7 @@ location ~ ^/vchains/{{.Id}}/logs {
 	access_log off;
 }
 location ~ ^/vchains/{{.Id}}/status {
+{{ CORS }}
 	alias {{.StatusVolume}}/status.json;
 	access_log off;
 }
@@ -68,6 +69,7 @@ location /services/{{.ServiceId}}/logs {
 	alias {{.LogsVolume}}/current;
 }
 location /services/{{.ServiceId}}/status {
+{{ CORS }}
 	alias {{.StatusVolume}}/status.json;
 }
 {{- end }}
@@ -125,7 +127,7 @@ ssl_certificate_key /var/run/secrets/ssl-key;
 		return services[i].ServiceId < services[j].ServiceId
 	})
 
-	err := TplNginxConf.Execute(&sb, nginxTemplateParams{
+	err := tplNginxConf.Execute(&sb, nginxTemplateParams{
 		Chains:     transformedChains,
 		Services:   services,
 		SslEnabled: cfg.SSLOptions().SSLCertificatePath != "" && cfg.SSLOptions().SSLPrivateKeyPath != "",
@@ -135,4 +137,25 @@ ssl_certificate_key /var/run/secrets/ssl-key;
 		panic(err)
 	}
 	return sb.String()
+}
+
+func getCORS() string {
+	return `
+	# CORS start
+
+    # Simple requests
+    if ($request_method ~* "(GET|POST)") {
+      add_header "Access-Control-Allow-Origin"  *;
+    }
+
+    # Preflight requests
+    if ($request_method = OPTIONS ) {
+      add_header "Access-Control-Allow-Origin"  *;
+      add_header "Access-Control-Allow-Methods" "GET, POST, OPTIONS, HEAD";
+      add_header "Access-Control-Allow-Headers" "Authorization, Origin, X-Requested-With, Content-Type, Accept";
+      return 200;
+    }
+
+    # CORS end
+`
 }

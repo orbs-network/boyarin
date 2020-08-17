@@ -115,7 +115,7 @@ func managementConfigJson(nodeManagementUrl string, vchainManagementFileUrl stri
 			"Disabled":         vc.Disabled,
 			"DockerConfig": map[string]interface{}{
 				"Image": "orbsnetwork/node",
-				"Tag":   "experimental",
+				"Tag":   "v1.3.16",
 				"Pull":  false,
 			},
 			"Config": map[string]interface{}{

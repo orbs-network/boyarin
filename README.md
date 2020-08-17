@@ -21,6 +21,19 @@ Services has become **mandatory** part of the config.
 
 Staring from version 0.17.0, Boyar only works with Docker version higher than 19.03.
 
+## Building
+
+```bash
+export GOOS=linux
+./build-binaries.sh
+```
+
+To publish new version to S3: update `.version` file and run this command:
+
+```bash
+./.circleci/export.sh
+```
+
 ## Tips
 
 To remove all containers: `docker rm -f $(docker ps -aq)`

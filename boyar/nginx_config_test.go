@@ -24,6 +24,24 @@ location ~ ^/vchains/42/logs {
 	access_log off;
 }
 location ~ ^/vchains/42/status {
+
+	# CORS start
+
+    # Simple requests
+    if ($request_method ~* "(GET|POST)") {
+      add_header "Access-Control-Allow-Origin"  *;
+    }
+
+    # Preflight requests
+    if ($request_method = OPTIONS ) {
+      add_header "Access-Control-Allow-Origin"  *;
+      add_header "Access-Control-Allow-Methods" "GET, POST, OPTIONS, HEAD";
+      add_header "Access-Control-Allow-Headers" "Authorization, Origin, X-Requested-With, Content-Type, Accept";
+      return 200;
+    }
+
+    # CORS end
+
 	alias /opt/orbs/status/chain-42/status.json;
 	access_log off;
 }
@@ -35,18 +53,72 @@ location /services/boyar/logs {
 	alias /opt/orbs/logs/boyar/current;
 }
 location /services/boyar/status {
+
+	# CORS start
+
+    # Simple requests
+    if ($request_method ~* "(GET|POST)") {
+      add_header "Access-Control-Allow-Origin"  *;
+    }
+
+    # Preflight requests
+    if ($request_method = OPTIONS ) {
+      add_header "Access-Control-Allow-Origin"  *;
+      add_header "Access-Control-Allow-Methods" "GET, POST, OPTIONS, HEAD";
+      add_header "Access-Control-Allow-Headers" "Authorization, Origin, X-Requested-With, Content-Type, Accept";
+      return 200;
+    }
+
+    # CORS end
+
 	alias /opt/orbs/status/boyar/status.json;
 }
 location /services/management-service/logs {
 	alias /opt/orbs/logs/management-service/current;
 }
 location /services/management-service/status {
+
+	# CORS start
+
+    # Simple requests
+    if ($request_method ~* "(GET|POST)") {
+      add_header "Access-Control-Allow-Origin"  *;
+    }
+
+    # Preflight requests
+    if ($request_method = OPTIONS ) {
+      add_header "Access-Control-Allow-Origin"  *;
+      add_header "Access-Control-Allow-Methods" "GET, POST, OPTIONS, HEAD";
+      add_header "Access-Control-Allow-Headers" "Authorization, Origin, X-Requested-With, Content-Type, Accept";
+      return 200;
+    }
+
+    # CORS end
+
 	alias /opt/orbs/status/management-service/status.json;
 }
 location /services/signer/logs {
 	alias /opt/orbs/logs/signer/current;
 }
 location /services/signer/status {
+
+	# CORS start
+
+    # Simple requests
+    if ($request_method ~* "(GET|POST)") {
+      add_header "Access-Control-Allow-Origin"  *;
+    }
+
+    # Preflight requests
+    if ($request_method = OPTIONS ) {
+      add_header "Access-Control-Allow-Origin"  *;
+      add_header "Access-Control-Allow-Methods" "GET, POST, OPTIONS, HEAD";
+      add_header "Access-Control-Allow-Headers" "Authorization, Origin, X-Requested-With, Content-Type, Accept";
+      return 200;
+    }
+
+    # CORS end
+
 	alias /opt/orbs/status/signer/status.json;
 }
 }`,
@@ -71,6 +143,24 @@ location ~ ^/vchains/42/logs {
 	access_log off;
 }
 location ~ ^/vchains/42/status {
+
+	# CORS start
+
+    # Simple requests
+    if ($request_method ~* "(GET|POST)") {
+      add_header "Access-Control-Allow-Origin"  *;
+    }
+
+    # Preflight requests
+    if ($request_method = OPTIONS ) {
+      add_header "Access-Control-Allow-Origin"  *;
+      add_header "Access-Control-Allow-Methods" "GET, POST, OPTIONS, HEAD";
+      add_header "Access-Control-Allow-Headers" "Authorization, Origin, X-Requested-With, Content-Type, Accept";
+      return 200;
+    }
+
+    # CORS end
+
 	alias /opt/orbs/status/chain-42/status.json;
 	access_log off;
 }
@@ -84,6 +174,24 @@ location ~ ^/vchains/1991/logs {
 	access_log off;
 }
 location ~ ^/vchains/1991/status {
+
+	# CORS start
+
+    # Simple requests
+    if ($request_method ~* "(GET|POST)") {
+      add_header "Access-Control-Allow-Origin"  *;
+    }
+
+    # Preflight requests
+    if ($request_method = OPTIONS ) {
+      add_header "Access-Control-Allow-Origin"  *;
+      add_header "Access-Control-Allow-Methods" "GET, POST, OPTIONS, HEAD";
+      add_header "Access-Control-Allow-Headers" "Authorization, Origin, X-Requested-With, Content-Type, Accept";
+      return 200;
+    }
+
+    # CORS end
+
 	alias /opt/orbs/status/chain-1991/status.json;
 	access_log off;
 }
@@ -95,18 +203,72 @@ location /services/boyar/logs {
 	alias /opt/orbs/logs/boyar/current;
 }
 location /services/boyar/status {
+
+	# CORS start
+
+    # Simple requests
+    if ($request_method ~* "(GET|POST)") {
+      add_header "Access-Control-Allow-Origin"  *;
+    }
+
+    # Preflight requests
+    if ($request_method = OPTIONS ) {
+      add_header "Access-Control-Allow-Origin"  *;
+      add_header "Access-Control-Allow-Methods" "GET, POST, OPTIONS, HEAD";
+      add_header "Access-Control-Allow-Headers" "Authorization, Origin, X-Requested-With, Content-Type, Accept";
+      return 200;
+    }
+
+    # CORS end
+
 	alias /opt/orbs/status/boyar/status.json;
 }
 location /services/service-name/logs {
 	alias /opt/orbs/logs/service-name/current;
 }
 location /services/service-name/status {
+
+	# CORS start
+
+    # Simple requests
+    if ($request_method ~* "(GET|POST)") {
+      add_header "Access-Control-Allow-Origin"  *;
+    }
+
+    # Preflight requests
+    if ($request_method = OPTIONS ) {
+      add_header "Access-Control-Allow-Origin"  *;
+      add_header "Access-Control-Allow-Methods" "GET, POST, OPTIONS, HEAD";
+      add_header "Access-Control-Allow-Headers" "Authorization, Origin, X-Requested-With, Content-Type, Accept";
+      return 200;
+    }
+
+    # CORS end
+
 	alias /opt/orbs/status/service-name/status.json;
 }
 location /services/signer/logs {
 	alias /opt/orbs/logs/signer/current;
 }
 location /services/signer/status {
+
+	# CORS start
+
+    # Simple requests
+    if ($request_method ~* "(GET|POST)") {
+      add_header "Access-Control-Allow-Origin"  *;
+    }
+
+    # Preflight requests
+    if ($request_method = OPTIONS ) {
+      add_header "Access-Control-Allow-Origin"  *;
+      add_header "Access-Control-Allow-Methods" "GET, POST, OPTIONS, HEAD";
+      add_header "Access-Control-Allow-Headers" "Authorization, Origin, X-Requested-With, Content-Type, Accept";
+      return 200;
+    }
+
+    # CORS end
+
 	alias /opt/orbs/status/signer/status.json;
 }
 }`,
@@ -134,6 +296,24 @@ location ~ ^/vchains/42/logs {
 	access_log off;
 }
 location ~ ^/vchains/42/status {
+
+	# CORS start
+
+    # Simple requests
+    if ($request_method ~* "(GET|POST)") {
+      add_header "Access-Control-Allow-Origin"  *;
+    }
+
+    # Preflight requests
+    if ($request_method = OPTIONS ) {
+      add_header "Access-Control-Allow-Origin"  *;
+      add_header "Access-Control-Allow-Methods" "GET, POST, OPTIONS, HEAD";
+      add_header "Access-Control-Allow-Headers" "Authorization, Origin, X-Requested-With, Content-Type, Accept";
+      return 200;
+    }
+
+    # CORS end
+
 	alias /opt/orbs/status/chain-42/status.json;
 	access_log off;
 }
@@ -145,18 +325,72 @@ location /services/boyar/logs {
 	alias /opt/orbs/logs/boyar/current;
 }
 location /services/boyar/status {
+
+	# CORS start
+
+    # Simple requests
+    if ($request_method ~* "(GET|POST)") {
+      add_header "Access-Control-Allow-Origin"  *;
+    }
+
+    # Preflight requests
+    if ($request_method = OPTIONS ) {
+      add_header "Access-Control-Allow-Origin"  *;
+      add_header "Access-Control-Allow-Methods" "GET, POST, OPTIONS, HEAD";
+      add_header "Access-Control-Allow-Headers" "Authorization, Origin, X-Requested-With, Content-Type, Accept";
+      return 200;
+    }
+
+    # CORS end
+
 	alias /opt/orbs/status/boyar/status.json;
 }
 location /services/management-service/logs {
 	alias /opt/orbs/logs/management-service/current;
 }
 location /services/management-service/status {
+
+	# CORS start
+
+    # Simple requests
+    if ($request_method ~* "(GET|POST)") {
+      add_header "Access-Control-Allow-Origin"  *;
+    }
+
+    # Preflight requests
+    if ($request_method = OPTIONS ) {
+      add_header "Access-Control-Allow-Origin"  *;
+      add_header "Access-Control-Allow-Methods" "GET, POST, OPTIONS, HEAD";
+      add_header "Access-Control-Allow-Headers" "Authorization, Origin, X-Requested-With, Content-Type, Accept";
+      return 200;
+    }
+
+    # CORS end
+
 	alias /opt/orbs/status/management-service/status.json;
 }
 location /services/signer/logs {
 	alias /opt/orbs/logs/signer/current;
 }
 location /services/signer/status {
+
+	# CORS start
+
+    # Simple requests
+    if ($request_method ~* "(GET|POST)") {
+      add_header "Access-Control-Allow-Origin"  *;
+    }
+
+    # Preflight requests
+    if ($request_method = OPTIONS ) {
+      add_header "Access-Control-Allow-Origin"  *;
+      add_header "Access-Control-Allow-Methods" "GET, POST, OPTIONS, HEAD";
+      add_header "Access-Control-Allow-Headers" "Authorization, Origin, X-Requested-With, Content-Type, Accept";
+      return 200;
+    }
+
+    # CORS end
+
 	alias /opt/orbs/status/signer/status.json;
 }
 }
@@ -177,6 +411,24 @@ location ~ ^/vchains/42/logs {
 	access_log off;
 }
 location ~ ^/vchains/42/status {
+
+	# CORS start
+
+    # Simple requests
+    if ($request_method ~* "(GET|POST)") {
+      add_header "Access-Control-Allow-Origin"  *;
+    }
+
+    # Preflight requests
+    if ($request_method = OPTIONS ) {
+      add_header "Access-Control-Allow-Origin"  *;
+      add_header "Access-Control-Allow-Methods" "GET, POST, OPTIONS, HEAD";
+      add_header "Access-Control-Allow-Headers" "Authorization, Origin, X-Requested-With, Content-Type, Accept";
+      return 200;
+    }
+
+    # CORS end
+
 	alias /opt/orbs/status/chain-42/status.json;
 	access_log off;
 }
@@ -188,18 +440,72 @@ location /services/boyar/logs {
 	alias /opt/orbs/logs/boyar/current;
 }
 location /services/boyar/status {
+
+	# CORS start
+
+    # Simple requests
+    if ($request_method ~* "(GET|POST)") {
+      add_header "Access-Control-Allow-Origin"  *;
+    }
+
+    # Preflight requests
+    if ($request_method = OPTIONS ) {
+      add_header "Access-Control-Allow-Origin"  *;
+      add_header "Access-Control-Allow-Methods" "GET, POST, OPTIONS, HEAD";
+      add_header "Access-Control-Allow-Headers" "Authorization, Origin, X-Requested-With, Content-Type, Accept";
+      return 200;
+    }
+
+    # CORS end
+
 	alias /opt/orbs/status/boyar/status.json;
 }
 location /services/management-service/logs {
 	alias /opt/orbs/logs/management-service/current;
 }
 location /services/management-service/status {
+
+	# CORS start
+
+    # Simple requests
+    if ($request_method ~* "(GET|POST)") {
+      add_header "Access-Control-Allow-Origin"  *;
+    }
+
+    # Preflight requests
+    if ($request_method = OPTIONS ) {
+      add_header "Access-Control-Allow-Origin"  *;
+      add_header "Access-Control-Allow-Methods" "GET, POST, OPTIONS, HEAD";
+      add_header "Access-Control-Allow-Headers" "Authorization, Origin, X-Requested-With, Content-Type, Accept";
+      return 200;
+    }
+
+    # CORS end
+
 	alias /opt/orbs/status/management-service/status.json;
 }
 location /services/signer/logs {
 	alias /opt/orbs/logs/signer/current;
 }
 location /services/signer/status {
+
+	# CORS start
+
+    # Simple requests
+    if ($request_method ~* "(GET|POST)") {
+      add_header "Access-Control-Allow-Origin"  *;
+    }
+
+    # Preflight requests
+    if ($request_method = OPTIONS ) {
+      add_header "Access-Control-Allow-Origin"  *;
+      add_header "Access-Control-Allow-Methods" "GET, POST, OPTIONS, HEAD";
+      add_header "Access-Control-Allow-Headers" "Authorization, Origin, X-Requested-With, Content-Type, Accept";
+      return 200;
+    }
+
+    # CORS end
+
 	alias /opt/orbs/status/signer/status.json;
 }
 }`,

@@ -51,26 +51,3 @@ func getMetricsForEndpoint(getEndpoint func() string) func() (map[string]interfa
 		return metrics, nil
 	}
 }
-
-func GetBlockHeight(getMetrics func() (map[string]interface{}, error)) (value int, err error) {
-	defer func() {
-		if e := recover(); e != nil {
-			value = 0
-			err = e.(error)
-		}
-	}()
-	metrics, err := getMetrics()
-	if err != nil {
-		return 0, err
-	}
-
-	blockHeight := int(metrics["BlockStorage.BlockHeight"].(map[string]interface{})["Value"].(float64))
-	fmt.Println("blockHeight", blockHeight)
-	return blockHeight, nil
-}
-
-func GetMetricsForPort(httpPort int) func() (map[string]interface{}, error) {
-	return getMetricsForEndpoint(func() string {
-		return getMetricsEndpoint(httpPort)
-	})
-}

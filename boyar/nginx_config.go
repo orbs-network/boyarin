@@ -45,19 +45,35 @@ func getNginxConfig(cfg config.NodeConfiguration) string {
 	}).Parse(`{{ "" -}}
 {{- define "locations" -}}
 location ~^/$ { return 200 '{{DefaultResponse "OK"}}'; }
-location / { error_page 404 = @error404; }
+location / {
+	error_page 404 = @error404;
+	error_page 403 = @error403;
+}
+location @error403 { return 403 '{{DefaultResponse "Forbidden"}}'; }
 location @error404 { return 404 '{{DefaultResponse "Not found"}}'; }
 location @error502 { return 502 '{{DefaultResponse "Bad gateway"}}'; }
 {{- range .Chains }}
 set $vc{{.Id}} {{.ServiceId}};
-location ~ ^/vchains/{{.Id}}/logs {
-	alias {{.LogsVolume}}/current;
-	access_log off;
+location ~ ^/vchains/{{.Id}}/logs/(.*) {
+	alias {{.LogsVolume}}/$1;
+	error_page 404 = @error404;
+	error_page 403 = @error403;
 }
-location ~ ^/vchains/{{.Id}}/status {
+location ~ ^/vchains/{{.Id}}/logs$ {
+	alias {{.LogsVolume}}/current;
+	error_page 404 = @error404;
+	error_page 403 = @error403;
+}
+location ~ ^/vchains/{{.Id}}/status/(.*) {
+	alias {{.StatusVolume}}/$1;
+	error_page 404 = @error404;
+	error_page 403 = @error403;
+}
+location ~ ^/vchains/{{.Id}}/status$ {
 {{ CORS }}
 	alias {{.StatusVolume}}/status.json;
-	access_log off;
+	error_page 404 = @error404;
+	error_page 403 = @error403;
 }
 location ~ ^/vchains/{{.Id}}(/?)(.*) {
 	proxy_pass http://$vc{{.Id}}:{{.Port}}/$2;
@@ -65,12 +81,27 @@ location ~ ^/vchains/{{.Id}}(/?)(.*) {
 }
 {{- end }} {{- /* range .Chains */ -}}
 {{- range .Services }}
-location /services/{{.ServiceId}}/logs {
-	alias {{.LogsVolume}}/current;
+location ~ ^/services/{{.ServiceId}}/logs/(.*) {
+	alias {{.LogsVolume}}/$1;
+	error_page 404 = @error404;
+	error_page 403 = @error403;
 }
-location /services/{{.ServiceId}}/status {
+location ~ ^/services/{{.ServiceId}}/logs$ {
+	alias {{.LogsVolume}}/current;
+	error_page 404 = @error404;
+	error_page 403 = @error403;
+}
+location ~ ^/services/{{.ServiceId}}/status/(.*) {
+{{ CORS }}
+	alias {{.StatusVolume}}/$1;
+	error_page 404 = @error404;
+	error_page 403 = @error403;
+}
+location ~ ^/services/{{.ServiceId}}/status$ {
 {{ CORS }}
 	alias {{.StatusVolume}}/status.json;
+	error_page 404 = @error404;
+	error_page 403 = @error403;
 }
 {{- end }}
 {{- end -}} {{- /* define "locations" */ -}}

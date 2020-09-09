@@ -42,6 +42,11 @@ func (b *boyar) provisionService(ctx context.Context, serviceName string, servic
 				}
 			}
 
+			var logsMountPointNames map[string]string
+			if service.MountNodeLogs {
+				logsMountPointNames = getLogsMountPointNames(b.config)
+			}
+
 			serviceConfig := &adapter.ServiceConfig{
 				NodeAddress: string(b.config.NodeAddress()),
 
@@ -59,6 +64,8 @@ func (b *boyar) provisionService(ctx context.Context, serviceName string, servic
 				LimitedCPU:     service.DockerConfig.Resources.Limits.CPUs,
 				ReservedMemory: service.DockerConfig.Resources.Reservations.Memory,
 				ReservedCPU:    service.DockerConfig.Resources.Reservations.CPUs,
+
+				LogsMountPointNames: logsMountPointNames,
 			}
 
 			jsonConfig, _ := json.Marshal(service.Config)
@@ -81,4 +88,19 @@ func (b *boyar) provisionService(ctx context.Context, serviceName string, servic
 	}
 
 	return nil
+}
+
+func getLogsMountPointNames(cfg config.NodeConfiguration) map[string]string {
+	mountPointNames := make(map[string]string)
+	mountPointNames["boyar"] = "boyar"
+
+	for name, _ := range cfg.Services() {
+		mountPointNames[name] = cfg.NamespacedContainerName(name)
+	}
+
+	for _, chain := range cfg.Chains() {
+		mountPointNames[chain.GetContainerName()] = cfg.NamespacedContainerName(chain.GetContainerName())
+	}
+
+	return mountPointNames
 }

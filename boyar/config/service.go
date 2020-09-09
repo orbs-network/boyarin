@@ -11,6 +11,8 @@ type Service struct {
 	ExecutablePath        string
 	AllowAccessToSigner   bool
 	AllowAccessToServices bool
+
+	MountNodeLogs bool
 }
 
 type Services map[string]*Service
@@ -24,4 +26,3 @@ func (s Services) Management() *Service {
 }
 
 const SIGNER = "signer"
-const MANAGEMENT = "management-service"

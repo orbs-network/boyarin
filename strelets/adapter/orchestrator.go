@@ -39,6 +39,8 @@ type ServiceConfig struct {
 	LimitedCPU     float64
 	ReservedMemory int64
 	ReservedCPU    float64
+
+	LogsMountPointNames []string
 }
 
 type ContainerStatus struct {

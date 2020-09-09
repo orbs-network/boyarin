@@ -44,28 +44,44 @@ func (d *dockerSwarmOrchestrator) RunService(ctx context.Context, serviceConfig 
 		secrets = append(secrets, getSecretReference(serviceConfig.ContainerName, config.keysSecretId, "keyPair", "keys.json"))
 	}
 
-	var mounts []mount.Mount
-	if statusMount, err := d.provisionStatusVolume(ctx, serviceConfig.NodeAddress, serviceConfig.ContainerName, ORBS_STATUS_TARGET); err != nil {
+	mounts, err := d.provisionServiceVolumes(ctx, serviceConfig)
+	if err != nil {
 		return err
-	} else {
-		mounts = append(mounts, statusMount)
-	}
-
-	if cacheMount, err := d.provisionCacheVolume(ctx, serviceConfig.NodeAddress, serviceConfig.ContainerName); err != nil {
-		return err
-	} else {
-		mounts = append(mounts, cacheMount)
-	}
-
-	if logsMount, err := d.provisionLogsVolume(ctx, serviceConfig.NodeAddress, serviceConfig.ContainerName, ORBS_LOGS_TARGET); err != nil {
-		return fmt.Errorf("failed to provision volumes: %s", err)
-	} else {
-		mounts = append(mounts, logsMount)
 	}
 
 	spec := getServiceSpec(serviceConfig, secrets, networks, mounts)
 
 	return d.create(ctx, spec, serviceConfig.ImageName)
+}
+
+func (d *dockerSwarmOrchestrator) provisionServiceVolumes(ctx context.Context, serviceConfig *ServiceConfig) (mounts []mount.Mount, err error) {
+	if statusMount, err := d.provisionStatusVolume(ctx, serviceConfig.ContainerName, ORBS_STATUS_TARGET); err != nil {
+		return nil, err
+	} else {
+		mounts = append(mounts, statusMount)
+	}
+
+	if cacheMount, err := d.provisionCacheVolume(ctx, serviceConfig.ContainerName); err != nil {
+		return nil, err
+	} else {
+		mounts = append(mounts, cacheMount)
+	}
+
+	getTarget := func(input string) string {
+		return ORBS_LOGS_TARGET
+	}
+	if len(serviceConfig.LogsMountPointNames) > 1 {
+		getTarget = GetNginxLogsMountPath
+	}
+	for _, logsMountPointName := range serviceConfig.LogsMountPointNames {
+		if logsMount, err := d.provisionLogsVolume(ctx, logsMountPointName, getTarget(logsMountPointName)); err != nil {
+			return nil, fmt.Errorf("failed to provision volumes: %s", err)
+		} else {
+			mounts = append(mounts, logsMount)
+		}
+	}
+
+	return mounts, nil
 }
 
 func (d *dockerSwarmOrchestrator) storeServiceConfiguration(ctx context.Context, containerName string, config *AppConfig) (*dockerSwarmSecretsConfig, error) {

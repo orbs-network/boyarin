@@ -11,6 +11,8 @@ type Service struct {
 	ExecutablePath        string
 	AllowAccessToSigner   bool
 	AllowAccessToServices bool
+
+	MountNodeLogs bool
 }
 
 type Services map[string]*Service
@@ -23,5 +25,12 @@ func (s Services) Management() *Service {
 	return s["management-service"]
 }
 
+func (s Services) Names() (names []string) {
+	for name, _ := range s {
+		names = append(names, name)
+	}
+
+	return
+}
+
 const SIGNER = "signer"
-const MANAGEMENT = "management-service"

@@ -63,6 +63,8 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 					LimitedCPU:     chain.DockerConfig.Resources.Limits.CPUs,
 					ReservedMemory: chain.DockerConfig.Resources.Reservations.Memory,
 					ReservedCPU:    chain.DockerConfig.Resources.Reservations.CPUs,
+
+					LogsMountPointNames: []string{containerName},
 				}
 
 				appConfig := &adapter.AppConfig{

@@ -42,9 +42,9 @@ func (b *boyar) provisionService(ctx context.Context, serviceName string, servic
 				}
 			}
 
-			logsMountPointNames := []string{serviceName}
+			var logsMountPointNames map[string]string
 			if service.MountNodeLogs {
-				logsMountPointNames = getLogsMountPointNames(b.config.Services())
+				logsMountPointNames = getLogsMountPointNames(b.config)
 			}
 
 			serviceConfig := &adapter.ServiceConfig{
@@ -90,9 +90,17 @@ func (b *boyar) provisionService(ctx context.Context, serviceName string, servic
 	return nil
 }
 
-func getLogsMountPointNames(s config.Services) (mountPointNames []string) {
-	mountPointNames = []string{"boyar"}
-	mountPointNames = append(mountPointNames, s.Names()...)
+func getLogsMountPointNames(cfg config.NodeConfiguration) map[string]string {
+	mountPointNames := make(map[string]string)
+	mountPointNames["boyar"] = "boyar"
 
-	return
+	for name, _ := range cfg.Services() {
+		mountPointNames[name] = cfg.NamespacedContainerName(name)
+	}
+
+	for _, chain := range cfg.Chains() {
+		mountPointNames[chain.GetContainerName()] = cfg.NamespacedContainerName(chain.GetContainerName())
+	}
+
+	return mountPointNames
 }

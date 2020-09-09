@@ -40,7 +40,8 @@ type ServiceConfig struct {
 	ReservedMemory int64
 	ReservedCPU    float64
 
-	LogsMountPointNames []string
+	// logs service only
+	LogsMountPointNames map[string]string // simple name -> namespaced name
 }
 
 type ContainerStatus struct {

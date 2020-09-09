@@ -67,17 +67,20 @@ func (d *dockerSwarmOrchestrator) provisionServiceVolumes(ctx context.Context, s
 		mounts = append(mounts, cacheMount)
 	}
 
-	getTarget := func(input string) string {
-		return ORBS_LOGS_TARGET
-	}
-	if len(serviceConfig.LogsMountPointNames) > 1 {
-		getTarget = GetNginxLogsMountPath
-	}
-	for _, logsMountPointName := range serviceConfig.LogsMountPointNames {
-		if logsMount, err := d.provisionLogsVolume(ctx, logsMountPointName, getTarget(logsMountPointName)); err != nil {
+	if len(serviceConfig.LogsMountPointNames) == 0 {
+		if logsMount, err := d.provisionLogsVolume(ctx, serviceConfig.ContainerName, ORBS_LOGS_TARGET); err != nil {
 			return nil, fmt.Errorf("failed to provision volumes: %s", err)
 		} else {
 			mounts = append(mounts, logsMount)
+		}
+	} else {
+		// special case for multiple logs
+		for simpleName, namespacedName := range serviceConfig.LogsMountPointNames {
+			if logsMount, err := d.provisionLogsVolume(ctx, namespacedName, GetNestedLogsMountPath(simpleName)); err != nil {
+				return nil, fmt.Errorf("failed to provision volumes: %s", err)
+			} else {
+				mounts = append(mounts, logsMount)
+			}
 		}
 	}
 

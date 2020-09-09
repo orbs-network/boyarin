@@ -132,7 +132,7 @@ ssl_certificate_key /var/run/secrets/ssl-key;
 				Id:           chain.Id,
 				ServiceId:    containerName,
 				Port:         chain.InternalHttpPort,
-				LogsVolume:   adapter.GetNginxLogsMountPath(chain.GetContainerName()),
+				LogsVolume:   adapter.GetNestedLogsMountPath(chain.GetContainerName()),
 				StatusVolume: adapter.GetNginxStatusMountPath(chain.GetContainerName()),
 			})
 		}
@@ -142,7 +142,7 @@ ssl_certificate_key /var/run/secrets/ssl-key;
 	for serviceName, _ := range cfg.Services() {
 		services = append(services, nginxTemplateServiceParams{
 			ServiceId:    serviceName,
-			LogsVolume:   adapter.GetNginxLogsMountPath(serviceName),
+			LogsVolume:   adapter.GetNestedLogsMountPath(serviceName),
 			StatusVolume: adapter.GetNginxStatusMountPath(serviceName),
 		})
 	}
@@ -150,7 +150,7 @@ ssl_certificate_key /var/run/secrets/ssl-key;
 	// special case to pass boyar logs from the outside
 	services = append(services, nginxTemplateServiceParams{
 		ServiceId:    BOYAR_SERVICE,
-		LogsVolume:   adapter.GetNginxLogsMountPath(BOYAR_SERVICE),
+		LogsVolume:   adapter.GetNestedLogsMountPath(BOYAR_SERVICE),
 		StatusVolume: adapter.GetNginxStatusMountPath(BOYAR_SERVICE),
 	})
 

@@ -172,6 +172,7 @@ If both these parameters are present, the node will also start service SSL traff
       "ExecutablePath": "/opt/orbs/service", // default (optional)
       "AllowAccessToSigner": false, // should be able communicate with the signer service, default false (optional)
       "AllowAccessToServices": true, // should be able to communicate with other services, default true (optional)
+      "MountNodeLogs": false, // mounts all service and vchain logs inside the container, default false (optional)
 
       "DockerConfig": {
         "Image": "orbsnetwork/service-name",

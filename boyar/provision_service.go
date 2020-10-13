@@ -27,60 +27,74 @@ func (b *boyar) ProvisionServices(ctx context.Context) error {
 }
 
 func (b *boyar) provisionService(ctx context.Context, serviceName string, service *config.Service) error {
-	if b.cache.services.CheckNewJsonValue(serviceName, service) {
-		if service != nil {
-			fullServiceName := b.config.NamespacedContainerName(serviceName)
-			imageName := service.DockerConfig.FullImageName()
+	logger := b.logger.WithTags(log.String("service", serviceName))
 
-			if service.Disabled {
-				return fmt.Errorf("service %s is disabled even though it should not be, ignored", serviceName)
-			}
+	if service != nil {
+		fullServiceName := b.config.NamespacedContainerName(serviceName)
+		imageName := service.DockerConfig.FullImageName()
 
-			if service.DockerConfig.Pull {
-				if err := b.orchestrator.PullImage(ctx, imageName); err != nil {
-					return fmt.Errorf("could not pull docker image: %s", err)
+		fmt.Println("cache", b.cache.services)
+		fmt.Println("service.disabled", service.Disabled)
+
+		if service.Disabled {
+			if b.cache.services.CheckNewJsonValue(serviceName, removed) {
+				if err := b.orchestrator.RemoveService(ctx, serviceName); err != nil {
+					b.cache.services.Clear(serviceName)
+					logger.Error("failed to remove service", log.Error(err))
+				} else {
+					logger.Info("successfully removed service")
 				}
 			}
 
-			var logsMountPointNames map[string]string
-			if service.MountNodeLogs {
-				logsMountPointNames = getLogsMountPointNames(b.config)
+			return nil
+		}
+
+		if service.DockerConfig.Pull {
+			if err := b.orchestrator.PullImage(ctx, imageName); err != nil {
+				return fmt.Errorf("could not pull docker image: %s", err)
 			}
+		}
 
-			serviceConfig := &adapter.ServiceConfig{
-				NodeAddress: string(b.config.NodeAddress()),
+		var logsMountPointNames map[string]string
+		if service.MountNodeLogs {
+			logsMountPointNames = getLogsMountPointNames(b.config)
+		}
 
-				ImageName:      imageName,
-				Name:           serviceName,
-				ContainerName:  fullServiceName,
-				ExecutablePath: service.ExecutablePath,
-				InternalPort:   service.InternalPort,
-				ExternalPort:   service.ExternalPort,
+		serviceConfig := &adapter.ServiceConfig{
+			NodeAddress: string(b.config.NodeAddress()),
 
-				AllowAccessToSigner:   service.AllowAccessToSigner,
-				AllowAccessToServices: service.AllowAccessToServices,
+			ImageName:      imageName,
+			Name:           serviceName,
+			ContainerName:  fullServiceName,
+			ExecutablePath: service.ExecutablePath,
+			InternalPort:   service.InternalPort,
+			ExternalPort:   service.ExternalPort,
 
-				LimitedMemory:  service.DockerConfig.Resources.Limits.Memory,
-				LimitedCPU:     service.DockerConfig.Resources.Limits.CPUs,
-				ReservedMemory: service.DockerConfig.Resources.Reservations.Memory,
-				ReservedCPU:    service.DockerConfig.Resources.Reservations.CPUs,
+			AllowAccessToSigner:   service.AllowAccessToSigner,
+			AllowAccessToServices: service.AllowAccessToServices,
 
-				LogsMountPointNames: logsMountPointNames,
-			}
+			LimitedMemory:  service.DockerConfig.Resources.Limits.Memory,
+			LimitedCPU:     service.DockerConfig.Resources.Limits.CPUs,
+			ReservedMemory: service.DockerConfig.Resources.Reservations.Memory,
+			ReservedCPU:    service.DockerConfig.Resources.Reservations.CPUs,
 
-			jsonConfig, _ := json.Marshal(service.Config)
+			LogsMountPointNames: logsMountPointNames,
+		}
 
-			var keyPairConfigJSON = getKeyConfigJson(b.config, !service.InjectNodePrivateKey)
-			appConfig := &adapter.AppConfig{
-				KeyPair: keyPairConfigJSON,
-				Config:  jsonConfig,
-			}
+		jsonConfig, _ := json.Marshal(service.Config)
 
+		var keyPairConfigJSON = getKeyConfigJson(b.config, !service.InjectNodePrivateKey)
+		appConfig := &adapter.AppConfig{
+			KeyPair: keyPairConfigJSON,
+			Config:  jsonConfig,
+		}
+
+		if b.cache.services.CheckNewJsonValue(serviceName, serviceConfig) {
 			if err := b.orchestrator.RunService(ctx, serviceConfig, appConfig); err == nil {
 				data, _ := json.Marshal(serviceConfig)
-				b.logger.Info("updated service configuration", log.Service(serviceName), log.String("configuration", string(data)))
+				logger.Info("updated service configuration", log.String("configuration", string(data)))
 			} else {
-				b.logger.Error("failed to update service configuration", log.Service(serviceName), log.Error(err))
+				logger.Error("failed to update service configuration", log.Error(err))
 				b.cache.services.Clear(serviceName)
 				return err
 			}

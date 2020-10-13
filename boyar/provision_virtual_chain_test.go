@@ -162,7 +162,7 @@ func Test_BoyarProvisionVirtualChainsClearsCacheAfterFailedAttempts(t *testing.T
 	assert.True(t, cache.vChains.CheckNewJsonValue(cfg.Chains()[0].Id.String(), getVirtualChainConfig(cfg, cfg.Chains()[0])), "cache should not remember chain deployed with configuration")
 }
 
-func Test_BoyarProvisionVirtualChainsUpdatesCacheAfterRemovingChain(t *testing.T) {
+func Test_BoyarProvisionVirtualChainsOnOffAndOnAgain(t *testing.T) {
 	orchestrator := &adapter.OrchestratorMock{}
 
 	cfg := getJSONConfig(t, ConfigWithSingleChain)
@@ -180,6 +180,15 @@ func Test_BoyarProvisionVirtualChainsUpdatesCacheAfterRemovingChain(t *testing.T
 	orchestrator.On("RemoveService", mock.Anything, mock.Anything).Return(nil)
 
 	cfg.Chains()[0].Disabled = true
+	err = b.ProvisionVirtualChains(context.Background())
+	require.NoError(t, err)
+	assertAllChainedCached(t, cfg, cache)
+
+	orchestrator.AssertExpectations(t)
+
+	orchestrator.On("RunVirtualChain", mock.Anything, mock.Anything).Return(nil)
+
+	cfg.Chains()[0].Disabled = false
 	err = b.ProvisionVirtualChains(context.Background())
 	require.NoError(t, err)
 	assertAllChainedCached(t, cfg, cache)

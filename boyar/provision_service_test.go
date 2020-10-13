@@ -26,7 +26,7 @@ func Test_BoyarProvisionServices(t *testing.T) {
 	orchestrator.AssertExpectations(t)
 }
 
-func Test_BoyarSignerOffOn(t *testing.T) {
+func Test_BoyarSignerChangeTags(t *testing.T) {
 	orchestrator := &adapter.OrchestratorMock{}
 
 	cache := NewCache()
@@ -55,28 +55,43 @@ func Test_BoyarSignerOffOn(t *testing.T) {
 }
 
 // Shouldn't be able to disable services, really
-//func Test_BoyarSignerOnOff(t *testing.T) {
-//	orchestrator := &adapter.OrchestratorMock{}
-//
-//	cache := NewCache()
-//
-//	sourceWithSigner := getJSONConfig(t, ConfigWithSigner)
-//
-//	orchestrator.On("ProvisionSharedNetwork", mock.Anything, mock.Anything).Return(nil).Once()
-//	orchestrator.On("UpdateService", mock.Anything, mock.Anything).Return(nil).Once()
-//
-//	boyarWithSigner := NewBoyar(orchestrator, sourceWithSigner, cache, helpers.DefaultTestLogger())
-//
-//	err := boyarWithSigner.ProvisionServices(context.Background())
-//	require.NoError(t, err)
-//	orchestrator.AssertExpectations(t)
-//
-//	sourceWithoutSigner := getJSONConfig(t, Management)
-//	boyarWithoutSigner := NewBoyar(orchestrator, sourceWithoutSigner, cache, helpers.DefaultTestLogger())
-//
-//	orchestrator.On("ProvisionSharedNetwork", mock.Anything, mock.Anything).Return(nil).Once()
-//
-//	err = boyarWithoutSigner.ProvisionServices(context.Background())
-//	require.NoError(t, err)
-//	orchestrator.AssertExpectations(t) // nothing happens
-//}
+func Test_BoyarSignerOnOffOnAgain(t *testing.T) {
+	orchestrator := &adapter.OrchestratorMock{}
+
+	cache := NewCache()
+
+	sourceWithSigner := getJSONConfig(t, ConfigWithSigner)
+
+	orchestrator.On("GetOverlayNetwork", mock.Anything, mock.Anything, mock.Anything).Return("fake-network-id", nil).Once()
+	orchestrator.On("RunService", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+
+	boyarWithSigner := NewBoyar(orchestrator, sourceWithSigner, cache, helpers.DefaultTestLogger())
+
+	err := boyarWithSigner.ProvisionServices(context.Background())
+	require.NoError(t, err)
+	orchestrator.AssertExpectations(t)
+
+	sourceWithoutSigner := getJSONConfig(t, ConfigWithSigner)
+	sourceWithoutSigner.Services().Signer().Disabled = true
+
+	boyarWithoutSigner := NewBoyar(orchestrator, sourceWithoutSigner, cache, helpers.DefaultTestLogger())
+
+	orchestrator.On("GetOverlayNetwork", mock.Anything, mock.Anything, mock.Anything).Return("fake-network-id", nil).Once()
+	orchestrator.On("RemoveService", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+
+	err = boyarWithoutSigner.ProvisionServices(context.Background())
+	require.NoError(t, err)
+	orchestrator.AssertExpectations(t) // nothing happens
+
+	// turn the service back on
+
+	orchestrator.On("GetOverlayNetwork", mock.Anything, mock.Anything, mock.Anything).Return("fake-network-id", nil).Once()
+	orchestrator.On("RunService", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+
+	boyarWithSignerAgain := NewBoyar(orchestrator, sourceWithSigner, cache, helpers.DefaultTestLogger())
+
+	err = boyarWithSignerAgain.ProvisionServices(context.Background())
+	require.NoError(t, err)
+	orchestrator.AssertExpectations(t)
+
+}

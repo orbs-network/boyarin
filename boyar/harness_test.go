@@ -49,7 +49,7 @@ func assertAllChainedCached(t *testing.T, cfg config.MutableNodeConfiguration, c
 		chainId := cfg.NamespacedContainerName(chain.GetContainerName())
 
 		if chain.Disabled {
-			assert.False(t, cache.vChains.CheckNewValue(chainId, removed), "cache should remember chain was removed")
+			assert.False(t, cache.vChains.CheckNewJsonValue(chainId, removed), "cache should remember chain was removed")
 		} else {
 			assert.False(t, cache.vChains.CheckNewJsonValue(chainId, getVirtualChainConfig(cfg, chain)), "cache should remember chain deployed with configuration")
 		}

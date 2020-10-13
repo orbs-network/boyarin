@@ -21,8 +21,10 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 	for _, chain := range chains {
 		containerName := b.config.NamespacedContainerName(chain.GetContainerName())
 
+		fmt.Println("chain.Disabled", chain.Disabled)
+
 		if chain.Disabled {
-			if b.cache.vChains.CheckNewValue(containerName, removed) {
+			if b.cache.vChains.CheckNewJsonValue(containerName, removed) {
 				if err := b.orchestrator.RemoveService(ctx, containerName); err != nil {
 					b.cache.vChains.Clear(chain.Id.String())
 
@@ -30,59 +32,63 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 						log_types.VirtualChainId(int64(chain.Id)),
 						log.Error(err))
 					errors = append(errors, err)
-				}
-			} else {
-				b.logger.Info("removed virtual chain", log_types.VirtualChainId(int64(chain.Id)))
-
-			}
-		} else {
-			input := getVirtualChainConfig(b.config, chain)
-
-			if b.cache.vChains.CheckNewJsonValue(containerName, input) {
-				imageName := chain.DockerConfig.FullImageName()
-
-				if chain.DockerConfig.Pull {
-					if err := b.orchestrator.PullImage(ctx, imageName); err != nil {
-						return fmt.Errorf("could not pull docker image: %b", err)
-					}
-				}
-
-				serviceConfig := &adapter.ServiceConfig{
-					Id:            uint32(chain.Id),
-					NodeAddress:   string(b.config.NodeAddress()),
-					ImageName:     imageName,
-					ContainerName: containerName,
-					InternalPort:  chain.InternalPort,
-					ExternalPort:  chain.ExternalPort,
-
-					AllowAccessToSigner:     true,
-					HTTPProxyNetworkEnabled: true,
-					AllowAccessToServices:   true,
-
-					LimitedMemory:  chain.DockerConfig.Resources.Limits.Memory,
-					LimitedCPU:     chain.DockerConfig.Resources.Limits.CPUs,
-					ReservedMemory: chain.DockerConfig.Resources.Reservations.Memory,
-					ReservedCPU:    chain.DockerConfig.Resources.Reservations.CPUs,
-				}
-
-				appConfig := &adapter.AppConfig{
-					KeyPair: input.KeyPairConfig,
-					Network: getNetworkConfigJSON(overrideTopologyPort(b.config.FederationNodes(), chain.ExternalPort)),
-					Config:  chain.GetSerializedConfig(),
-				}
-
-				if err := b.orchestrator.RunVirtualChain(ctx, serviceConfig, appConfig); err != nil {
-					b.cache.vChains.Clear(containerName)
-					b.logger.Error("failed to apply virtual chain configuration",
-						log_types.VirtualChainId(int64(chain.Id)),
-						log.Error(err))
-					errors = append(errors, err)
 				} else {
-					data, _ := json.Marshal(chain)
-					b.logger.Info("updated virtual chain configuration",
-						log_types.VirtualChainId(int64(chain.Id)),
-						log.String("configuration", string(data)))
+					b.logger.Info("successfully removed virtual chain", log_types.VirtualChainId(int64(chain.Id)))
 				}
+			}
+
+			continue
+		}
+
+		input := getVirtualChainConfig(b.config, chain)
+		v := b.cache.vChains.CheckNewJsonValue(containerName, input)
+
+		fmt.Println("v???", v)
+
+		if v {
+			imageName := chain.DockerConfig.FullImageName()
+
+			if chain.DockerConfig.Pull {
+				if err := b.orchestrator.PullImage(ctx, imageName); err != nil {
+					return fmt.Errorf("could not pull docker image: %b", err)
+				}
+			}
+
+			serviceConfig := &adapter.ServiceConfig{
+				Id:            uint32(chain.Id),
+				NodeAddress:   string(b.config.NodeAddress()),
+				ImageName:     imageName,
+				ContainerName: containerName,
+				InternalPort:  chain.InternalPort,
+				ExternalPort:  chain.ExternalPort,
+
+				AllowAccessToSigner:     true,
+				HTTPProxyNetworkEnabled: true,
+				AllowAccessToServices:   true,
+
+				LimitedMemory:  chain.DockerConfig.Resources.Limits.Memory,
+				LimitedCPU:     chain.DockerConfig.Resources.Limits.CPUs,
+				ReservedMemory: chain.DockerConfig.Resources.Reservations.Memory,
+				ReservedCPU:    chain.DockerConfig.Resources.Reservations.CPUs,
+			}
+
+			appConfig := &adapter.AppConfig{
+				KeyPair: input.KeyPairConfig,
+				Network: getNetworkConfigJSON(overrideTopologyPort(b.config.FederationNodes(), chain.ExternalPort)),
+				Config:  chain.GetSerializedConfig(),
+			}
+
+			if err := b.orchestrator.RunVirtualChain(ctx, serviceConfig, appConfig); err != nil {
+				b.cache.vChains.Clear(containerName)
+				b.logger.Error("failed to apply virtual chain configuration",
+					log_types.VirtualChainId(int64(chain.Id)),
+					log.Error(err))
+				errors = append(errors, err)
+			} else {
+				data, _ := json.Marshal(chain)
+				b.logger.Info("updated virtual chain configuration",
+					log_types.VirtualChainId(int64(chain.Id)),
+					log.String("configuration", string(data)))
 			}
 		}
 	}

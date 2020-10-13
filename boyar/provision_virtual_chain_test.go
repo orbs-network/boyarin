@@ -186,7 +186,7 @@ func Test_BoyarProvisionVirtualChainsOnOffAndOnAgain(t *testing.T) {
 
 	orchestrator.AssertExpectations(t)
 
-	orchestrator.On("RunVirtualChain", mock.Anything, mock.Anything).Return(nil)
+	orchestrator.On("RunVirtualChain", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	cfg.Chains()[0].Disabled = false
 	err = b.ProvisionVirtualChains(context.Background())

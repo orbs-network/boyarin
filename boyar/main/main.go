@@ -41,12 +41,12 @@ func main() {
 
 	managementConfig := flag.String("management-config", "", "bootstrap only a configuration provider service and then retrieve all configuration from it")
 
-	showConfiguration := flag.Bool("show-configuration", false, "show configuration and exit")
+	showConfiguration := flag.Bool("show-configuration", false, "print configuration and exit")
 	help := flag.Bool("help", false, "show usage")
 	showVersion := flag.Bool("version", false, "show version")
 
-	metricsOnly := flag.Bool("metrics-only", false, "print the list of prometheus metrics")
-	statusOnly := flag.Bool("status-only", false, "print status in json format")
+	showMetrics := flag.Bool("metrics-only", false, "print the list of prometheus metrics and exit")
+	showStatus := flag.Bool("status-only", false, "print status in json format and exit")
 
 	flag.Parse()
 
@@ -58,7 +58,7 @@ func main() {
 
 	basicLogger := log.GetLogger()
 
-	if *statusOnly {
+	if *showStatus {
 		ctx, cancel := context.WithTimeout(context.Background(), services.SERVICE_STATUS_REPORT_TIMEOUT)
 		defer cancel()
 
@@ -73,7 +73,7 @@ func main() {
 		return
 	}
 
-	if *metricsOnly {
+	if *showMetrics {
 		registry := prometheus.NewRegistry()
 		metrics, err := services.InitializeMetrics(registry)
 

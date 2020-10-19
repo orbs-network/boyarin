@@ -52,6 +52,8 @@ In case you ever need to regenerate the SSL certificate:
 
 `--status` path to status file
 
+`--metrics` path to metrics file
+
 `--config-url` path to Boyar configuration
 
 `--ethereum-endpoint` HTTP endpoint for the Ethereum node
@@ -65,6 +67,10 @@ In case you ever need to regenerate the SSL certificate:
 `--orchestrator-options` allows to override `orchestrator` section of boyar JSON config. Takes JSON object as a parameter.
 
 `--show-configuration` show configuration for evaluation and exit
+
+`--show-status` print status in json format and exit
+
+`--show-metrics` print the list of prometheus metrics and exit
 
 `--max-reload-time-delay` introduces jitter to reloading configuration to make network more stable, only works in daemon mode (duration: 1s, 1m, 1h, etc)
 

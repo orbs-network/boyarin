@@ -3,9 +3,13 @@ package services
 import (
 	"bytes"
 	"github.com/c9s/goprocinfo/linux"
+	"github.com/orbs-network/boyarin/strelets/adapter"
+	"github.com/orbs-network/scribe/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/common/expfmt"
+	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -28,12 +32,10 @@ func GetSerializedMetrics(registry *prometheus.Registry) (value string, err erro
 }
 
 type Metrics struct {
-	cpuLoad          prometheus.Histogram
-	memoryLoad       prometheus.Histogram
-	usedMemoryMBytes prometheus.Histogram
-
-	diskReadTics  map[string]prometheus.Histogram
-	diskWriteTics map[string]prometheus.Histogram
+	cpuLoad          prometheus.Gauge
+	memoryLoad       prometheus.Gauge
+	usedMemoryMBytes prometheus.Gauge
+	efsAccessTimeMs  prometheus.Gauge
 }
 
 func getCPULoad() (float64, error) {
@@ -45,114 +47,68 @@ func getCPULoad() (float64, error) {
 	return float64(cpu.User + cpu.Nice + cpu.System + cpu.Idle), nil
 }
 
-func GetDiskNames() (names []string, err error) {
-	diskStats, err := readDiskStats()
-	for _, stat := range diskStats {
-		names = append(names, stat.Name)
-	}
-
-	return
-}
-
-func InitializeMetrics(registry *prometheus.Registry, diskNames []string) (Metrics, error) {
-	usedWriteTics := make(map[string]prometheus.Histogram)
-	usedReadTics := make(map[string]prometheus.Histogram)
-
-	for _, name := range diskNames {
-		usedWriteTics[name] = promauto.With(registry).NewHistogram(prometheus.HistogramOpts{
-			Name: "used_read_ticks",
-			Help: "total memory used in megabytes",
-			ConstLabels: map[string]string{
-				"disk": name,
-			},
-		})
-
-		usedReadTics[name] = promauto.With(registry).NewHistogram(prometheus.HistogramOpts{
-			Name: "used_write_ticks",
-			Help: "total memory used in megabytes",
-			ConstLabels: map[string]string{
-				"disk": name,
-			},
-		})
-	}
-
+func InitializeMetrics(registry *prometheus.Registry) (Metrics, error) {
 	return Metrics{
-		usedMemoryMBytes: promauto.With(registry).NewHistogram(prometheus.HistogramOpts{
-			Name: "used_memory",
+		usedMemoryMBytes: promauto.With(registry).NewGauge(prometheus.GaugeOpts{
+			Name: "used_memory_mbs",
 			Help: "total memory used in megabytes",
 		}),
-		memoryLoad: promauto.With(registry).NewHistogram(prometheus.HistogramOpts{
-			Name: "memory_load",
+		memoryLoad: promauto.With(registry).NewGauge(prometheus.GaugeOpts{
+			Name: "memory_load_percent",
 			Help: "total memory load in percent",
 		}),
-		cpuLoad: promauto.With(registry).NewHistogram(prometheus.HistogramOpts{
-			Name: "cpu_load",
+		cpuLoad: promauto.With(registry).NewGauge(prometheus.GaugeOpts{
+			Name: "cpu_load_percent",
 			Help: "CPU load across all processors in percent",
+		}),
+		efsAccessTimeMs: promauto.With(registry).NewGauge(prometheus.GaugeOpts{
+			Name: "efs_access_time_ms",
+			Help: "EFS access time in milliseconds",
 		}),
 	}, nil
 }
 
-func readDiskStats() ([]linux.DiskStat, error) {
-	return linux.ReadDiskStats("/proc/diskstats")
+const EFS_ACCESS_ERROR_VALUE = float64(-99999)
+
+// in case of error return negative value
+func measureEFSAccessTime() (float64, error) {
+	start := time.Now()
+	err := filepath.Walk(adapter.DEFAULT_EFS_PATH, func(path string, info os.FileInfo, err error) error {
+		return err
+	})
+
+	if err != nil {
+		return EFS_ACCESS_ERROR_VALUE, err
+	}
+
+	return float64(time.Since(start).Milliseconds()), nil
 }
 
-func findDiskStatByName(stats []linux.DiskStat, name string) (linux.DiskStat, error) {
-	for _, stat := range stats {
-		if stat.Name == name {
-			return stat, nil
-		}
-	}
-
-	return linux.DiskStat{}, nil
-}
-
-const MB = 1000 * 1000
-const SECTOR = 512
-
-func collectMetrics(m Metrics) error {
-	cpu0, err := getCPULoad()
-	if err != nil {
-		return nil
-	}
-
-	disks0, err := readDiskStats()
-	if err != nil {
-		return nil
-	}
+func CollectMetrics(m Metrics, logger log.Logger) {
+	cpu0, errCPU0 := getCPULoad()
 
 	<-time.After(time.Second)
-	cpu1, err := getCPULoad()
-	if err != nil {
-		return nil
-	}
 
-	disks1, err := readDiskStats()
-	if err != nil {
-		return nil
+	cpu1, errCPU1 := getCPULoad()
+	if errCPU0 != nil {
+		logger.Error("failed to read /proc/stat", log.Error(errCPU0))
+	} else if errCPU1 != nil {
+		logger.Error("failed to read /proc/stat", log.Error(errCPU1))
+	} else {
+		m.cpuLoad.Set((cpu1 - cpu0) * 100)
 	}
-
-	m.cpuLoad.Observe((cpu1 - cpu0) * 100)
 
 	memInfo, err := linux.ReadMemInfo("/proc/meminfo")
 	if err != nil {
-		return nil
+		logger.Error("failed to read /proc/meminfo", log.Error(err))
+	} else {
+		m.usedMemoryMBytes.Set(float64(memInfo.MemAvailable-memInfo.MemFree) / 1000)
+		m.memoryLoad.Set(float64((memInfo.MemAvailable - memInfo.MemFree) / memInfo.MemAvailable * 100))
 	}
 
-	m.usedMemoryMBytes.Observe(float64(memInfo.MemAvailable-memInfo.MemFree) / 1000)
-	m.memoryLoad.Observe(float64((memInfo.MemAvailable - memInfo.MemFree) / memInfo.MemAvailable * 100))
-
-	for _, stat0 := range disks0 {
-		stat1, err := findDiskStatByName(disks1, stat0.Name)
-		if err != nil {
-			return err
-		}
-
-		diskReadsMbs := float64(stat1.ReadSectors-stat0.ReadSectors) * SECTOR / MB
-		diskWritesMbs := float64(stat1.WriteSectors-stat0.WriteSectors) * SECTOR / MB
-
-		m.diskReadTics[stat0.Name].Observe(diskReadsMbs)
-		m.diskWriteTics[stat0.Name].Observe(diskWritesMbs)
+	accessTime, err := measureEFSAccessTime()
+	if err != nil {
+		logger.Error("failed to measure EFS access time", log.Error(err))
 	}
-
-	return nil
+	m.efsAccessTimeMs.Set(accessTime)
 }

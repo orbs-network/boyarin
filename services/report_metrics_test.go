@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"github.com/orbs-network/scribe/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/stretchr/testify/require"
@@ -28,9 +29,24 @@ func TestGetSerializedMetrics(t *testing.T) {
 func TestInitializeMetrics(t *testing.T) {
 	registry := prometheus.NewRegistry()
 
-	metrics, err := InitializeMetrics(registry, []string{"disk0", "disk1"})
+	metrics, err := InitializeMetrics(registry)
 	require.NoError(t, err)
 	require.NotNil(t, metrics)
+
+	serializedMetrics, err := GetSerializedMetrics(registry)
+	require.NoError(t, err)
+	fmt.Println(serializedMetrics)
+}
+
+func TestCollectMetrics(t *testing.T) {
+	registry := prometheus.NewRegistry()
+
+	metrics, err := InitializeMetrics(registry)
+	require.NoError(t, err)
+	require.NotNil(t, metrics)
+
+	logger := log.GetLogger()
+	CollectMetrics(metrics, logger)
 
 	serializedMetrics, err := GetSerializedMetrics(registry)
 	require.NoError(t, err)

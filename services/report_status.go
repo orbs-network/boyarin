@@ -21,8 +21,13 @@ func WatchAndReportServicesStatus(ctx context.Context, logger log.Logger, status
 		start := time.Now()
 		ctxWithTimeout, cancel := context.WithTimeout(ctx, SERVICE_STATUS_REPORT_TIMEOUT)
 		defer cancel()
-		if err := reportStatus(ctxWithTimeout, logger, SERVICE_STATUS_REPORT_PERIOD, statusFilePath); err != nil {
+		if status, err := GetStatus(ctxWithTimeout, logger, SERVICE_STATUS_REPORT_PERIOD); err != nil {
 			logger.Error("status check failed", log.Error(err))
+		} else {
+			rawJSON, _ := json.MarshalIndent(status, "  ", "  ")
+			if err := ioutil.WriteFile(statusFilePath, rawJSON, 0644); err != nil {
+				logger.Error("failed to write status.json", log.Error(err))
+			}
 		}
 
 		select {
@@ -39,15 +44,14 @@ type StatusResponse struct {
 	Payload   interface{}
 }
 
-func reportStatus(ctx context.Context, logger log.Logger, since time.Duration, statusFilePath string) error {
+func GetStatus(ctx context.Context, logger log.Logger, since time.Duration) (status StatusResponse, err error) {
 	// We really don't need any options here since we're just observing
 	orchestrator, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{}, logger)
 	if err != nil {
-		return err
+		return
 	}
 	defer orchestrator.Close()
 
-	var status StatusResponse
 	containerStatus, err := orchestrator.GetStatus(ctx, since)
 	if err != nil {
 		status = StatusResponse{
@@ -74,6 +78,5 @@ func reportStatus(ctx context.Context, logger log.Logger, since time.Duration, s
 		}
 	}
 
-	rawJSON, _ := json.Marshal(status)
-	return ioutil.WriteFile(statusFilePath, rawJSON, 0644)
+	return
 }

@@ -32,6 +32,7 @@ func main() {
 	logFilePath := flag.String("log", "", "path to log file")
 
 	statusFilePath := flag.String("status", "", "path to status file")
+	metricsFilePath := flag.String("metrics", "", "path to metrics file")
 
 	orchestratorOptionsPtr := flag.String("orchestrator-options", "", "allows to override `orchestrator` section of boyar config, takes JSON object as a parameter")
 
@@ -58,10 +59,10 @@ func main() {
 	basicLogger := log.GetLogger()
 
 	if *statusOnly {
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), services.SERVICE_STATUS_REPORT_TIMEOUT)
 		defer cancel()
 
-		if status, err := services.GetStatus(ctx, basicLogger, 30*time.Second); err != nil {
+		if status, err := services.GetStatus(ctx, basicLogger, services.SERVICE_STATUS_REPORT_TIMEOUT); err != nil {
 			basicLogger.Error("status check failed", log.Error(err))
 			os.Exit(1)
 		} else {
@@ -76,12 +77,15 @@ func main() {
 		registry := prometheus.NewRegistry()
 		metrics, err := services.InitializeMetrics(registry)
 
+		ctx, cancel := context.WithTimeout(context.Background(), services.METRICS_REPORT_TIMEOUT)
+		defer cancel()
+
 		if err != nil {
 			basicLogger.Error("failed to initialize metrics", log.Error(err))
 			os.Exit(1)
 		}
 
-		services.CollectMetrics(metrics, basicLogger)
+		services.CollectMetrics(ctx, metrics, basicLogger)
 
 		serializedMetrics, err := services.GetSerializedMetrics(registry)
 		if err != nil {
@@ -99,6 +103,7 @@ func main() {
 		KeyPairConfigPath:   *keyPairConfigPathPtr,
 		LogFilePath:         *logFilePath,
 		StatusFilePath:      *statusFilePath,
+		MetricsFilePath:     *metricsFilePath,
 		PollingInterval:     *pollingIntervalPtr,
 		Timeout:             *timeoutPtr,
 		MaxReloadTimeDelay:  *maxReloadTimePtr,

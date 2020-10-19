@@ -26,6 +26,14 @@ func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) (govnr
 		supervisor.Supervise(WatchAndReportServicesStatus(ctx, logger, flags.StatusFilePath))
 	}
 
+	if flags.MetricsFilePath == "" {
+		logger.Info("metrics file path is empty, metrics report disabled")
+	} else if waiter, err := WatchAndReportMetrics(ctx, logger, flags.MetricsFilePath); err != nil {
+		logger.Error("failed to report metrics", log.Error(err))
+	} else {
+		supervisor.Supervise(waiter)
+	}
+
 	cfgFetcher := NewConfigurationPollService(flags, logger)
 	coreBoyar := NewCoreBoyarService(logger)
 

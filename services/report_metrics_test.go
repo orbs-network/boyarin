@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"github.com/orbs-network/scribe/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -46,7 +47,10 @@ func TestCollectMetrics(t *testing.T) {
 	require.NotNil(t, metrics)
 
 	logger := log.GetLogger()
-	CollectMetrics(metrics, logger)
+	//ctx, cancel := context.WithTimeout(context.Background(), 0)
+	//defer cancel()
+	ctx := context.Background()
+	CollectMetrics(ctx, metrics, logger)
 
 	serializedMetrics, err := GetSerializedMetrics(registry)
 	require.NoError(t, err)

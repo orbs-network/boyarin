@@ -26,7 +26,7 @@ func WatchAndReportServicesStatus(ctx context.Context, logger log.Logger, status
 		} else {
 			rawJSON, _ := json.MarshalIndent(status, "  ", "  ")
 			if err := ioutil.WriteFile(statusFilePath, rawJSON, 0644); err != nil {
-				logger.Error("failed to write status.json", log.Error(err))
+				logger.Error("failed to write status file", log.Error(err))
 			}
 		}
 

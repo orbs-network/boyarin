@@ -18,7 +18,8 @@ type Flags struct {
 	LoggerHttpEndpoint string
 	LogFilePath        string
 
-	StatusFilePath string
+	StatusFilePath  string
+	MetricsFilePath string
 
 	OrchestratorOptions string
 

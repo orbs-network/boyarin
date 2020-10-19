@@ -21,8 +21,6 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 	for _, chain := range chains {
 		containerName := b.config.NamespacedContainerName(chain.GetContainerName())
 
-		fmt.Println("chain.Disabled", chain.Disabled)
-
 		if chain.Disabled {
 			if b.cache.vChains.CheckNewJsonValue(containerName, removed) {
 				if err := b.orchestrator.RemoveService(ctx, containerName); err != nil {
@@ -42,8 +40,6 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 
 		input := getVirtualChainConfig(b.config, chain)
 		v := b.cache.vChains.CheckNewJsonValue(containerName, input)
-
-		fmt.Println("v???", v)
 
 		if v {
 			imageName := chain.DockerConfig.FullImageName()

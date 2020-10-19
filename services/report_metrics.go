@@ -18,6 +18,10 @@ import (
 	"time"
 )
 
+const EFS_ACCESS_ERROR_VALUE = float64(-99999)
+const METRICS_REPORT_TIMEOUT = 5 * time.Minute
+const METRICS_REPORT_PERIOD = 30 * time.Second
+
 func GetSerializedMetrics(registry *prometheus.Registry) (value string, err error) {
 	mfs, err := registry.Gather()
 	if err != nil {
@@ -73,8 +77,6 @@ func InitializeMetrics(registry *prometheus.Registry) (Metrics, error) {
 	}, nil
 }
 
-const EFS_ACCESS_ERROR_VALUE = float64(-99999)
-
 // in case of error return negative value
 func measureEFSAccessTime(ctx context.Context) (float64, error) {
 	select {
@@ -122,9 +124,6 @@ func CollectMetrics(ctx context.Context, m Metrics, logger log.Logger) {
 	}
 	m.efsAccessTimeMs.Set(accessTime)
 }
-
-const METRICS_REPORT_TIMEOUT = 5 * time.Minute
-const METRICS_REPORT_PERIOD = 10 * time.Second
 
 func WatchAndReportMetrics(ctx context.Context, logger log.Logger, metricsFilePath string) (govnr.ShutdownWaiter, error) {
 	errorHandler := utils.NewLogErrors("metrics reporter", logger)

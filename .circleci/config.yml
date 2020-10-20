@@ -28,14 +28,6 @@ jobs:
       - store_test_results: # upload test results for display in Test Summary
           path: /tmp/test-results
 
-  dev-build:
-    docker:
-      - image: itamararjuan/golang_with_node_aws
-    steps:
-      - checkout
-      - run: ./.circleci/set-aws-credentials.sh
-      - run: ./.circleci/build-to-s3.sh
-
   test-e2e:
     machine: true
     environment:
@@ -74,6 +66,3 @@ workflows:
     jobs:
       - test
       - test-e2e
-      - dev-build:
-          requires:
-            - test

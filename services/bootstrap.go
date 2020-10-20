@@ -5,7 +5,6 @@ import (
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/scribe/log"
 	"io/ioutil"
-	"os"
 )
 
 func Bootstrap(ctx context.Context, flags *config.Flags, logger log.Logger) (*config.Flags, error) {
@@ -20,11 +19,6 @@ func Bootstrap(ctx context.Context, flags *config.Flags, logger log.Logger) (*co
 	if err != nil {
 		return nil, err
 	}
-
-	// clean up old files
-	logger.Info("cleaning up old files")
-	os.Remove(flags.MetricsFilePath)
-	os.Remove(flags.StatusFilePath)
 
 	newFlags := &config.Flags{
 		ConfigUrl: cfg.OrchestratorOptions().DynamicManagementConfig.Url,

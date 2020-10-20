@@ -70,8 +70,6 @@ In case you ever need to regenerate the SSL certificate:
 
 `--show-status` print status in json format and exit
 
-`--show-metrics` print the list of prometheus metrics and exit
-
 `--max-reload-time-delay` introduces jitter to reloading configuration to make network more stable, only works in daemon mode (duration: 1s, 1m, 1h, etc)
 
 `--timeout` timeout for provisioning all virtual chains (duration: 1s, 1m, 1h, etc)

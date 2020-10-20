@@ -27,30 +27,17 @@ func TestGetSerializedMetrics(t *testing.T) {
 	require.Contains(t, serializedMetrics, "myapp_processed_ops_total 10")
 }
 
-func TestInitializeMetrics(t *testing.T) {
-	registry := prometheus.NewRegistry()
-
-	metrics, err := InitializeMetrics(registry)
-	require.NoError(t, err)
-	require.NotNil(t, metrics)
-
-	serializedMetrics, err := GetSerializedMetrics(registry)
-	require.NoError(t, err)
-	fmt.Println(serializedMetrics)
-}
-
 func TestCollectMetrics(t *testing.T) {
 	registry := prometheus.NewRegistry()
-
-	metrics, err := InitializeMetrics(registry)
-	require.NoError(t, err)
-	require.NotNil(t, metrics)
 
 	logger := log.GetLogger()
 	//ctx, cancel := context.WithTimeout(context.Background(), 0)
 	//defer cancel()
 	ctx := context.Background()
-	CollectMetrics(ctx, metrics, logger)
+
+	m, _ := CollectMetrics(ctx, logger)
+	metrics := InitializeAndUpdatePrometheusMetrics(registry, m)
+	require.NotNil(t, metrics)
 
 	serializedMetrics, err := GetSerializedMetrics(registry)
 	require.NoError(t, err)

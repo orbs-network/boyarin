@@ -10,7 +10,6 @@ import (
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/version"
 	"github.com/orbs-network/scribe/log"
-	"github.com/prometheus/client_golang/prometheus"
 	"os"
 	"time"
 )
@@ -45,8 +44,7 @@ func main() {
 	help := flag.Bool("help", false, "show usage")
 	showVersion := flag.Bool("version", false, "show version")
 
-	showMetrics := flag.Bool("metrics-only", false, "print the list of prometheus metrics and exit")
-	showStatus := flag.Bool("status-only", false, "print status in json format and exit")
+	showStatus := flag.Bool("show-status", false, "print status in json format and exit")
 
 	flag.Parse()
 
@@ -62,38 +60,9 @@ func main() {
 		ctx, cancel := context.WithTimeout(context.Background(), services.SERVICE_STATUS_REPORT_TIMEOUT)
 		defer cancel()
 
-		if status, err := services.GetStatus(ctx, basicLogger, services.SERVICE_STATUS_REPORT_TIMEOUT); err != nil {
-			basicLogger.Error("status check failed", log.Error(err))
-			os.Exit(1)
-		} else {
-			rawJSON, _ := json.MarshalIndent(status, "  ", "  ")
-			fmt.Println(string(rawJSON))
-		}
-
-		return
-	}
-
-	if *showMetrics {
-		registry := prometheus.NewRegistry()
-		metrics, err := services.InitializeMetrics(registry)
-
-		ctx, cancel := context.WithTimeout(context.Background(), services.METRICS_REPORT_TIMEOUT)
-		defer cancel()
-
-		if err != nil {
-			basicLogger.Error("failed to initialize metrics", log.Error(err))
-			os.Exit(1)
-		}
-
-		services.CollectMetrics(ctx, metrics, basicLogger)
-
-		serializedMetrics, err := services.GetSerializedMetrics(registry)
-		if err != nil {
-			basicLogger.Error("failed to serialize metrics", log.Error(err))
-			os.Exit(1)
-		}
-
-		fmt.Println(serializedMetrics)
+		status, _ := services.GetStatusAndMetrics(ctx, basicLogger, services.SERVICE_STATUS_REPORT_TIMEOUT)
+		rawJSON, _ := json.MarshalIndent(status, "  ", "  ")
+		fmt.Println(string(rawJSON))
 
 		return
 	}

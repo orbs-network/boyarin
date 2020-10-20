@@ -7,20 +7,14 @@ import (
 	"github.com/c9s/goprocinfo/linux"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/utils"
-	"github.com/orbs-network/govnr"
 	"github.com/orbs-network/scribe/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/common/expfmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
 )
-
-const EFS_ACCESS_ERROR_VALUE = float64(-99999)
-const METRICS_REPORT_TIMEOUT = 5 * time.Minute
-const METRICS_REPORT_PERIOD = 30 * time.Second
 
 func GetSerializedMetrics(registry *prometheus.Registry) (value string, err error) {
 	mfs, err := registry.Gather()
@@ -41,23 +35,30 @@ func GetSerializedMetrics(registry *prometheus.Registry) (value string, err erro
 }
 
 type Metrics struct {
+	CPULoad          uint64
+	MemoryLoad       uint64
+	UsedMemoryMBytes uint64
+	EFSAccessTimeMs  uint64
+}
+
+type PrometheusMetrics struct {
 	cpuLoad          prometheus.Gauge
 	memoryLoad       prometheus.Gauge
 	usedMemoryMBytes prometheus.Gauge
 	efsAccessTimeMs  prometheus.Gauge
 }
 
-func getCPULoad() (float64, error) {
+func getCPULoad() (uint64, error) {
 	cpuStats, err := linux.ReadStat("/proc/stat")
 	if err != nil {
 		return 0, err
 	}
 	cpu := cpuStats.CPUStatAll
-	return float64(cpu.User + cpu.Nice + cpu.System + cpu.Idle), nil
+	return cpu.User + cpu.Nice + cpu.System + cpu.Idle, nil
 }
 
-func InitializeMetrics(registry *prometheus.Registry) (Metrics, error) {
-	return Metrics{
+func InitializeAndUpdatePrometheusMetrics(registry *prometheus.Registry, metrics Metrics) PrometheusMetrics {
+	prometheusMetrics := PrometheusMetrics{
 		usedMemoryMBytes: promauto.With(registry).NewGauge(prometheus.GaugeOpts{
 			Name: "used_memory_mbs",
 			Help: "total memory used in megabytes",
@@ -74,84 +75,63 @@ func InitializeMetrics(registry *prometheus.Registry) (Metrics, error) {
 			Name: "efs_access_time_ms",
 			Help: "EFS access time in milliseconds",
 		}),
-	}, nil
+	}
+
+	prometheusMetrics.usedMemoryMBytes.Set(float64(metrics.UsedMemoryMBytes))
+	prometheusMetrics.cpuLoad.Set(float64(metrics.CPULoad))
+	prometheusMetrics.memoryLoad.Set(float64(metrics.MemoryLoad))
+	prometheusMetrics.efsAccessTimeMs.Set(float64(metrics.EFSAccessTimeMs))
+
+	return prometheusMetrics
 }
 
-// in case of error return negative value
-func measureEFSAccessTime(ctx context.Context) (float64, error) {
+func measureEFSAccessTime(ctx context.Context) (uint64, error) {
 	select {
 	case <-ctx.Done():
-		return EFS_ACCESS_ERROR_VALUE, ctx.Err()
+		return 0, ctx.Err()
 	default:
 		start := time.Now()
 		err := filepath.Walk(adapter.DEFAULT_EFS_PATH, func(path string, info os.FileInfo, err error) error {
 			return err
 		})
 
-		if err != nil {
-			return EFS_ACCESS_ERROR_VALUE, err
-		}
-
-		return float64(time.Since(start).Milliseconds()), nil
+		return uint64(time.Since(start).Milliseconds()), err
 	}
 }
 
-func CollectMetrics(ctx context.Context, m Metrics, logger log.Logger) {
+func CollectMetrics(ctx context.Context, logger log.Logger) (metrics Metrics, aggregateError error) {
+	var errors []error
+
 	cpu0, errCPU0 := getCPULoad()
 
 	<-time.After(time.Second)
 
 	cpu1, errCPU1 := getCPULoad()
 	if errCPU0 != nil {
+		errors = append(errors, fmt.Errorf("failed to read /proc/stat: %s", errCPU0))
 		logger.Error("failed to read /proc/stat", log.Error(errCPU0))
 	} else if errCPU1 != nil {
+		errors = append(errors, fmt.Errorf("failed to read /proc/stat: %s", errCPU1))
 		logger.Error("failed to read /proc/stat", log.Error(errCPU1))
 	} else {
-		m.cpuLoad.Set((cpu1 - cpu0) * 100)
+		metrics.CPULoad = (cpu1 - cpu0) * 100
 	}
 
 	memInfo, err := linux.ReadMemInfo("/proc/meminfo")
 	if err != nil {
+		errors = append(errors, fmt.Errorf("failed to read /proc/meminfo: %s", err))
 		logger.Error("failed to read /proc/meminfo", log.Error(err))
 	} else {
-		m.usedMemoryMBytes.Set(float64(memInfo.MemAvailable-memInfo.MemFree) / 1000)
-		m.memoryLoad.Set(float64((memInfo.MemAvailable - memInfo.MemFree) / memInfo.MemAvailable * 100))
+		metrics.UsedMemoryMBytes = (memInfo.MemAvailable - memInfo.MemFree) / 1000
+		metrics.MemoryLoad = (memInfo.MemAvailable - memInfo.MemFree) / memInfo.MemAvailable * 100
 	}
 
 	accessTime, err := measureEFSAccessTime(ctx)
 	if err != nil {
+		errors = append(errors, fmt.Errorf("failed to measure EFS access time: %s", err))
 		logger.Error("failed to measure EFS access time", log.Error(err))
 	}
-	m.efsAccessTimeMs.Set(accessTime)
-}
+	metrics.EFSAccessTimeMs = accessTime
 
-func WatchAndReportMetrics(ctx context.Context, logger log.Logger, metricsFilePath string) (govnr.ShutdownWaiter, error) {
-	errorHandler := utils.NewLogErrors("metrics reporter", logger)
-	registry := prometheus.NewRegistry()
-
-	metrics, err := InitializeMetrics(registry)
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize metrics: %s", err)
-	}
-
-	return govnr.Forever(ctx, "metrics reporter", errorHandler, func() {
-		start := time.Now()
-		ctxWithTimeout, cancel := context.WithTimeout(ctx, METRICS_REPORT_TIMEOUT)
-		defer cancel()
-
-		CollectMetrics(ctxWithTimeout, metrics, logger)
-
-		if serializedMetrics, err := GetSerializedMetrics(registry); err != nil {
-			logger.Error("failed to serialize metrics", log.Error(err))
-		} else {
-			if err := ioutil.WriteFile(metricsFilePath, []byte(serializedMetrics), 0644); err != nil {
-				logger.Error("failed to write metrics file", log.Error(err))
-			}
-		}
-
-		select {
-		case <-ctx.Done():
-		case <-time.After(METRICS_REPORT_PERIOD - time.Since(start)): // consistent delay
-		}
-	}), nil
+	return metrics, utils.AggregateErrors(errors)
 }

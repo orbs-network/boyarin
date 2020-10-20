@@ -50,13 +50,13 @@ type PrometheusMetrics struct {
 	efsAccessTimeMs   prometheus.Gauge
 }
 
-func getCPULoad() (uint64, error) {
+func getCPULoad() (uint64, uint64, error) {
 	cpuStats, err := linux.ReadStat("/proc/stat")
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 	cpu := cpuStats.CPUStatAll
-	return cpu.User + cpu.Nice + cpu.System + cpu.Idle, nil
+	return cpu.User + cpu.Nice + cpu.System, cpu.Idle + cpu.IOWait, nil
 }
 
 func InitializeAndUpdatePrometheusMetrics(registry *prometheus.Registry, metrics Metrics) PrometheusMetrics {
@@ -108,11 +108,13 @@ func measureEFSAccessTime(ctx context.Context) (uint64, error) {
 func CollectMetrics(ctx context.Context, logger log.Logger) (metrics Metrics, aggregateError error) {
 	var errors []error
 
-	cpu0, errCPU0 := getCPULoad()
+	cpu0, idle0, errCPU0 := getCPULoad()
+	total0 := cpu0 + idle0
 
 	<-time.After(time.Second)
 
-	cpu1, errCPU1 := getCPULoad()
+	cpu1, idle1, errCPU1 := getCPULoad()
+	total1 := cpu1 + idle1
 	if errCPU0 != nil {
 		errors = append(errors, fmt.Errorf("failed to read /proc/stat: %s", errCPU0))
 		logger.Error("failed to read /proc/stat", log.Error(errCPU0))
@@ -120,7 +122,7 @@ func CollectMetrics(ctx context.Context, logger log.Logger) (metrics Metrics, ag
 		errors = append(errors, fmt.Errorf("failed to read /proc/stat: %s", errCPU1))
 		logger.Error("failed to read /proc/stat", log.Error(errCPU1))
 	} else {
-		metrics.CPULoad = float64(cpu1-cpu0) * 100
+		metrics.CPULoad = float64((total1-total0)-(idle1-idle0)) / float64(total1-total0) * 100
 	}
 
 	memInfo, err := linux.ReadMemInfo("/proc/meminfo")

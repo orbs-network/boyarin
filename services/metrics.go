@@ -35,17 +35,19 @@ func GetSerializedMetrics(registry *prometheus.Registry) (value string, err erro
 }
 
 type Metrics struct {
-	CPULoad          uint64
-	MemoryLoad       uint64
-	UsedMemoryMBytes uint64
-	EFSAccessTimeMs  uint64
+	CPULoad           float64
+	MemoryLoad        float64
+	UsedMemoryMBytes  uint64
+	TotalMemoryMBytes uint64
+	EFSAccessTimeMs   uint64
 }
 
 type PrometheusMetrics struct {
-	cpuLoad          prometheus.Gauge
-	memoryLoad       prometheus.Gauge
-	usedMemoryMBytes prometheus.Gauge
-	efsAccessTimeMs  prometheus.Gauge
+	cpuLoad           prometheus.Gauge
+	memoryLoad        prometheus.Gauge
+	usedMemoryMBytes  prometheus.Gauge
+	totalMemoryMBytes prometheus.Gauge
+	efsAccessTimeMs   prometheus.Gauge
 }
 
 func getCPULoad() (uint64, error) {
@@ -61,11 +63,15 @@ func InitializeAndUpdatePrometheusMetrics(registry *prometheus.Registry, metrics
 	prometheusMetrics := PrometheusMetrics{
 		usedMemoryMBytes: promauto.With(registry).NewGauge(prometheus.GaugeOpts{
 			Name: "used_memory_mbs",
-			Help: "total memory used in megabytes",
+			Help: "memory used in megabytes",
+		}),
+		totalMemoryMBytes: promauto.With(registry).NewGauge(prometheus.GaugeOpts{
+			Name: "total_memory_mbs",
+			Help: "total memory in megabytes",
 		}),
 		memoryLoad: promauto.With(registry).NewGauge(prometheus.GaugeOpts{
 			Name: "memory_load_percent",
-			Help: "total memory load in percent",
+			Help: "memory load in percent",
 		}),
 		cpuLoad: promauto.With(registry).NewGauge(prometheus.GaugeOpts{
 			Name: "cpu_load_percent",
@@ -78,8 +84,8 @@ func InitializeAndUpdatePrometheusMetrics(registry *prometheus.Registry, metrics
 	}
 
 	prometheusMetrics.usedMemoryMBytes.Set(float64(metrics.UsedMemoryMBytes))
-	prometheusMetrics.cpuLoad.Set(float64(metrics.CPULoad))
-	prometheusMetrics.memoryLoad.Set(float64(metrics.MemoryLoad))
+	prometheusMetrics.cpuLoad.Set(metrics.CPULoad)
+	prometheusMetrics.memoryLoad.Set(metrics.MemoryLoad)
 	prometheusMetrics.efsAccessTimeMs.Set(float64(metrics.EFSAccessTimeMs))
 
 	return prometheusMetrics
@@ -114,7 +120,7 @@ func CollectMetrics(ctx context.Context, logger log.Logger) (metrics Metrics, ag
 		errors = append(errors, fmt.Errorf("failed to read /proc/stat: %s", errCPU1))
 		logger.Error("failed to read /proc/stat", log.Error(errCPU1))
 	} else {
-		metrics.CPULoad = (cpu1 - cpu0) * 100
+		metrics.CPULoad = float64(cpu1-cpu0) * 100
 	}
 
 	memInfo, err := linux.ReadMemInfo("/proc/meminfo")
@@ -122,8 +128,9 @@ func CollectMetrics(ctx context.Context, logger log.Logger) (metrics Metrics, ag
 		errors = append(errors, fmt.Errorf("failed to read /proc/meminfo: %s", err))
 		logger.Error("failed to read /proc/meminfo", log.Error(err))
 	} else {
-		metrics.UsedMemoryMBytes = (memInfo.MemAvailable - memInfo.MemFree) / 1000
-		metrics.MemoryLoad = (memInfo.MemAvailable - memInfo.MemFree) / memInfo.MemAvailable * 100
+		metrics.UsedMemoryMBytes = (memInfo.MemTotal - memInfo.MemAvailable) / 1000
+		metrics.MemoryLoad = float64(memInfo.MemTotal-memInfo.MemAvailable) / float64(memInfo.MemTotal) * 100
+		metrics.TotalMemoryMBytes = memInfo.MemTotal / 1000
 	}
 
 	accessTime, err := measureEFSAccessTime(ctx)

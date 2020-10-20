@@ -1,7 +1,7 @@
 #!/bin/bash -x
 
 # setup a test machine (written for circleci) for e2e tests
-GO_VERSION=1.12.9
+GO_VERSION=1.15.3
 NODE_VERSION=12.13
 
 if [ -x "$(command -v go)" ]; then

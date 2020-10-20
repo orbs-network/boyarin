@@ -31,6 +31,7 @@ func main() {
 	logFilePath := flag.String("log", "", "path to log file")
 
 	statusFilePath := flag.String("status", "", "path to status file")
+	metricsFilePath := flag.String("metrics", "", "path to metrics file")
 
 	orchestratorOptionsPtr := flag.String("orchestrator-options", "", "allows to override `orchestrator` section of boyar config, takes JSON object as a parameter")
 
@@ -39,9 +40,11 @@ func main() {
 
 	managementConfig := flag.String("management-config", "", "bootstrap only a configuration provider service and then retrieve all configuration from it")
 
-	showConfiguration := flag.Bool("show-configuration", false, "show configuration and exit")
+	showConfiguration := flag.Bool("show-configuration", false, "print configuration and exit")
 	help := flag.Bool("help", false, "show usage")
 	showVersion := flag.Bool("version", false, "show version")
+
+	showStatus := flag.Bool("show-status", false, "print status in json format and exit")
 
 	flag.Parse()
 
@@ -51,11 +54,25 @@ func main() {
 		return
 	}
 
+	basicLogger := log.GetLogger()
+
+	if *showStatus {
+		ctx, cancel := context.WithTimeout(context.Background(), services.SERVICE_STATUS_REPORT_TIMEOUT)
+		defer cancel()
+
+		status, _ := services.GetStatusAndMetrics(ctx, basicLogger, services.SERVICE_STATUS_REPORT_TIMEOUT)
+		rawJSON, _ := json.MarshalIndent(status, "  ", "  ")
+		fmt.Println(string(rawJSON))
+
+		return
+	}
+
 	flags := &config.Flags{
 		ConfigUrl:           *configUrlPtr,
 		KeyPairConfigPath:   *keyPairConfigPathPtr,
 		LogFilePath:         *logFilePath,
 		StatusFilePath:      *statusFilePath,
+		MetricsFilePath:     *metricsFilePath,
 		PollingInterval:     *pollingIntervalPtr,
 		Timeout:             *timeoutPtr,
 		MaxReloadTimeDelay:  *maxReloadTimePtr,

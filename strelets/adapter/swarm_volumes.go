@@ -18,6 +18,8 @@ const ORBS_CACHE_TARGET = "/opt/orbs/cache"
 const REXRAY_EBS_DRIVER = "rexray/ebs"
 const LOCAL_DRIVER = "local"
 
+const DEFAULT_EFS_PATH = "/var/efs/"
+
 func getVchainVolumeName(nodeAddress string, vcId uint32, postfix string) string {
 	return fmt.Sprintf("%s-%d-%s", nodeAddress, vcId, postfix)
 }
@@ -102,7 +104,7 @@ func getVolumeDriverOptions(volumeName string, orchestratorOptions OrchestratorO
 			os.MkdirAll(dir, 0755)
 		}
 	case mount.TypeBind:
-		volumeName = "/var/efs/" + volumeName
+		volumeName = DEFAULT_EFS_PATH + volumeName
 		os.MkdirAll(volumeName, 0755)
 	}
 

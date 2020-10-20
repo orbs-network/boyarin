@@ -7,6 +7,7 @@ import (
 	"github.com/orbs-network/boyarin/utils"
 	"github.com/orbs-network/govnr"
 	"github.com/orbs-network/scribe/log"
+	"os"
 )
 
 func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) (govnr.ShutdownWaiter, error) {
@@ -20,10 +21,15 @@ func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) (govnr
 
 	supervisor := &govnr.TreeSupervisor{}
 
-	if flags.StatusFilePath == "" {
-		logger.Info("status file path is empty, docker service report disabled")
+	// clean up old files
+	logger.Info("cleaning up old files")
+	os.Remove(flags.MetricsFilePath)
+	os.Remove(flags.StatusFilePath)
+
+	if flags.StatusFilePath == "" && flags.MetricsFilePath == "" {
+		logger.Info("status file path and metrics file path are empty, periodical report disabled")
 	} else {
-		supervisor.Supervise(WatchAndReportServicesStatus(ctx, logger, flags.StatusFilePath))
+		supervisor.Supervise(WatchAndReportStatusAndMetrics(ctx, logger, flags.StatusFilePath, flags.MetricsFilePath))
 	}
 
 	cfgFetcher := NewConfigurationPollService(flags, logger)

@@ -23,31 +23,31 @@ func WatchAndReportStatusAndMetrics(ctx context.Context, logger log.Logger, stat
 		ctxWithTimeout, cancel := context.WithTimeout(ctx, SERVICE_STATUS_REPORT_TIMEOUT)
 		defer cancel()
 
+		status, metrics := GetStatusAndMetrics(ctxWithTimeout, logger, SERVICE_STATUS_REPORT_PERIOD)
+
+		if statusFilePath != "" {
+			rawJSON, _ := json.MarshalIndent(status, "  ", "  ")
+			if err := ioutil.WriteFile(statusFilePath, rawJSON, 0644); err != nil {
+				logger.Error("failed to write status file", log.Error(err))
+			}
+		}
+
+		if metricsFilePath != "" {
+			registry := prometheus.NewRegistry()
+			InitializeAndUpdatePrometheusMetrics(registry, metrics)
+			if serializedMetrics, err := GetSerializedMetrics(registry); err != nil {
+				logger.Error("failed to serialize metrics", log.Error(err))
+			} else {
+				if err := ioutil.WriteFile(metricsFilePath, []byte(serializedMetrics), 0644); err != nil {
+					logger.Error("failed to write metrics file", log.Error(err))
+				}
+			}
+		}
+
+		logger.Info("finished reporting status")
+
 		select {
 		case <-ctx.Done():
-			status, metrics := GetStatusAndMetrics(ctxWithTimeout, logger, SERVICE_STATUS_REPORT_PERIOD)
-
-			if statusFilePath != "" {
-				rawJSON, _ := json.MarshalIndent(status, "  ", "  ")
-				if err := ioutil.WriteFile(statusFilePath, rawJSON, 0644); err != nil {
-					logger.Error("failed to write status file", log.Error(err))
-				}
-			}
-
-			if metricsFilePath != "" {
-				registry := prometheus.NewRegistry()
-				InitializeAndUpdatePrometheusMetrics(registry, metrics)
-				if serializedMetrics, err := GetSerializedMetrics(registry); err != nil {
-					logger.Error("failed to serialize metrics", log.Error(err))
-				} else {
-					if err := ioutil.WriteFile(metricsFilePath, []byte(serializedMetrics), 0644); err != nil {
-						logger.Error("failed to write metrics file", log.Error(err))
-					}
-				}
-			}
-
-			logger.Info("finished reporting status")
-
 		case <-time.After(SERVICE_STATUS_REPORT_PERIOD - time.Since(start)): // to report exactly every minute
 		}
 	})

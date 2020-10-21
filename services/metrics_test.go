@@ -8,6 +8,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/stretchr/testify/require"
 	"testing"
+	"time"
 )
 
 func TestGetSerializedMetrics(t *testing.T) {
@@ -35,9 +36,8 @@ func TestCollectMetrics(t *testing.T) {
 	//defer cancel()
 	ctx := context.Background()
 
-	m, _ := CollectMetrics(ctx, logger)
-	metrics := InitializeAndUpdatePrometheusMetrics(registry, m)
-	require.NotNil(t, metrics)
+	m, _ := CollectMetrics(ctx, logger, time.Now())
+	InitializeAndUpdatePrometheusMetrics(registry, m)
 
 	serializedMetrics, err := GetSerializedMetrics(registry)
 	require.NoError(t, err)

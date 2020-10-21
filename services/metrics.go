@@ -43,6 +43,7 @@ type DiskMetric struct {
 }
 
 type Metrics struct {
+	BoyarUptime       float64
 	CPULoadPercent    float64
 	MemoryUsedPercent float64
 	MemoryUsedMBytes  float64
@@ -59,30 +60,34 @@ type PrometheusMetrics struct {
 	efsAccessTimeMs   prometheus.Gauge
 }
 
-func InitializeAndUpdatePrometheusMetrics(registry *prometheus.Registry, metrics Metrics) PrometheusMetrics {
-	prometheusMetrics := PrometheusMetrics{
-		memoryTotalMbytes: promauto.With(registry).NewGauge(prometheus.GaugeOpts{
-			Name: "memory_total_mbs",
-		}),
-		memoryUsedMbytes: promauto.With(registry).NewGauge(prometheus.GaugeOpts{
-			Name: "memory_used_mbs",
-		}),
-		memoryUsedPercent: promauto.With(registry).NewGauge(prometheus.GaugeOpts{
-			Name: "memory_used_percent",
-		}),
-		cpuLoadPercent: promauto.With(registry).NewGauge(prometheus.GaugeOpts{
-			Name: "cpu_load_percent",
-		}),
-		efsAccessTimeMs: promauto.With(registry).NewGauge(prometheus.GaugeOpts{
-			Name: "efs_access_time_ms",
-		}),
-	}
+func InitializeAndUpdatePrometheusMetrics(registry *prometheus.Registry, metrics Metrics) {
+	boyarUptimeSeconds := promauto.With(registry).NewGauge(prometheus.GaugeOpts{
+		Name: "boyar_uptime_seconds",
+	})
 
-	prometheusMetrics.memoryTotalMbytes.Set(metrics.MemoryTotalMBytes)
-	prometheusMetrics.memoryUsedMbytes.Set(float64(metrics.MemoryUsedMBytes))
-	prometheusMetrics.memoryUsedPercent.Set(metrics.MemoryUsedPercent)
-	prometheusMetrics.cpuLoadPercent.Set(metrics.CPULoadPercent)
-	prometheusMetrics.efsAccessTimeMs.Set(float64(metrics.EFSAccessTimeMs))
+	boyarUptimeSeconds.Set(metrics.BoyarUptime)
+
+	memoryTotalMbytes := promauto.With(registry).NewGauge(prometheus.GaugeOpts{
+		Name: "memory_total_mbs",
+	})
+	memoryUsedMbytes := promauto.With(registry).NewGauge(prometheus.GaugeOpts{
+		Name: "memory_used_mbs",
+	})
+	memoryUsedPercent := promauto.With(registry).NewGauge(prometheus.GaugeOpts{
+		Name: "memory_used_percent",
+	})
+	cpuLoadPercent := promauto.With(registry).NewGauge(prometheus.GaugeOpts{
+		Name: "cpu_load_percent",
+	})
+	efsAccessTimeMs := promauto.With(registry).NewGauge(prometheus.GaugeOpts{
+		Name: "efs_access_time_ms",
+	})
+
+	memoryTotalMbytes.Set(metrics.MemoryTotalMBytes)
+	memoryUsedMbytes.Set(float64(metrics.MemoryUsedMBytes))
+	memoryUsedPercent.Set(metrics.MemoryUsedPercent)
+	cpuLoadPercent.Set(metrics.CPULoadPercent)
+	efsAccessTimeMs.Set(float64(metrics.EFSAccessTimeMs))
 
 	for _, diskMetric := range metrics.Disks {
 		diskTotalMbs := promauto.With(registry).NewGauge(prometheus.GaugeOpts{
@@ -110,8 +115,6 @@ func InitializeAndUpdatePrometheusMetrics(registry *prometheus.Registry, metrics
 		diskUsedMbs.Set(diskMetric.UsedMbytes)
 		diskUsedPercent.Set(diskMetric.UsedPercent)
 	}
-
-	return prometheusMetrics
 }
 
 func measureEFSAccessTime(ctx context.Context) (uint64, error) {
@@ -128,8 +131,10 @@ func measureEFSAccessTime(ctx context.Context) (uint64, error) {
 	}
 }
 
-func CollectMetrics(ctx context.Context, logger log.Logger) (metrics Metrics, aggregateError error) {
+func CollectMetrics(ctx context.Context, logger log.Logger, startupTimestamp time.Time) (metrics Metrics, aggregateError error) {
 	var errors []error
+
+	metrics.BoyarUptime = time.Since(startupTimestamp).Seconds()
 
 	if cpuPercents, err := cpu.Percent(1*time.Second, false); err != nil {
 		errors = append(errors, fmt.Errorf("failed to read cpu info: %s", err))

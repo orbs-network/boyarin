@@ -18,12 +18,13 @@ const SERVICE_STATUS_REPORT_TIMEOUT = 15 * time.Second
 
 func WatchAndReportStatusAndMetrics(ctx context.Context, logger log.Logger, statusFilePath string, metricsFilePath string) govnr.ShutdownWaiter {
 	errorHandler := utils.NewLogErrors("service status reporter", logger)
+	startupTimestamp := time.Now()
 	return govnr.Forever(ctx, "service status reporter", errorHandler, func() {
 		start := time.Now()
 		ctxWithTimeout, cancel := context.WithTimeout(ctx, SERVICE_STATUS_REPORT_TIMEOUT)
 		defer cancel()
 
-		status, metrics := GetStatusAndMetrics(ctxWithTimeout, logger, SERVICE_STATUS_REPORT_PERIOD)
+		status, metrics := GetStatusAndMetrics(ctxWithTimeout, logger, startupTimestamp, SERVICE_STATUS_REPORT_PERIOD)
 
 		if statusFilePath != "" {
 			rawJSON, _ := json.MarshalIndent(status, "  ", "  ")
@@ -71,7 +72,7 @@ func statusResponseWithError(err error) StatusResponse {
 	}
 }
 
-func GetStatusAndMetrics(ctx context.Context, logger log.Logger, since time.Duration) (status StatusResponse, metrics Metrics) {
+func GetStatusAndMetrics(ctx context.Context, logger log.Logger, startupTimestamp time.Time, dockerStatusPeriod time.Duration) (status StatusResponse, metrics Metrics) {
 	// We really don't need any options here since we're just observing
 	orchestrator, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{}, logger)
 	if err != nil {
@@ -79,7 +80,7 @@ func GetStatusAndMetrics(ctx context.Context, logger log.Logger, since time.Dura
 	} else {
 		defer orchestrator.Close()
 
-		containerStatus, err := orchestrator.GetStatus(ctx, since)
+		containerStatus, err := orchestrator.GetStatus(ctx, dockerStatusPeriod)
 		if err != nil {
 			status = statusResponseWithError(err)
 		} else {
@@ -99,7 +100,7 @@ func GetStatusAndMetrics(ctx context.Context, logger log.Logger, since time.Dura
 		}
 	}
 
-	metrics, err = CollectMetrics(ctx, logger)
+	metrics, err = CollectMetrics(ctx, logger, startupTimestamp)
 	if err != nil {
 		status.Status = "Failed to collect metrics"
 		status.Error = err.Error()

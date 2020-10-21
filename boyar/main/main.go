@@ -60,7 +60,7 @@ func main() {
 		ctx, cancel := context.WithTimeout(context.Background(), services.SERVICE_STATUS_REPORT_TIMEOUT)
 		defer cancel()
 
-		status, _ := services.GetStatusAndMetrics(ctx, basicLogger, services.SERVICE_STATUS_REPORT_TIMEOUT)
+		status, _ := services.GetStatusAndMetrics(ctx, basicLogger, time.Now(), services.SERVICE_STATUS_REPORT_TIMEOUT)
 		rawJSON, _ := json.MarshalIndent(status, "  ", "  ")
 		fmt.Println(string(rawJSON))
 

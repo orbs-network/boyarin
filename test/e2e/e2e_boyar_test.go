@@ -7,7 +7,6 @@ import (
 	"github.com/orbs-network/govnr"
 	"github.com/orbs-network/scribe/log"
 	"testing"
-	"time"
 )
 
 const PublicKey = "cfc9e5189223aedce9543be0ef419f89aaa69e8b"
@@ -73,7 +72,7 @@ func TestE2ERunMultipleVirtualChains(t *testing.T) {
 		defer cleanup()
 		waiter = InProcessBoyar(t, ctx, logger, flags)
 
-		helpers.RequireEventually(t, 40*time.Second, func(t helpers.TestingT) {
+		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT*2, func(t helpers.TestingT) {
 			AssertVchainUp(t, 80, PublicKey, vc1)
 			AssertVchainUp(t, 80, PublicKey, vc2)
 		})

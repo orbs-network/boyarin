@@ -18,7 +18,8 @@ func Test_getVirtualChainServiceSpec(t *testing.T) {
 		{Source: "vol2"},
 	}
 
-	restartDelay := time.Duration(10 * time.Second)
+	restartDelay := 20 * time.Minute
+	successWindow := 2 * time.Minute
 	replicas := uint64(1)
 
 	serviceConfig := &ServiceConfig{
@@ -48,8 +49,9 @@ func Test_getVirtualChainServiceSpec(t *testing.T) {
 			Mounts:  mounts,
 		},
 		RestartPolicy: &swarm.RestartPolicy{
-			Condition: "",
+			Condition: "on-failure",
 			Delay:     &restartDelay,
+			Window:    &successWindow,
 		},
 		Resources: &swarm.ResourceRequirements{
 			Limits: &swarm.Resources{

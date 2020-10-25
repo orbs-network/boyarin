@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"path/filepath"
 	"testing"
 )
 
@@ -33,32 +32,12 @@ func createFilesPerMount(t *testing.T, mounts []mount.Mount) {
 	}
 }
 
-func verifyFilesExist(t *testing.T, mounts []mount.Mount) bool {
-	require.NotZero(t, len(mounts), "number of mounts should be more than 0")
-
-	var filenames []string
-
+func mountsToPaths(mounts []mount.Mount) (results []string) {
 	for _, m := range mounts {
-		volumePath := m.Source
-
-		if err := filepath.Walk(volumePath, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-
-			if !info.IsDir() {
-				filenames = append(filenames, path)
-			}
-
-			return err
-		}); err != nil {
-			require.NoError(t, err)
-		}
+		results = append(results, m.Source)
 	}
 
-	t.Log("files found:", filenames)
-
-	return len(filenames) != 0
+	return
 }
 
 func TestPurgeServiceData(t *testing.T) {
@@ -81,14 +60,14 @@ func TestPurgeServiceData(t *testing.T) {
 		mounts, err := orchestrator.provisionServiceVolumes(ctx, containerName, nil)
 		require.NoError(t, err)
 
-		require.False(t, verifyFilesExist(t, mounts))
+		require.False(t, helpers.VerifyFilesExist(t, mountsToPaths(mounts)...))
 
 		createFilesPerMount(t, mounts)
-		require.True(t, verifyFilesExist(t, mounts))
+		require.True(t, helpers.VerifyFilesExist(t, mountsToPaths(mounts)...))
 
 		err = orchestrator.PurgeServiceData(ctx, containerName)
 		require.NoError(t, err)
-		require.False(t, verifyFilesExist(t, mounts))
+		require.False(t, helpers.VerifyFilesExist(t, mountsToPaths(mounts)...))
 	})
 }
 
@@ -118,13 +97,13 @@ func TestPurgeVirtualChainData(t *testing.T) {
 		require.NoError(t, err)
 		mounts = append(mounts, blocksMount)
 
-		require.False(t, verifyFilesExist(t, mounts))
+		require.False(t, helpers.VerifyFilesExist(t, mountsToPaths(mounts)...))
 
 		createFilesPerMount(t, mounts)
-		require.True(t, verifyFilesExist(t, mounts))
+		require.True(t, helpers.VerifyFilesExist(t, mountsToPaths(mounts)...))
 
 		err = orchestrator.PurgeVirtualChainData(ctx, nodeAddress, vcId, containerName)
 		require.NoError(t, err)
-		require.False(t, verifyFilesExist(t, mounts))
+		require.False(t, helpers.VerifyFilesExist(t, mountsToPaths(mounts)...))
 	})
 }

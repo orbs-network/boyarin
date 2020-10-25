@@ -143,8 +143,8 @@ func managementConfigJson(deps boyarDependencies, vChains []VChainArgument, node
 				"ResetTimeout": "30m",
 			},
 			// FIXME find a way to pass storage driver
-			//"storage-driver":     "local",
-			//"storage-mount-type": "bind",
+			"storage-driver":     deps.storageDriver,
+			"storage-mount-type": deps.storageMountType,
 		},
 		"chains": chains,
 		"services": map[string]interface{}{

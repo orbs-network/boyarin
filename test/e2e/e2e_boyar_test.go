@@ -3,9 +3,13 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/orbs-network/govnr"
 	"github.com/orbs-network/scribe/log"
+	"github.com/stretchr/testify/require"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -126,6 +130,10 @@ func TestE2EAddAndRemoveVirtualChain(t *testing.T) {
 	})
 }
 
+func efsDir(dir string) string {
+	return filepath.Join(adapter.DEFAULT_EFS_PATH, dir)
+}
+
 func TestE2EPurgeVirtualChain(t *testing.T) {
 	helpers.SkipUnlessSwarmIsEnabled(t)
 
@@ -140,7 +148,22 @@ func TestE2EPurgeVirtualChain(t *testing.T) {
 		vChainsChannel := make(chan []VChainArgument)
 		defer close(vChainsChannel)
 
-		flags, cleanup := SetupDynamicBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), vChainsChannel)
+		deps := defaultBoyarDependencies(keys, genesisValidators(NETWORK_KEY_CONFIG))
+		deps.storageDriver = "local"
+		deps.storageMountType = "bind"
+
+		dirs := []string{
+			efsDir("cfc9e5189223aedce9543be0ef419f89aaa69e8b-42-blocks"),
+			efsDir("cfc9e5-chain-42-status"),
+			efsDir("cfc9e5-chain-42-logs"),
+			efsDir("cfc9e5-chain-42-cache"),
+		}
+
+		for _, dir := range dirs {
+			os.RemoveAll(dir)
+		}
+
+		flags, cleanup := SetupDynamicBoyarDepencenciesForNetwork(t, deps, vChainsChannel)
 		defer cleanup()
 		waiter = InProcessBoyar(t, ctx, logger, flags)
 
@@ -148,6 +171,7 @@ func TestE2EPurgeVirtualChain(t *testing.T) {
 		vChainsChannel <- []VChainArgument{vc1}
 		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
 			AssertVchainUp(t, 80, PublicKey, vc1)
+			require.True(t, helpers.VerifyFilesExist(t, dirs...))
 		})
 
 		vc1.Disabled = true
@@ -157,6 +181,7 @@ func TestE2EPurgeVirtualChain(t *testing.T) {
 		vChainsChannel <- []VChainArgument{vc1}
 		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT*3, func(t helpers.TestingT) {
 			AssertVchainDown(t, 80, vc1)
+			require.False(t, helpers.VerifyFilesExist(t, dirs...))
 		})
 		return
 	})

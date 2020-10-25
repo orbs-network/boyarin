@@ -22,6 +22,9 @@ type boyarDependencies struct {
 	topology          []interface{}
 	genesisValidators []string
 	httpPort          int
+
+	storageDriver    string
+	storageMountType string
 }
 
 func readOnlyChannel(vChains ...VChainArgument) chan []VChainArgument {
@@ -32,7 +35,12 @@ func readOnlyChannel(vChains ...VChainArgument) chan []VChainArgument {
 }
 
 func SetupDynamicBoyarDependencies(t *testing.T, keyPair KeyConfig, genesisValidators []string, vChains <-chan []VChainArgument) (*config.Flags, func()) {
-	deps := boyarDependencies{
+	deps := defaultBoyarDependencies(keyPair, genesisValidators)
+	return SetupDynamicBoyarDepencenciesForNetwork(t, deps, vChains)
+}
+
+func defaultBoyarDependencies(keyPair KeyConfig, genesisValidators []string) boyarDependencies {
+	return boyarDependencies{
 		keyPair:           keyPair,
 		genesisValidators: genesisValidators,
 		topology: []interface{}{
@@ -44,8 +52,6 @@ func SetupDynamicBoyarDependencies(t *testing.T, keyPair KeyConfig, genesisValid
 		},
 		httpPort: 80,
 	}
-
-	return SetupDynamicBoyarDepencenciesForNetwork(t, deps, vChains)
 }
 
 func SetupDynamicBoyarDepencenciesForNetwork(t *testing.T, deps boyarDependencies, vChains <-chan []VChainArgument) (*config.Flags, func()) {

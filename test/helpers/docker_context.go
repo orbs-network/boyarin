@@ -9,6 +9,7 @@ import (
 	dockerClient "github.com/docker/docker/client"
 	"github.com/orbs-network/boyarin/utils"
 	"github.com/stretchr/testify/require"
+	"os"
 	"testing"
 	"time"
 )
@@ -174,4 +175,10 @@ func DockerClient(t TestingT) *dockerClient.Client {
 	}
 
 	return client
+}
+
+func SkipUnlessSwarmIsEnabled(t *testing.T) {
+	if os.Getenv("ENABLE_SWARM") != "true" {
+		t.Skip("skipping test, docker swarm is disabled")
+	}
 }

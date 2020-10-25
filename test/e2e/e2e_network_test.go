@@ -41,7 +41,7 @@ func TestE2ERunFullNetwork(t *testing.T) {
 					httpPort:          httpPort,
 				}
 
-				vChainsChannel := singleUseChannel(vc)
+				vChainsChannel := readOnlyChannel(vc)
 				flags, cleanup := SetupDynamicBoyarDepencenciesForNetwork(t, deps, vChainsChannel)
 				defer cleanup()
 

@@ -17,6 +17,20 @@ import (
 
 const DEFAULT_VCHAIN_TIMEOUT = 90 * time.Second
 
+type boyarDependencies struct {
+	keyPair           KeyConfig
+	topology          []interface{}
+	genesisValidators []string
+	httpPort          int
+}
+
+func readOnlyChannel(vChains ...VChainArgument) chan []VChainArgument {
+	vChainsChannel := make(chan []VChainArgument, 1)
+	vChainsChannel <- vChains
+	close(vChainsChannel)
+	return vChainsChannel
+}
+
 func SetupDynamicBoyarDependencies(t *testing.T, keyPair KeyConfig, genesisValidators []string, vChains <-chan []VChainArgument) (*config.Flags, func()) {
 	deps := boyarDependencies{
 		keyPair:           keyPair,
@@ -82,25 +96,6 @@ func SetupConfigServer(t *testing.T, keyPair KeyConfig, configBuilder func(manag
 		defer ts.Close()
 	}
 	return flags, cleanup
-}
-
-type boyarDependencies struct {
-	keyPair           KeyConfig
-	topology          []interface{}
-	genesisValidators []string
-	httpPort          int
-}
-
-func SetupBoyarDependencies(t *testing.T, keyPair KeyConfig, genesisValidators []string, vChains ...VChainArgument) (*config.Flags, func()) {
-	vChainsChannel := singleUseChannel(vChains...)
-	return SetupDynamicBoyarDependencies(t, keyPair, genesisValidators, vChainsChannel)
-}
-
-func singleUseChannel(vChains ...VChainArgument) chan []VChainArgument {
-	vChainsChannel := make(chan []VChainArgument, 1)
-	vChainsChannel <- vChains
-	close(vChainsChannel)
-	return vChainsChannel
 }
 
 func InProcessBoyar(t *testing.T, ctx context.Context, logger log.Logger, flags *config.Flags) govnr.ShutdownWaiter {

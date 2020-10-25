@@ -26,7 +26,8 @@ func TestE2EBootstrapWithDefaultConfig(t *testing.T) {
 			NodePrivateKey: PrivateKey,
 		}
 
-		defaultFlags, cleanup := SetupBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), vc1)
+		vChainsChannel := readOnlyChannel(vc1)
+		defaultFlags, cleanup := SetupDynamicBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), vChainsChannel)
 		defer cleanup()
 
 		bootstrapConfig := fmt.Sprintf(`

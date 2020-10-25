@@ -24,7 +24,8 @@ func TestE2ERunSingleVirtualChain(t *testing.T) {
 			NodePrivateKey: PrivateKey,
 		}
 
-		flags, cleanup := SetupBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), vc1)
+		vcChannel := readOnlyChannel(vc1)
+		flags, cleanup := SetupDynamicBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), vcChannel)
 		defer cleanup()
 		waiter = InProcessBoyar(t, ctx, logger, flags)
 
@@ -68,7 +69,8 @@ func TestE2ERunMultipleVirtualChains(t *testing.T) {
 			NodePrivateKey: PrivateKey,
 		}
 
-		flags, cleanup := SetupBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), vc1, vc2)
+		vChainsChannel := readOnlyChannel(vc1, vc2)
+		flags, cleanup := SetupDynamicBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), vChainsChannel)
 		defer cleanup()
 		waiter = InProcessBoyar(t, ctx, logger, flags)
 

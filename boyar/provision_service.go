@@ -41,14 +41,17 @@ func (b *boyar) provisionService(ctx context.Context, serviceName string, servic
 			if err := b.orchestrator.RemoveService(ctx, serviceName); err != nil {
 				b.cache.services.Clear(serviceName)
 				logger.Error("failed to remove service", log.Error(err))
+				return err
 			} else {
 				logger.Info("successfully removed service")
 			}
 		}
 
-		if service.PurgeData && b.cache.services.CheckNewJsonValue(serviceName+"-purged", removed) {
+		if key := serviceName + "-data"; service.PurgeData && b.cache.services.CheckNewJsonValue(key, removed) {
 			if err := b.orchestrator.PurgeServiceData(ctx, fullServiceName); err != nil {
+				b.cache.vChains.Clear(key)
 				logger.Error("failed to purge service data", log.Error(err))
+				return err
 			} else {
 				logger.Info("successfully purged service data")
 			}

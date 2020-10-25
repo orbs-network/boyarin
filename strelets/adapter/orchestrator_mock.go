@@ -49,3 +49,13 @@ func (a *OrchestratorMock) GetOverlayNetwork(ctx context.Context, name string) (
 	res := a.MethodCalled("GetOverlayNetwork", ctx, name)
 	return res.String(0), res.Error(1)
 }
+
+func (a *OrchestratorMock) PurgeServiceData(ctx context.Context, containerName string) error {
+	res := a.MethodCalled("PurgeServiceData", ctx, containerName)
+	return res.Error(1)
+}
+
+func (a *OrchestratorMock) PurgeVirtualChainData(ctx context.Context, nodeAddress string, vcId uint32, containerName string) error {
+	res := a.MethodCalled("PurgeVirtualChainData", ctx, nodeAddress, vcId, containerName)
+	return res.Error(1)
+}

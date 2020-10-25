@@ -34,9 +34,11 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 				}
 			}
 
-			if chain.PurgeData && b.cache.services.CheckNewJsonValue(containerName+"-purged", removed) {
-				if err := b.orchestrator.PurgeServiceData(ctx, containerName); err != nil {
+			if key := containerName + "-data"; chain.PurgeData && b.cache.vChains.CheckNewJsonValue(key, removed) {
+				if err := b.orchestrator.PurgeVirtualChainData(ctx, string(b.config.NodeAddress()), uint32(chain.Id), containerName); err != nil {
+					b.cache.vChains.Clear(key)
 					logger.Error("failed to purge vchain data", log.Error(err))
+					errors = append(errors, err)
 				} else {
 					logger.Info("successfully purged vchain data")
 				}

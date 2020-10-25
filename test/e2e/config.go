@@ -105,7 +105,7 @@ func (vc VChainArgument) ExternalPort() int {
 	return port + vc.Id
 }
 
-func managementConfigJson(nodeManagementUrl string, vchainManagementFileUrl string, httpPort int, vChains []VChainArgument) string {
+func managementConfigJson(deps boyarDependencies, vChains []VChainArgument, nodeManagementUrl string, vchainManagementFileUrl string) string {
 	var chains []map[string]interface{}
 	for _, vc := range vChains {
 		chains = append(chains, map[string]interface{}{
@@ -136,7 +136,7 @@ func managementConfigJson(nodeManagementUrl string, vchainManagementFileUrl stri
 		"network": []string{},
 		"orchestrator": map[string]interface{}{
 			"max-reload-time-delay": "1s",
-			"http-port":             httpPort,
+			"http-port":             deps.httpPort,
 			"DynamicManagementConfig": map[string]interface{}{
 				"Url":          nodeManagementUrl,
 				"ReadInterval": "1m",
@@ -163,9 +163,9 @@ func managementConfigJson(nodeManagementUrl string, vchainManagementFileUrl stri
 	return string(jsonStr)
 }
 
-func vchainManagementConfig(vcArgument []VChainArgument, topology interface{}, genesisValidator []string) string {
+func vchainManagementConfig(deps boyarDependencies, vcArgument []VChainArgument) string {
 	var committee []map[string]interface{}
-	for _, validator := range genesisValidator {
+	for _, validator := range deps.genesisValidators {
 		committee = append(committee, map[string]interface{}{
 			"OrbsAddress":  validator,
 			"Weight":       1000,
@@ -178,7 +178,7 @@ func vchainManagementConfig(vcArgument []VChainArgument, topology interface{}, g
 		chains[fmt.Sprintf("%d", vc.Id)] = map[string]interface{}{
 			"VirtualChainId":  vc.Id,
 			"GenesisRefTime":  0,
-			"CurrentTopology": topology,
+			"CurrentTopology": deps.topology,
 			"CommitteeEvents": []interface{}{
 				map[string]interface{}{
 					"RefTime":   0,

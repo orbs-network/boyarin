@@ -36,13 +36,13 @@ func SetupDynamicBoyarDependencies(t *testing.T, keyPair KeyConfig, genesisValid
 
 func SetupDynamicBoyarDepencenciesForNetwork(t *testing.T, deps boyarDependencies, vChains <-chan []VChainArgument) (*config.Flags, func()) {
 	return SetupConfigServer(t, deps.keyPair, func(managementUrl string, vchainManagementUrl string) (*string, *string) {
-		configStr := managementConfigJson(managementUrl, vchainManagementUrl, deps.httpPort, []VChainArgument{})
+		configStr := managementConfigJson(deps, []VChainArgument{}, managementUrl, vchainManagementUrl)
 		managementStr := "{}"
 
 		go func() {
 			for currentChains := range vChains {
-				configStr = managementConfigJson(managementUrl, vchainManagementUrl, deps.httpPort, currentChains)
-				managementStr = vchainManagementConfig(currentChains, deps.topology, deps.genesisValidators)
+				configStr = managementConfigJson(deps, currentChains, managementUrl, vchainManagementUrl)
+				managementStr = vchainManagementConfig(deps, currentChains)
 				fmt.Println(configStr)
 				fmt.Println(managementStr)
 			}

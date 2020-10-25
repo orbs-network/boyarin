@@ -25,9 +25,9 @@ func GetLogger(flags *Flags) (log.Logger, error) {
 		}
 
 		fileWriter := log.NewTruncatingFileWriter(logFile, DEFAULT_TRUNCATE_WINDOW)
-		outputs = append(outputs, log.NewFormattingOutput(fileWriter, log.NewHumanReadableFormatter()))
+		outputs = append(outputs, log.NewFormattingOutput(fileWriter, log.NewJsonFormatter()))
 	} else {
-		outputs = append(outputs, log.NewFormattingOutput(os.Stdout, log.NewHumanReadableFormatter()))
+		outputs = append(outputs, log.NewFormattingOutput(os.Stdout, log.NewJsonFormatter()))
 	}
 
 	tags := []*log.Field{

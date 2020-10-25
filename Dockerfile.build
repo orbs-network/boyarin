@@ -4,14 +4,16 @@ ARG git_commit
 
 RUN apk add --no-cache gcc linux-headers libc-dev git
 
-WORKDIR /src
-
-ADD . /src
-
-RUN go get
-
 RUN env
 
 RUN go env
+
+WORKDIR /src
+
+ADD go.* /src/
+
+RUN go mod download
+
+ADD . /src
 
 RUN GIT_COMMIT=${git_commit:-unknown} sh -x build-binaries.sh

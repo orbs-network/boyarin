@@ -88,9 +88,10 @@ func buildTopology(keyPairs []KeyConfig, vcId int) (topology []interface{}) {
 }
 
 type VChainArgument struct {
-	Id       int
-	Disabled bool
-	BasePort int
+	Id        int
+	Disabled  bool
+	PurgeData bool
+	BasePort  int
 }
 
 const basePort = 6000
@@ -113,6 +114,7 @@ func managementConfigJson(nodeManagementUrl string, vchainManagementFileUrl stri
 			"InternalPort":     4400,
 			"ExternalPort":     vc.ExternalPort(),
 			"Disabled":         vc.Disabled,
+			"PurgeData":        vc.PurgeData,
 			"DockerConfig": map[string]interface{}{
 				"Image": "orbsnetwork/node",
 				"Tag":   "v1.3.16",
@@ -140,6 +142,9 @@ func managementConfigJson(nodeManagementUrl string, vchainManagementFileUrl stri
 				"ReadInterval": "1m",
 				"ResetTimeout": "30m",
 			},
+			// FIXME find a way to pass storage driver
+			//"storage-driver":     "local",
+			//"storage-mount-type": "bind",
 		},
 		"chains": chains,
 		"services": map[string]interface{}{

@@ -123,3 +123,39 @@ func TestE2EAddAndRemoveVirtualChain(t *testing.T) {
 		return
 	})
 }
+
+func TestE2EPurgeVirtualChain(t *testing.T) {
+	helpers.SkipUnlessSwarmIsEnabled(t)
+
+	vc1 := VChainArgument{Id: 42}
+	helpers.WithContextAndShutdown(func(ctx context.Context) (waiter govnr.ShutdownWaiter) {
+		logger := log.GetLogger()
+		helpers.InitSwarmEnvironment(t, ctx)
+		keys := KeyConfig{
+			NodeAddress:    PublicKey,
+			NodePrivateKey: PrivateKey,
+		}
+		vChainsChannel := make(chan []VChainArgument)
+		defer close(vChainsChannel)
+
+		flags, cleanup := SetupDynamicBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), vChainsChannel)
+		defer cleanup()
+		waiter = InProcessBoyar(t, ctx, logger, flags)
+
+		logger.Info(fmt.Sprintf("adding vchain %d", vc1.Id))
+		vChainsChannel <- []VChainArgument{vc1}
+		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
+			AssertVchainUp(t, 80, PublicKey, vc1)
+		})
+
+		vc1.Disabled = true
+		vc1.PurgeData = true
+
+		logger.Info(fmt.Sprintf("disabling and purging vchain %d", vc1.Id))
+		vChainsChannel <- []VChainArgument{vc1}
+		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT*3, func(t helpers.TestingT) {
+			AssertVchainDown(t, 80, vc1)
+		})
+		return
+	})
+}

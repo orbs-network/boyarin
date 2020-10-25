@@ -34,7 +34,14 @@ func TestE2ERunFullNetwork(t *testing.T) {
 
 				vc := vcs[i]
 				httpPort := basePort*2 + 1000*i
-				flags, cleanup := SetupBoyarDependenciesForNetwork(t, keys, topology, genesisValidators(NETWORK_KEY_CONFIG), httpPort, vc)
+				deps := boyarDependencies{
+					keyPair:           keys,
+					topology:          topology,
+					genesisValidators: genesisValidators(NETWORK_KEY_CONFIG),
+					httpPort:          httpPort,
+				}
+
+				flags, cleanup := SetupBoyarDependenciesForNetwork(t, deps, vc)
 				defer cleanup()
 
 				waiter = InProcessBoyar(t, ctx, logger, flags)

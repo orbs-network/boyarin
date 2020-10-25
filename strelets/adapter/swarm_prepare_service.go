@@ -44,7 +44,7 @@ func (d *dockerSwarmOrchestrator) RunService(ctx context.Context, serviceConfig 
 		secrets = append(secrets, getSecretReference(serviceConfig.ContainerName, config.keysSecretId, "keyPair", "keys.json"))
 	}
 
-	mounts, err := d.provisionServiceVolumes(ctx, serviceConfig)
+	mounts, err := d.provisionServiceVolumes(ctx, serviceConfig, false)
 	if err != nil {
 		return err
 	}
@@ -54,7 +54,7 @@ func (d *dockerSwarmOrchestrator) RunService(ctx context.Context, serviceConfig 
 	return d.create(ctx, spec, serviceConfig.ImageName)
 }
 
-func (d *dockerSwarmOrchestrator) provisionServiceVolumes(ctx context.Context, serviceConfig *ServiceConfig) (mounts []mount.Mount, err error) {
+func (d *dockerSwarmOrchestrator) provisionServiceVolumes(ctx context.Context, serviceConfig *ServiceConfig, ignoreMultipleLogsMountPoints bool) (mounts []mount.Mount, err error) {
 	if statusMount, err := d.provisionStatusVolume(ctx, serviceConfig.ContainerName, ORBS_STATUS_TARGET); err != nil {
 		return nil, err
 	} else {
@@ -73,7 +73,7 @@ func (d *dockerSwarmOrchestrator) provisionServiceVolumes(ctx context.Context, s
 		} else {
 			mounts = append(mounts, logsMount)
 		}
-	} else {
+	} else if !ignoreMultipleLogsMountPoints {
 		// special case for multiple logs
 		for simpleName, namespacedName := range serviceConfig.LogsMountPointNames {
 			if logsMount, err := d.provisionLogsVolume(ctx, namespacedName, GetNestedLogsMountPath(simpleName)); err != nil {

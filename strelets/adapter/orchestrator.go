@@ -68,6 +68,8 @@ type Orchestrator interface {
 
 	GetStatus(ctx context.Context, since time.Duration) ([]*ContainerStatus, error)
 
+	PurgeServiceData(ctx context.Context, containerName string) error
+
 	io.Closer
 }
 

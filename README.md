@@ -28,6 +28,12 @@ export GOOS=linux
 ./build-binaries.sh
 ```
 
+Alternatively, building in Docker:
+
+```
+./docker-build.sh
+```
+
 To publish new version to S3: update `.version` file and run this command:
 
 ```bash

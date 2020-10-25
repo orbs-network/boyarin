@@ -115,7 +115,7 @@ func TestE2EAddAndRemoveVirtualChain(t *testing.T) {
 		vc2.Disabled = true
 		logger.Info(fmt.Sprintf("adding vchain %d", vc2.Id))
 		vChainsChannel <- []VChainArgument{vc1, vc2}
-		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT*2, func(t helpers.TestingT) {
+		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT*3, func(t helpers.TestingT) {
 			AssertVchainUp(t, 80, PublicKey, vc1)
 			AssertVchainDown(t, 80, vc2)
 			AssertServiceDown(t, ctx, "cfc9e5-chain-45")

@@ -13,6 +13,11 @@ func VerifyFilesExist(t TestingT, directories ...string) bool {
 	var filenames []string
 
 	for _, dir := range directories {
+		_, err := os.Lstat(dir)
+		if err != nil {
+
+		}
+
 		if err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
@@ -24,7 +29,11 @@ func VerifyFilesExist(t TestingT, directories ...string) bool {
 
 			return err
 		}); err != nil {
-			require.NoError(t, err)
+			if os.IsNotExist(err) {
+				continue
+			} else {
+				require.NoError(t, err)
+			}
 		}
 	}
 

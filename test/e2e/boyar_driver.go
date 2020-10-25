@@ -91,19 +91,16 @@ type boyarDependencies struct {
 	httpPort          int
 }
 
-func SetupBoyarDependenciesForNetwork(t *testing.T, deps boyarDependencies, vChains ...VChainArgument) (*config.Flags, func()) {
-	vChainsChannel := make(chan []VChainArgument, 1)
-	vChainsChannel <- vChains
-	close(vChainsChannel)
-	return SetupDynamicBoyarDepencenciesForNetwork(t, deps, vChainsChannel)
+func SetupBoyarDependencies(t *testing.T, keyPair KeyConfig, genesisValidators []string, vChains ...VChainArgument) (*config.Flags, func()) {
+	vChainsChannel := singleUseChannel(vChains...)
+	return SetupDynamicBoyarDependencies(t, keyPair, genesisValidators, vChainsChannel)
 }
 
-func SetupBoyarDependencies(t *testing.T, keyPair KeyConfig, genesisValidators []string, vChains ...VChainArgument) (*config.Flags, func()) {
+func singleUseChannel(vChains ...VChainArgument) chan []VChainArgument {
 	vChainsChannel := make(chan []VChainArgument, 1)
 	vChainsChannel <- vChains
 	close(vChainsChannel)
-
-	return SetupDynamicBoyarDependencies(t, keyPair, genesisValidators, vChainsChannel)
+	return vChainsChannel
 }
 
 func InProcessBoyar(t *testing.T, ctx context.Context, logger log.Logger, flags *config.Flags) govnr.ShutdownWaiter {

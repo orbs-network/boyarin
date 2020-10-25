@@ -7,7 +7,6 @@ import (
 	"github.com/orbs-network/scribe/log"
 	"github.com/stretchr/testify/require"
 	"testing"
-	"time"
 )
 
 func TestE2ERunFullNetwork(t *testing.T) {
@@ -17,8 +16,9 @@ func TestE2ERunFullNetwork(t *testing.T) {
 		helpers.InitSwarmEnvironment(t, ctx)
 	})
 
+	const NUM_VCS = 4
 	var vcs []VChainArgument
-	for i := 0; i < 4; i++ {
+	for i := 0; i < NUM_VCS; i++ {
 		vcs = append(vcs, VChainArgument{
 			Id:       42,
 			BasePort: basePort + 1000*i,
@@ -33,7 +33,7 @@ func TestE2ERunFullNetwork(t *testing.T) {
 				logger := log.GetLogger().WithTags(log.Int("node", i))
 
 				vc := vcs[i]
-				httpPort := basePort*2 + 1000*i
+				httpPort := basePort*2 + 1000*i // very ad hoc
 				deps := boyarDependencies{
 					keyPair:           keys,
 					topology:          topology,
@@ -41,12 +41,13 @@ func TestE2ERunFullNetwork(t *testing.T) {
 					httpPort:          httpPort,
 				}
 
-				flags, cleanup := SetupBoyarDependenciesForNetwork(t, deps, vc)
+				vChainsChannel := singleUseChannel(vc)
+				flags, cleanup := SetupDynamicBoyarDepencenciesForNetwork(t, deps, vChainsChannel)
 				defer cleanup()
 
 				waiter = InProcessBoyar(t, ctx, logger, flags)
 
-				helpers.RequireEventually(t, 1*time.Minute, func(t helpers.TestingT) {
+				helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
 					AssertVchainUp(t, httpPort, keys.NodeAddress, vc)
 				})
 
@@ -55,7 +56,7 @@ func TestE2ERunFullNetwork(t *testing.T) {
 		}(i, keys)
 	}
 
-	helpers.RequireEventually(t, 3*time.Minute, func(t helpers.TestingT) {
+	helpers.RequireEventually(t, NUM_VCS*DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
 		metrics := GetVChainMetrics(t, basePort*2, vcs[0])
 		require.EqualValues(t, 3, metrics.Uint64("BlockStorage.BlockHeight"))
 	})

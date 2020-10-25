@@ -44,7 +44,7 @@ func (d *dockerSwarmOrchestrator) RunService(ctx context.Context, serviceConfig 
 		secrets = append(secrets, getSecretReference(serviceConfig.ContainerName, config.keysSecretId, "keyPair", "keys.json"))
 	}
 
-	mounts, err := d.provisionServiceVolumes(ctx, serviceConfig, false)
+	mounts, err := d.provisionServiceVolumes(ctx, serviceConfig.ContainerName, serviceConfig.LogsMountPointNames)
 	if err != nil {
 		return err
 	}
@@ -54,28 +54,28 @@ func (d *dockerSwarmOrchestrator) RunService(ctx context.Context, serviceConfig 
 	return d.create(ctx, spec, serviceConfig.ImageName)
 }
 
-func (d *dockerSwarmOrchestrator) provisionServiceVolumes(ctx context.Context, serviceConfig *ServiceConfig, ignoreMultipleLogsMountPoints bool) (mounts []mount.Mount, err error) {
-	if statusMount, err := d.provisionStatusVolume(ctx, serviceConfig.ContainerName, ORBS_STATUS_TARGET); err != nil {
+func (d *dockerSwarmOrchestrator) provisionServiceVolumes(ctx context.Context, containerName string, logsMountPointNames map[string]string) (mounts []mount.Mount, err error) {
+	if statusMount, err := d.provisionStatusVolume(ctx, containerName, ORBS_STATUS_TARGET); err != nil {
 		return nil, err
 	} else {
 		mounts = append(mounts, statusMount)
 	}
 
-	if cacheMount, err := d.provisionCacheVolume(ctx, serviceConfig.ContainerName); err != nil {
+	if cacheMount, err := d.provisionCacheVolume(ctx, containerName); err != nil {
 		return nil, err
 	} else {
 		mounts = append(mounts, cacheMount)
 	}
 
-	if len(serviceConfig.LogsMountPointNames) == 0 {
-		if logsMount, err := d.provisionLogsVolume(ctx, serviceConfig.ContainerName, ORBS_LOGS_TARGET); err != nil {
+	if len(logsMountPointNames) == 0 {
+		if logsMount, err := d.provisionLogsVolume(ctx, containerName, ORBS_LOGS_TARGET); err != nil {
 			return nil, fmt.Errorf("failed to provision volumes: %s", err)
 		} else {
 			mounts = append(mounts, logsMount)
 		}
-	} else if !ignoreMultipleLogsMountPoints {
+	} else {
 		// special case for multiple logs
-		for simpleName, namespacedName := range serviceConfig.LogsMountPointNames {
+		for simpleName, namespacedName := range logsMountPointNames {
 			if logsMount, err := d.provisionLogsVolume(ctx, namespacedName, GetNestedLogsMountPath(simpleName)); err != nil {
 				return nil, fmt.Errorf("failed to provision volumes: %s", err)
 			} else {

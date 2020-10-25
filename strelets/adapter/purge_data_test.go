@@ -78,12 +78,7 @@ func TestPurgeServiceData(t *testing.T) {
 
 		containerName := "diamond-dogs"
 
-		serviceConfig := ServiceConfig{
-			Name:          containerName,
-			ContainerName: containerName,
-		}
-
-		mounts, err := orchestrator.provisionServiceVolumes(ctx, &serviceConfig, true)
+		mounts, err := orchestrator.provisionServiceVolumes(ctx, containerName, nil)
 		require.NoError(t, err)
 
 		require.False(t, verifyFilesExist(t, mounts))

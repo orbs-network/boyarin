@@ -55,7 +55,7 @@ func (d *dockerSwarmOrchestrator) RunVirtualChain(ctx context.Context, serviceCo
 		getSecretReference(serviceConfig.ContainerName, config.networkSecretId, "network", "network.json"),
 	}
 
-	mounts, err := d.provisionServiceVolumes(ctx, serviceConfig, true)
+	mounts, err := d.provisionServiceVolumes(ctx, serviceConfig.ContainerName, nil)
 	if err != nil {
 		return err
 	}

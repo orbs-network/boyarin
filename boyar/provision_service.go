@@ -7,7 +7,6 @@ import (
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/utils"
-	"github.com/orbs-network/govnr"
 	"github.com/orbs-network/scribe/log"
 	"github.com/pkg/errors"
 )
@@ -43,14 +42,15 @@ func (b *boyar) provisionService(ctx context.Context, serviceName string, servic
 				b.cache.services.Clear(serviceName)
 				logger.Error("failed to remove service", log.Error(err))
 			} else {
-				if service.PurgeData {
-					govnr.Once(utils.NewLogErrors("apply config changes", logger), func() {
-						// FIXME add purge data to the orchestrator
-						//err := b.orchestrator.PurgeData()
-					})
-				}
-
 				logger.Info("successfully removed service")
+			}
+		}
+
+		if service.PurgeData && b.cache.services.CheckNewJsonValue(serviceName+"-purged", removed) {
+			if err := b.orchestrator.PurgeServiceData(ctx, fullServiceName); err != nil {
+				logger.Error("failed to purge service data", log.Error(err))
+			} else {
+				logger.Info("successfully purged service data")
 			}
 		}
 

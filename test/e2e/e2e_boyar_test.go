@@ -179,7 +179,7 @@ func TestE2EPurgeVirtualChain(t *testing.T) {
 
 		logger.Info(fmt.Sprintf("disabling and purging vchain %d", vc1.Id))
 		vChainsChannel <- []VChainArgument{vc1}
-		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT*3, func(t helpers.TestingT) {
+		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT*2, func(t helpers.TestingT) {
 			AssertVchainDown(t, 80, vc1)
 			require.False(t, helpers.VerifyFilesExist(t, dirs...))
 		})

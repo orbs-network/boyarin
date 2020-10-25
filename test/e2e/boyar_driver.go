@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-const DEFAULT_VCHAIN_TIMEOUT = 90 * time.Second
+const DEFAULT_VCHAIN_TIMEOUT = 120 * time.Second
 
 type boyarDependencies struct {
 	keyPair           KeyConfig

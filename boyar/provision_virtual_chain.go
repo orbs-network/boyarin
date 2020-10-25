@@ -23,9 +23,9 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 		logger := b.logger.WithTags(log_types.VirtualChainId(int64(chain.Id)))
 
 		if chain.Disabled {
-			if b.cache.vChains.CheckNewJsonValue(containerName, removed) {
+			if key := containerName; b.cache.vChains.CheckNewJsonValue(key, removed) {
 				if err := b.orchestrator.RemoveService(ctx, containerName); err != nil {
-					b.cache.vChains.Clear(chain.Id.String())
+					b.cache.vChains.Clear(key)
 
 					logger.Error("failed to remove virtual chain", log.Error(err))
 					errors = append(errors, err)
@@ -48,9 +48,7 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 		}
 
 		input := getVirtualChainConfig(b.config, chain)
-		v := b.cache.vChains.CheckNewJsonValue(containerName, input)
-
-		if v {
+		if key := containerName; b.cache.vChains.CheckNewJsonValue(key, input) {
 			imageName := chain.DockerConfig.FullImageName()
 
 			if chain.DockerConfig.Pull {
@@ -84,7 +82,7 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 			}
 
 			if err := b.orchestrator.RunVirtualChain(ctx, serviceConfig, appConfig); err != nil {
-				b.cache.vChains.Clear(containerName)
+				b.cache.vChains.Clear(key)
 				logger.Error("failed to apply virtual chain configuration", log.Error(err))
 				errors = append(errors, err)
 			} else {

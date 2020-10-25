@@ -8,6 +8,9 @@ import (
 	"time"
 )
 
+var VIRTUAL_CHAIN_RESTART_DELAY = 20 * time.Minute
+var VIRTUAL_CHAIN_RESTART_SUCCESS_WINDOW = 2 * time.Minute
+
 func (d *dockerSwarmOrchestrator) RunVirtualChain(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) error {
 	if err := d.RemoveService(ctx, serviceConfig.ContainerName); err != nil {
 		return err
@@ -118,14 +121,15 @@ func getResourceRequirements(limitMemory int64, limitCPU float64, reserveMemory 
 }
 
 func getVirtualChainServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.SecretReference, mounts []mount.Mount, networks []swarm.NetworkAttachmentConfig) swarm.ServiceSpec {
-	restartDelay := time.Duration(10 * time.Second)
 	replicas := uint64(1)
 
 	spec := swarm.ServiceSpec{
 		TaskTemplate: swarm.TaskSpec{
 			ContainerSpec: getServiceContainerSpec(serviceConfig.ImageName, serviceConfig.ExecutablePath, secrets, mounts),
 			RestartPolicy: &swarm.RestartPolicy{
-				Delay: &restartDelay,
+				Delay:     &VIRTUAL_CHAIN_RESTART_DELAY,
+				Window:    &VIRTUAL_CHAIN_RESTART_SUCCESS_WINDOW,
+				Condition: swarm.RestartPolicyConditionOnFailure,
 			},
 			Resources: getResourceRequirements(serviceConfig.LimitedMemory, serviceConfig.LimitedCPU,
 				serviceConfig.ReservedMemory, serviceConfig.ReservedCPU),

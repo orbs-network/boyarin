@@ -20,18 +20,25 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 	var errors []error
 	for _, chain := range chains {
 		containerName := b.config.NamespacedContainerName(chain.GetContainerName())
+		logger := b.logger.WithTags(log_types.VirtualChainId(int64(chain.Id)))
 
 		if chain.Disabled {
 			if b.cache.vChains.CheckNewJsonValue(containerName, removed) {
 				if err := b.orchestrator.RemoveService(ctx, containerName); err != nil {
 					b.cache.vChains.Clear(chain.Id.String())
 
-					b.logger.Error("failed to remove virtual chain",
-						log_types.VirtualChainId(int64(chain.Id)),
-						log.Error(err))
+					logger.Error("failed to remove virtual chain", log.Error(err))
 					errors = append(errors, err)
 				} else {
-					b.logger.Info("successfully removed virtual chain", log_types.VirtualChainId(int64(chain.Id)))
+					logger.Info("successfully removed virtual chain", log_types.VirtualChainId(int64(chain.Id)))
+				}
+			}
+
+			if chain.PurgeData && b.cache.services.CheckNewJsonValue(containerName+"-purged", removed) {
+				if err := b.orchestrator.PurgeServiceData(ctx, containerName); err != nil {
+					logger.Error("failed to purge vchain data", log.Error(err))
+				} else {
+					logger.Info("successfully purged vchain data")
 				}
 			}
 
@@ -76,15 +83,11 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 
 			if err := b.orchestrator.RunVirtualChain(ctx, serviceConfig, appConfig); err != nil {
 				b.cache.vChains.Clear(containerName)
-				b.logger.Error("failed to apply virtual chain configuration",
-					log_types.VirtualChainId(int64(chain.Id)),
-					log.Error(err))
+				logger.Error("failed to apply virtual chain configuration", log.Error(err))
 				errors = append(errors, err)
 			} else {
 				data, _ := json.Marshal(chain)
-				b.logger.Info("updated virtual chain configuration",
-					log_types.VirtualChainId(int64(chain.Id)),
-					log.String("configuration", string(data)))
+				logger.Info("updated virtual chain configuration", log.String("configuration", string(data)))
 			}
 		}
 	}

@@ -69,6 +69,7 @@ type Orchestrator interface {
 	GetStatus(ctx context.Context, since time.Duration) ([]*ContainerStatus, error)
 
 	PurgeServiceData(ctx context.Context, containerName string) error
+	PurgeVirtualChainData(ctx context.Context, nodeAddress string, vcId uint32, containerName string) error
 
 	io.Closer
 }

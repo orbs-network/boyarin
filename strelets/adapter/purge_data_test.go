@@ -62,7 +62,7 @@ func verifyFilesExist(t *testing.T, mounts []mount.Mount) bool {
 }
 
 func TestPurgeServiceData(t *testing.T) {
-	//helpers.SkipUnlessSwarmIsEnabled(t)
+	helpers.SkipUnlessSwarmIsEnabled(t)
 
 	helpers.WithContext(func(ctx context.Context) {
 		helpers.InitSwarmEnvironment(t, ctx)
@@ -90,5 +90,41 @@ func TestPurgeServiceData(t *testing.T) {
 		require.NoError(t, err)
 		require.False(t, verifyFilesExist(t, mounts))
 	})
+}
 
+func TestPurgeVirtualChainData(t *testing.T) {
+	helpers.SkipUnlessSwarmIsEnabled(t)
+
+	helpers.WithContext(func(ctx context.Context) {
+		helpers.InitSwarmEnvironment(t, ctx)
+
+		logger := log.GetLogger()
+		orchestrator := &dockerSwarmOrchestrator{
+			client: helpers.DockerClient(t),
+			options: OrchestratorOptions{
+				StorageDriver:    LOCAL_DRIVER,
+				StorageMountType: "bind",
+			},
+			logger: logger}
+
+		containerName := "diamond-dogs-chain-95"
+		nodeAddress := "ADDR"
+		vcId := uint32(1974)
+
+		mounts, err := orchestrator.provisionServiceVolumes(ctx, containerName, nil)
+		require.NoError(t, err)
+
+		blocksMount, err := orchestrator.provisionVchainVolume(ctx, nodeAddress, vcId)
+		require.NoError(t, err)
+		mounts = append(mounts, blocksMount)
+
+		require.False(t, verifyFilesExist(t, mounts))
+
+		createFilesPerMount(t, mounts)
+		require.True(t, verifyFilesExist(t, mounts))
+
+		err = orchestrator.PurgeVirtualChainData(ctx, nodeAddress, vcId, containerName)
+		require.NoError(t, err)
+		require.False(t, verifyFilesExist(t, mounts))
+	})
 }

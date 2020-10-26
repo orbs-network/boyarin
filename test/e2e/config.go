@@ -88,9 +88,10 @@ func buildTopology(keyPairs []KeyConfig, vcId int) (topology []interface{}) {
 }
 
 type VChainArgument struct {
-	Id       int
-	Disabled bool
-	BasePort int
+	Id        int
+	Disabled  bool
+	PurgeData bool
+	BasePort  int
 }
 
 const basePort = 6000
@@ -104,7 +105,7 @@ func (vc VChainArgument) ExternalPort() int {
 	return port + vc.Id
 }
 
-func managementConfigJson(nodeManagementUrl string, vchainManagementFileUrl string, httpPort int, vChains []VChainArgument) string {
+func managementConfigJson(deps boyarDependencies, vChains []VChainArgument, nodeManagementUrl string, vchainManagementFileUrl string) string {
 	var chains []map[string]interface{}
 	for _, vc := range vChains {
 		chains = append(chains, map[string]interface{}{
@@ -113,10 +114,17 @@ func managementConfigJson(nodeManagementUrl string, vchainManagementFileUrl stri
 			"InternalPort":     4400,
 			"ExternalPort":     vc.ExternalPort(),
 			"Disabled":         vc.Disabled,
+			"PurgeData":        vc.PurgeData,
 			"DockerConfig": map[string]interface{}{
 				"Image": "orbsnetwork/node",
 				"Tag":   "v1.3.16",
 				"Pull":  false,
+				"Resources": map[string]interface{}{
+					"Reservations": map[string]interface{}{
+						"Memory": 128,
+						"CPUs":   0.01,
+					},
+				},
 			},
 			"Config": map[string]interface{}{
 				"active-consensus-algo": 2,
@@ -134,12 +142,15 @@ func managementConfigJson(nodeManagementUrl string, vchainManagementFileUrl stri
 		"network": []string{},
 		"orchestrator": map[string]interface{}{
 			"max-reload-time-delay": "1s",
-			"http-port":             httpPort,
+			"http-port":             deps.httpPort,
 			"DynamicManagementConfig": map[string]interface{}{
 				"Url":          nodeManagementUrl,
 				"ReadInterval": "1m",
 				"ResetTimeout": "30m",
 			},
+			// FIXME find a way to pass storage driver
+			"storage-driver":     deps.storageDriver,
+			"storage-mount-type": deps.storageMountType,
 		},
 		"chains": chains,
 		"services": map[string]interface{}{
@@ -158,9 +169,9 @@ func managementConfigJson(nodeManagementUrl string, vchainManagementFileUrl stri
 	return string(jsonStr)
 }
 
-func vchainManagementConfig(vcArgument []VChainArgument, topology interface{}, genesisValidator []string) string {
+func vchainManagementConfig(deps boyarDependencies, vcArgument []VChainArgument) string {
 	var committee []map[string]interface{}
-	for _, validator := range genesisValidator {
+	for _, validator := range deps.genesisValidators {
 		committee = append(committee, map[string]interface{}{
 			"OrbsAddress":  validator,
 			"Weight":       1000,
@@ -173,7 +184,7 @@ func vchainManagementConfig(vcArgument []VChainArgument, topology interface{}, g
 		chains[fmt.Sprintf("%d", vc.Id)] = map[string]interface{}{
 			"VirtualChainId":  vc.Id,
 			"GenesisRefTime":  0,
-			"CurrentTopology": topology,
+			"CurrentTopology": deps.topology,
 			"CommitteeEvents": []interface{}{
 				map[string]interface{}{
 					"RefTime":   0,

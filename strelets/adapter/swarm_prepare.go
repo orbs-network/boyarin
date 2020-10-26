@@ -55,7 +55,7 @@ func (d *dockerSwarmOrchestrator) RunVirtualChain(ctx context.Context, serviceCo
 		getSecretReference(serviceConfig.ContainerName, config.networkSecretId, "network", "network.json"),
 	}
 
-	mounts, err := d.provisionServiceVolumes(ctx, serviceConfig)
+	mounts, err := d.provisionServiceVolumes(ctx, serviceConfig.ContainerName, nil)
 	if err != nil {
 		return err
 	}
@@ -161,12 +161,4 @@ func (d *dockerSwarmOrchestrator) getNetwork(ctx context.Context, name string) (
 	return swarm.NetworkAttachmentConfig{
 		Target: target,
 	}, nil
-}
-
-func defaultValue(value, defaultV int) int {
-	if value != 0 {
-		return value
-	}
-
-	return defaultV
 }

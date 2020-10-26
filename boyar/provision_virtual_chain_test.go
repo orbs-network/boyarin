@@ -12,10 +12,17 @@ import (
 	"testing"
 )
 
+var NODE_ADDRESSES = []string{
+	"a328846cd5b4979d68a8c58a9bdfeee657b34de7",
+	"d27e2e7398e2582f63d0800330010b3e58952ff6",
+	"6e2cb55e4cbe97bf5b1e731d51cc2c285d83cbf9",
+	"c056dfc0d1fbc7479db11e61d1b0b57612bf7f17",
+}
+
 func Test_getNetworkConfigJSON(t *testing.T) {
 	var nodes []*config.FederationNode
 
-	for i, address := range helpers.NodeAddresses() {
+	for i, address := range NODE_ADDRESSES {
 		nodes = append(nodes, &config.FederationNode{
 			Address: address,
 			IP:      fmt.Sprintf("10.0.0.%d", i+1),

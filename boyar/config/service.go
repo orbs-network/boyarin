@@ -6,6 +6,7 @@ type Service struct {
 	DockerConfig DockerConfig
 	Config       map[string]interface{}
 	Disabled     bool
+	PurgeData    bool
 
 	InjectNodePrivateKey  bool
 	ExecutablePath        string

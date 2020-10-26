@@ -20,18 +20,27 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 	var errors []error
 	for _, chain := range chains {
 		containerName := b.config.NamespacedContainerName(chain.GetContainerName())
+		logger := b.logger.WithTags(log_types.VirtualChainId(int64(chain.Id)))
 
 		if chain.Disabled {
-			if b.cache.vChains.CheckNewJsonValue(containerName, removed) {
+			if key := containerName; b.cache.vChains.CheckNewJsonValue(key, removed) {
 				if err := b.orchestrator.RemoveService(ctx, containerName); err != nil {
-					b.cache.vChains.Clear(chain.Id.String())
+					b.cache.vChains.Clear(key)
 
-					b.logger.Error("failed to remove virtual chain",
-						log_types.VirtualChainId(int64(chain.Id)),
-						log.Error(err))
+					logger.Error("failed to remove virtual chain", log.Error(err))
 					errors = append(errors, err)
 				} else {
-					b.logger.Info("successfully removed virtual chain", log_types.VirtualChainId(int64(chain.Id)))
+					logger.Info("successfully removed virtual chain", log_types.VirtualChainId(int64(chain.Id)))
+				}
+			}
+
+			if key := containerName + "-data"; chain.PurgeData && b.cache.vChains.CheckNewJsonValue(key, removed) {
+				if err := b.orchestrator.PurgeVirtualChainData(ctx, string(b.config.NodeAddress()), uint32(chain.Id), containerName); err != nil {
+					b.cache.vChains.Clear(key)
+					logger.Error("failed to purge vchain data", log.Error(err))
+					errors = append(errors, err)
+				} else {
+					logger.Info("successfully purged vchain data")
 				}
 			}
 
@@ -39,9 +48,7 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 		}
 
 		input := getVirtualChainConfig(b.config, chain)
-		v := b.cache.vChains.CheckNewJsonValue(containerName, input)
-
-		if v {
+		if key := containerName; b.cache.vChains.CheckNewJsonValue(key, input) {
 			imageName := chain.DockerConfig.FullImageName()
 
 			if chain.DockerConfig.Pull {
@@ -75,16 +82,12 @@ func (b *boyar) ProvisionVirtualChains(ctx context.Context) error {
 			}
 
 			if err := b.orchestrator.RunVirtualChain(ctx, serviceConfig, appConfig); err != nil {
-				b.cache.vChains.Clear(containerName)
-				b.logger.Error("failed to apply virtual chain configuration",
-					log_types.VirtualChainId(int64(chain.Id)),
-					log.Error(err))
+				b.cache.vChains.Clear(key)
+				logger.Error("failed to apply virtual chain configuration", log.Error(err))
 				errors = append(errors, err)
 			} else {
 				data, _ := json.Marshal(chain)
-				b.logger.Info("updated virtual chain configuration",
-					log_types.VirtualChainId(int64(chain.Id)),
-					log.String("configuration", string(data)))
+				logger.Info("updated virtual chain configuration", log.String("configuration", string(data)))
 			}
 		}
 	}

@@ -33,3 +33,8 @@ fi
 docker container prune -f
 docker volume prune -f
 docker network prune -f
+
+# mock EFS
+
+sudo mkdir -p /var/efs
+sudo chmod 0777 /var/efs

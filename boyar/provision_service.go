@@ -37,12 +37,23 @@ func (b *boyar) provisionService(ctx context.Context, serviceName string, servic
 	imageName := service.DockerConfig.FullImageName()
 
 	if service.Disabled {
-		if b.cache.services.CheckNewJsonValue(serviceName, removed) {
+		if key := serviceName; b.cache.services.CheckNewJsonValue(key, removed) {
 			if err := b.orchestrator.RemoveService(ctx, serviceName); err != nil {
-				b.cache.services.Clear(serviceName)
+				b.cache.services.Clear(key)
 				logger.Error("failed to remove service", log.Error(err))
+				return err
 			} else {
 				logger.Info("successfully removed service")
+			}
+		}
+
+		if key := serviceName + "-data"; service.PurgeData && b.cache.services.CheckNewJsonValue(key, removed) {
+			if err := b.orchestrator.PurgeServiceData(ctx, fullServiceName); err != nil {
+				b.cache.vChains.Clear(key)
+				logger.Error("failed to purge service data", log.Error(err))
+				return err
+			} else {
+				logger.Info("successfully purged service data")
 			}
 		}
 
@@ -83,7 +94,7 @@ func (b *boyar) provisionService(ctx context.Context, serviceName string, servic
 		Config:  jsonConfig,
 	}
 
-	if b.cache.services.CheckNewJsonValue(serviceName, serviceConfig) {
+	if key := serviceName; b.cache.services.CheckNewJsonValue(key, serviceConfig) {
 		if service.DockerConfig.Pull {
 			if err := b.orchestrator.PullImage(ctx, imageName); err != nil {
 				return fmt.Errorf("could not pull docker image: %s", err)
@@ -95,7 +106,7 @@ func (b *boyar) provisionService(ctx context.Context, serviceName string, servic
 			logger.Info("updated service configuration", log.String("configuration", string(data)))
 		} else {
 			logger.Error("failed to update service configuration", log.Error(err))
-			b.cache.services.Clear(serviceName)
+			b.cache.services.Clear(key)
 			return err
 		}
 	}

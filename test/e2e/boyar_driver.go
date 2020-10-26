@@ -15,28 +15,54 @@ import (
 	"time"
 )
 
-const DEFAULT_VCHAIN_TIMEOUT = 90 * time.Second
+const DEFAULT_VCHAIN_TIMEOUT = 120 * time.Second
 
-func SetupDynamicBoyarDependencies(t *testing.T, keyPair KeyConfig, genesisValidators []string, vChains <-chan []VChainArgument) (*config.Flags, func()) {
-	return SetupDynamicBoyarDepencenciesForNetwork(t, keyPair, genesisValidators, []interface{}{
-		map[string]interface{}{
-			"OrbsAddress": keyPair.NodeAddress,
-			"Ip":          "127.0.0.1",
-			"Port":        4400,
-		},
-	}, 80, vChains)
+type boyarDependencies struct {
+	keyPair           KeyConfig
+	topology          []interface{}
+	genesisValidators []string
+	httpPort          int
+
+	storageDriver    string
+	storageMountType string
 }
 
-func SetupDynamicBoyarDepencenciesForNetwork(t *testing.T, keyPair KeyConfig, genesisValidators []string,
-	topology []interface{}, httpPort int, vChains <-chan []VChainArgument) (*config.Flags, func()) {
-	return SetupConfigServer(t, keyPair, func(managementUrl string, vchainManagementUrl string) (*string, *string) {
-		configStr := managementConfigJson(managementUrl, vchainManagementUrl, httpPort, []VChainArgument{})
+func readOnlyChannel(vChains ...VChainArgument) chan []VChainArgument {
+	vChainsChannel := make(chan []VChainArgument, 1)
+	vChainsChannel <- vChains
+	close(vChainsChannel)
+	return vChainsChannel
+}
+
+func SetupDynamicBoyarDependencies(t *testing.T, keyPair KeyConfig, genesisValidators []string, vChains <-chan []VChainArgument) (*config.Flags, func()) {
+	deps := defaultBoyarDependencies(keyPair, genesisValidators)
+	return SetupDynamicBoyarDepencenciesForNetwork(t, deps, vChains)
+}
+
+func defaultBoyarDependencies(keyPair KeyConfig, genesisValidators []string) boyarDependencies {
+	return boyarDependencies{
+		keyPair:           keyPair,
+		genesisValidators: genesisValidators,
+		topology: []interface{}{
+			map[string]interface{}{
+				"OrbsAddress": keyPair.NodeAddress,
+				"Ip":          "127.0.0.1",
+				"Port":        4400,
+			},
+		},
+		httpPort: 80,
+	}
+}
+
+func SetupDynamicBoyarDepencenciesForNetwork(t *testing.T, deps boyarDependencies, vChains <-chan []VChainArgument) (*config.Flags, func()) {
+	return SetupConfigServer(t, deps.keyPair, func(managementUrl string, vchainManagementUrl string) (*string, *string) {
+		configStr := managementConfigJson(deps, []VChainArgument{}, managementUrl, vchainManagementUrl)
 		managementStr := "{}"
 
 		go func() {
 			for currentChains := range vChains {
-				configStr = managementConfigJson(managementUrl, vchainManagementUrl, httpPort, currentChains)
-				managementStr = vchainManagementConfig(currentChains, topology, genesisValidators)
+				configStr = managementConfigJson(deps, currentChains, managementUrl, vchainManagementUrl)
+				managementStr = vchainManagementConfig(deps, currentChains)
 				fmt.Println(configStr)
 				fmt.Println(managementStr)
 			}
@@ -76,20 +102,6 @@ func SetupConfigServer(t *testing.T, keyPair KeyConfig, configBuilder func(manag
 		defer ts.Close()
 	}
 	return flags, cleanup
-}
-
-func SetupBoyarDependenciesForNetwork(t *testing.T, keyPair KeyConfig, topology []interface{}, genesisValidators []string, httpPort int, vChains ...VChainArgument) (*config.Flags, func()) {
-	vChainsChannel := make(chan []VChainArgument, 1)
-	vChainsChannel <- vChains
-	close(vChainsChannel)
-	return SetupDynamicBoyarDepencenciesForNetwork(t, keyPair, genesisValidators, topology, httpPort, vChainsChannel)
-}
-
-func SetupBoyarDependencies(t *testing.T, keyPair KeyConfig, genesisValidators []string, vChains ...VChainArgument) (*config.Flags, func()) {
-	vChainsChannel := make(chan []VChainArgument, 1)
-	vChainsChannel <- vChains
-	close(vChainsChannel)
-	return SetupDynamicBoyarDependencies(t, keyPair, genesisValidators, vChainsChannel)
 }
 
 func InProcessBoyar(t *testing.T, ctx context.Context, logger log.Logger, flags *config.Flags) govnr.ShutdownWaiter {

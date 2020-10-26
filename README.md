@@ -127,6 +127,7 @@ If both these parameters are present, the node will also start service SSL traff
       "InternalPort":   4400, // gossip port passed to the binary inside the container (mandatory, unique)
       "ExternalPort": 4400, // gossip port passed to the binary inside the container (mandatory, unique)
       "Disabled": false, // (optional)
+      "PurgeData": false, // destroys all data related to the chain (logs, cache, status, blocks), only works with EFS (optional)
       "DockerConfig": {
         "ContainerNamePrefix": "orbs-network",
         "Image":  "orbsnetwork/node", // Docker image
@@ -183,7 +184,8 @@ If both these parameters are present, the node will also start service SSL traff
       "AllowAccessToSigner": false, // should be able communicate with the signer service, default false (optional)
       "AllowAccessToServices": true, // should be able to communicate with other services, default true (optional)
       "MountNodeLogs": false, // mounts all service and vchain logs inside the container, default false (optional)
-
+      "Disabled": false, // (optional)
+      "PurgeData": false, // destroys all data related to the service (logs, cache, status), only works with EFS (optional)
       "DockerConfig": {
         "Image": "orbsnetwork/service-name",
         "Tag": "latest",

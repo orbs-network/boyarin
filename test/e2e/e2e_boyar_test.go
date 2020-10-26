@@ -60,7 +60,7 @@ func TestE2ERunSingleVirtualChain(t *testing.T) {
 	})
 }
 
-func TestE2ERunMultipleVirtualChains(t *testing.T) {
+func TestE2EAddVirtualChain(t *testing.T) {
 	helpers.SkipUnlessSwarmIsEnabled(t)
 
 	vc1 := VChainArgument{Id: 42}
@@ -73,12 +73,23 @@ func TestE2ERunMultipleVirtualChains(t *testing.T) {
 			NodePrivateKey: PrivateKey,
 		}
 
-		vChainsChannel := readOnlyChannel(vc1, vc2)
+		vChainsChannel := make(chan []VChainArgument)
+		defer close(vChainsChannel)
+
 		flags, cleanup := SetupDynamicBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), vChainsChannel)
 		defer cleanup()
 		waiter = InProcessBoyar(t, ctx, logger, flags)
 
-		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT*2, func(t helpers.TestingT) {
+		vChainsChannel <- []VChainArgument{vc1}
+
+		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
+			AssertVchainUp(t, 80, PublicKey, vc1)
+			AssertVchainDown(t, 80, vc2)
+		})
+
+		vChainsChannel <- []VChainArgument{vc1, vc2}
+
+		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
 			AssertVchainUp(t, 80, PublicKey, vc1)
 			AssertVchainUp(t, 80, PublicKey, vc2)
 		})
@@ -86,7 +97,7 @@ func TestE2ERunMultipleVirtualChains(t *testing.T) {
 	})
 }
 
-func TestE2EAddAndRemoveVirtualChain(t *testing.T) {
+func TestE2ERemoveVirtualChain(t *testing.T) {
 	helpers.SkipUnlessSwarmIsEnabled(t)
 
 	vc1 := VChainArgument{Id: 42}
@@ -105,23 +116,17 @@ func TestE2EAddAndRemoveVirtualChain(t *testing.T) {
 		defer cleanup()
 		waiter = InProcessBoyar(t, ctx, logger, flags)
 
-		logger.Info(fmt.Sprintf("adding vchain %d", vc1.Id))
-		vChainsChannel <- []VChainArgument{vc1}
-		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
-			AssertVchainUp(t, 80, PublicKey, vc1)
-		})
-
-		logger.Info(fmt.Sprintf("adding vchain %d", vc2.Id))
+		logger.Info(fmt.Sprintf("adding vchains %d and %d", vc1.Id, vc2.Id))
 		vChainsChannel <- []VChainArgument{vc1, vc2}
-		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT*2, func(t helpers.TestingT) {
+		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
 			AssertVchainUp(t, 80, PublicKey, vc1)
 			AssertVchainUp(t, 80, PublicKey, vc2)
 		})
 
 		vc2.Disabled = true
-		logger.Info(fmt.Sprintf("adding vchain %d", vc2.Id))
+		logger.Info(fmt.Sprintf("removing vchain %d", vc2.Id))
 		vChainsChannel <- []VChainArgument{vc1, vc2}
-		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT*3, func(t helpers.TestingT) {
+		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
 			AssertVchainUp(t, 80, PublicKey, vc1)
 			AssertVchainDown(t, 80, vc2)
 			AssertServiceDown(t, ctx, "cfc9e5-chain-45")

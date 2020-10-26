@@ -119,6 +119,12 @@ func managementConfigJson(deps boyarDependencies, vChains []VChainArgument, node
 				"Image": "orbsnetwork/node",
 				"Tag":   "v1.3.16",
 				"Pull":  false,
+				"Resources": map[string]interface{}{
+					"Reservations": map[string]interface{}{
+						"Memory": 128,
+						"CPUs":   0.01,
+					},
+				},
 			},
 			"Config": map[string]interface{}{
 				"active-consensus-algo": 2,

@@ -27,4 +27,5 @@ type Flags struct {
 
 	// Testing only
 	WithNamespace bool
+	TargetPath    string
 }

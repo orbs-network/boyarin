@@ -11,9 +11,10 @@ import (
 )
 
 type BoyarService struct {
-	cache   *boyar.Cache
-	logger  log.Logger
-	healthy bool
+	cache            *boyar.Cache
+	logger           log.Logger
+	healthy          bool
+	binaryTargetPath string
 }
 
 func NewCoreBoyarService(logger log.Logger) *BoyarService {
@@ -30,6 +31,15 @@ func (coreBoyar *BoyarService) OnConfigChange(ctx context.Context, cfg config.No
 		return err
 	}
 	defer orchestrator.Close()
+
+	if coreBoyar.NeedsUpdate() {
+		err := coreBoyar.SelfUpdate(ctx, cfg.OrchestratorOptions().ExecutableImage)
+		if err != nil {
+			coreBoyar.logger.Error("failed to update self", log.Error(err))
+		}
+
+		// FIXME handle exit
+	}
 
 	b := boyar.NewBoyar(orchestrator, cfg, coreBoyar.cache, coreBoyar.logger)
 

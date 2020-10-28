@@ -25,6 +25,9 @@ type boyarDependencies struct {
 
 	storageDriver    string
 	storageMountType string
+
+	binaryUrl    string
+	binarySha256 string
 }
 
 func readOnlyChannel(vChains ...VChainArgument) chan []VChainArgument {

@@ -34,6 +34,10 @@ func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) (govnr
 
 	cfgFetcher := NewConfigurationPollService(flags, logger)
 	coreBoyar := NewCoreBoyarService(logger)
+	// for self update E2E
+	if flags.TargetPath != "" {
+		coreBoyar.binaryTargetPath = flags.TargetPath
+	}
 
 	// wire cfg and boyar
 	supervisor.Supervise(govnr.Forever(ctx, "apply config changes", utils.NewLogErrors("apply config changes", logger), func() {

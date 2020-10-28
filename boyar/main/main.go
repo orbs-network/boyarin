@@ -47,8 +47,8 @@ func main() {
 
 	showStatus := flag.Bool("show-status", false, "print status in json format and exit")
 
-	autoUpdate := flag.Bool("auto-update", false, "enable boyar binary auto update")
-	shutdownAfterUpdate := flag.Bool("shutdown-after-update", false, "enable boyar binary auto update")
+	autoUpdate := flag.Bool("auto-update", false, "enables boyar binary auto update")
+	shutdownAfterUpdate := flag.Bool("shutdown-after-update", false, "the process shuts down after automatic update is performed and **DOES NOT** restart; recommended to be used with an external process manager")
 
 	flag.Parse()
 

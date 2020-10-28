@@ -25,6 +25,9 @@ type Flags struct {
 
 	ManagementConfig string
 
+	AutoUpdate          bool
+	ShutdownAfterUpdate bool
+
 	// Testing only
 	WithNamespace bool
 	TargetPath    string

@@ -40,7 +40,8 @@ func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) (govnr
 	}
 
 	// wire cfg and boyar
-	supervisor.Supervise(govnr.Forever(ctx, "apply config changes", utils.NewLogErrors("apply config changes", logger), func() {
+	ctxWithCancel, cancelAndExit := context.WithCancel(ctx)
+	supervisor.Supervise(govnr.Forever(ctxWithCancel, "apply config changes", utils.NewLogErrors("apply config changes", logger), func() {
 		var cfg config.NodeConfiguration = nil
 		select {
 		case <-ctx.Done():
@@ -57,15 +58,24 @@ func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) (govnr
 			logger.Info("applying new configuration immediately")
 		}
 
-		ctx, cancel := context.WithTimeout(ctx, flags.Timeout)
-		defer cancel()
-		if ctx.Err() != nil {
+		if shouldExit := coreBoyar.CheckForUpdates(flags, cfg); shouldExit {
+			logger.Info("shutting down after updating boyar binary")
+			cancelAndExit()
 			return
 		}
+
+		ctx, cancel := context.WithTimeout(ctx, flags.Timeout)
+		defer cancel()
+
 		err := coreBoyar.OnConfigChange(ctx, cfg)
 		if err != nil {
 			logger.Error("error executing configuration", log.Error(err))
 			cfgFetcher.Resend()
+		}
+
+		if ctx.Err() != nil {
+			logger.Error("failed to apply new configuration", log.Error(ctx.Err()))
+			return
 		}
 	}))
 

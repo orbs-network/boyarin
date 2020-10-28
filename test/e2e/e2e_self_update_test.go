@@ -29,12 +29,12 @@ func calcSha256FromFile(path string) ([]byte, error) {
 }
 
 func TestE2ESelfUpdate(t *testing.T) {
-	//helpers.SkipUnlessSwarmIsEnabled(t)
+	helpers.SkipUnlessSwarmIsEnabled(t)
 
-	os.RemoveAll("./tmp")
-	os.MkdirAll("./tmp", 0755)
+	os.RemoveAll("./_tmp")
+	os.MkdirAll("./_tmp", 0755)
 
-	targetPath := filepath.Join("./tmp", "boyar.bin")
+	targetPath := filepath.Join("./_tmp", "boyar.bin")
 	err := ioutil.WriteFile(targetPath, []byte("fake binary"), 0755)
 	require.NoError(t, err)
 
@@ -54,6 +54,8 @@ func TestE2ESelfUpdate(t *testing.T) {
 
 		flags, cleanup := SetupDynamicBoyarDepencenciesForNetwork(t, deps, vChainsChannel)
 		flags.TargetPath = targetPath
+		flags.AutoUpdate = true
+		flags.ShutdownAfterUpdate = true
 
 		defer cleanup()
 		waiter = InProcessBoyar(t, ctx, logger, flags)

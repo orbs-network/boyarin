@@ -1,10 +1,10 @@
 package services
 
 import (
-	"context"
 	"encoding/hex"
 	"fmt"
 	"github.com/inconshreveable/go-update"
+	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/scribe/log"
 	"net/http"
@@ -15,7 +15,7 @@ func (coreBoyar *BoyarService) NeedsUpdate() bool {
 	return true
 }
 
-func (coreBoyar *BoyarService) SelfUpdate(ctx context.Context, image adapter.ExecutableImageOptions) error {
+func (coreBoyar *BoyarService) SelfUpdate(image adapter.ExecutableImageOptions) error {
 	checksum, err := hex.DecodeString(image.Sha256)
 	if err != nil {
 		return fmt.Errorf("could not decode boyar binary SHA256 checksum \"%s\": %s", image.Sha256, err)
@@ -36,4 +36,18 @@ func (coreBoyar *BoyarService) SelfUpdate(ctx context.Context, image adapter.Exe
 		// error handling
 	}
 	return err
+}
+
+func (coreBoyar *BoyarService) CheckForUpdates(flags *config.Flags, cfg config.NodeConfiguration) (shouldExit bool) {
+	shouldExit = false
+	if flags.AutoUpdate && coreBoyar.NeedsUpdate() {
+		if err := coreBoyar.SelfUpdate(cfg.OrchestratorOptions().ExecutableImage); err != nil {
+			coreBoyar.logger.Error("failed to update self", log.Error(err))
+			return
+		}
+
+		return flags.ShutdownAfterUpdate
+	}
+
+	return
 }

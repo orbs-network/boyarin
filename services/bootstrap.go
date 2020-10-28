@@ -43,6 +43,9 @@ func Bootstrap(ctx context.Context, flags *config.Flags, logger log.Logger) (*co
 	}
 
 	coreBoyar := NewCoreBoyarService(logger)
-	// FIXME set target path properly
+	if shouldExit := coreBoyar.CheckForUpdates(flags, cfg); shouldExit {
+		logger.Info("shutting down after updating boyar binary")
+	}
+
 	return newFlags, coreBoyar.OnConfigChange(ctx, cfg)
 }

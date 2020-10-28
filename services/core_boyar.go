@@ -32,15 +32,6 @@ func (coreBoyar *BoyarService) OnConfigChange(ctx context.Context, cfg config.No
 	}
 	defer orchestrator.Close()
 
-	if coreBoyar.NeedsUpdate() {
-		err := coreBoyar.SelfUpdate(ctx, cfg.OrchestratorOptions().ExecutableImage)
-		if err != nil {
-			coreBoyar.logger.Error("failed to update self", log.Error(err))
-		}
-
-		// FIXME handle exit
-	}
-
 	b := boyar.NewBoyar(orchestrator, cfg, coreBoyar.cache, coreBoyar.logger)
 
 	var errors []error

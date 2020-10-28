@@ -44,7 +44,7 @@ func Bootstrap(ctx context.Context, flags *config.Flags, logger log.Logger) (*co
 	}
 
 	coreBoyar := NewCoreBoyarService(logger)
-	if shouldExit := coreBoyar.CheckForUpdates(flags, cfg); shouldExit {
+	if shouldExit := coreBoyar.CheckForUpdates(flags, cfg.OrchestratorOptions().ExecutableImage); shouldExit {
 		logger.Info("shutting down after updating boyar binary")
 		return flags, errors.New("restart needed after an update")
 	}

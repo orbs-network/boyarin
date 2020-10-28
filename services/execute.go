@@ -54,7 +54,7 @@ func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) (govnr
 			logger.Info("applying new configuration immediately")
 		}
 
-		if shouldExit := coreBoyar.CheckForUpdates(flags, cfg); shouldExit {
+		if shouldExit := coreBoyar.CheckForUpdates(flags, cfg.OrchestratorOptions().ExecutableImage); shouldExit {
 			logger.Info("shutting down after updating boyar binary")
 			cancelAndExit()
 			return

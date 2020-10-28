@@ -30,22 +30,20 @@ func (coreBoyar *BoyarService) SelfUpdate(targetPath string, image adapter.Execu
 	})
 }
 
-func (coreBoyar *BoyarService) CheckForUpdates(flags *config.Flags, cfg config.NodeConfiguration) (shouldExit bool) {
+func (coreBoyar *BoyarService) CheckForUpdates(flags *config.Flags, options adapter.ExecutableImageOptions) (shouldExit bool) {
 	shouldExit = false
 	if flags.AutoUpdate {
-		executableImage := cfg.OrchestratorOptions().ExecutableImage
 		currentHash, err := crypto.CalculateFileHash(flags.BoyarBinaryPath)
 		if err != nil {
 			coreBoyar.logger.Error("failed to calculate boyar binary hash", log.Error(err))
 			return
 		}
 
-		fmt.Println(currentHash, executableImage.Sha256)
-		if currentHash == executableImage.Sha256 { // already the correct version
+		if currentHash == options.Sha256 { // already the correct version
 			return
 		}
 
-		if err := coreBoyar.SelfUpdate(flags.BoyarBinaryPath, executableImage); err != nil {
+		if err := coreBoyar.SelfUpdate(flags.BoyarBinaryPath, options); err != nil {
 			coreBoyar.logger.Error("failed to update self", log.Error(err))
 			return
 		} else {

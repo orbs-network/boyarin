@@ -25,10 +25,11 @@ type Flags struct {
 
 	ManagementConfig string
 
+	// Autoupdate
 	AutoUpdate          bool
 	ShutdownAfterUpdate bool
+	BoyarBinaryPath     string
 
 	// Testing only
 	WithNamespace bool
-	TargetPath    string
 }

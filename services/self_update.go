@@ -5,17 +5,13 @@ import (
 	"fmt"
 	"github.com/inconshreveable/go-update"
 	"github.com/orbs-network/boyarin/boyar/config"
+	"github.com/orbs-network/boyarin/crypto"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/scribe/log"
 	"net/http"
 )
 
-// FIXME return actual value
-func (coreBoyar *BoyarService) NeedsUpdate() bool {
-	return true
-}
-
-func (coreBoyar *BoyarService) SelfUpdate(image adapter.ExecutableImageOptions) error {
+func (coreBoyar *BoyarService) SelfUpdate(targetPath string, image adapter.ExecutableImageOptions) error {
 	checksum, err := hex.DecodeString(image.Sha256)
 	if err != nil {
 		return fmt.Errorf("could not decode boyar binary SHA256 checksum \"%s\": %s", image.Sha256, err)
@@ -28,22 +24,32 @@ func (coreBoyar *BoyarService) SelfUpdate(image adapter.ExecutableImageOptions) 
 	}
 	defer resp.Body.Close()
 
-	err = update.Apply(resp.Body, update.Options{
-		TargetPath: coreBoyar.binaryTargetPath,
+	return update.Apply(resp.Body, update.Options{
+		TargetPath: targetPath,
 		Checksum:   checksum,
 	})
-	if err != nil {
-		// error handling
-	}
-	return err
 }
 
 func (coreBoyar *BoyarService) CheckForUpdates(flags *config.Flags, cfg config.NodeConfiguration) (shouldExit bool) {
 	shouldExit = false
-	if flags.AutoUpdate && coreBoyar.NeedsUpdate() {
-		if err := coreBoyar.SelfUpdate(cfg.OrchestratorOptions().ExecutableImage); err != nil {
+	if flags.AutoUpdate {
+		executableImage := cfg.OrchestratorOptions().ExecutableImage
+		currentHash, err := crypto.CalculateFileHash(flags.BoyarBinaryPath)
+		if err != nil {
+			coreBoyar.logger.Error("failed to calculate boyar binary hash", log.Error(err))
+			return
+		}
+
+		fmt.Println(currentHash, executableImage.Sha256)
+		if currentHash == executableImage.Sha256 { // already the correct version
+			return
+		}
+
+		if err := coreBoyar.SelfUpdate(flags.BoyarBinaryPath, executableImage); err != nil {
 			coreBoyar.logger.Error("failed to update self", log.Error(err))
 			return
+		} else {
+			coreBoyar.logger.Info("successfully replaced boyar binary", log.String("path", flags.BoyarBinaryPath))
 		}
 
 		return flags.ShutdownAfterUpdate

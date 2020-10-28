@@ -2,8 +2,7 @@ package e2e
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
+	"github.com/orbs-network/boyarin/crypto"
 	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/orbs-network/govnr"
 	"github.com/orbs-network/scribe/log"
@@ -13,20 +12,6 @@ import (
 	"path/filepath"
 	"testing"
 )
-
-func calcSha256(input []byte) []byte {
-	sum := sha256.Sum256(input)
-	return sum[:]
-}
-
-func calcSha256FromFile(path string) ([]byte, error) {
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-
-	return calcSha256(data), nil
-}
 
 func TestE2ESelfUpdate(t *testing.T) {
 	helpers.SkipUnlessSwarmIsEnabled(t)
@@ -53,7 +38,7 @@ func TestE2ESelfUpdate(t *testing.T) {
 		deps.binarySha256 = "1998cc1f7721acfe1954ab2878cc0ad8062cd6d919cd61fa22401c6750e195fe"
 
 		flags, cleanup := SetupDynamicBoyarDepencenciesForNetwork(t, deps, vChainsChannel)
-		flags.TargetPath = targetPath
+		flags.BoyarBinaryPath = targetPath
 		flags.AutoUpdate = true
 		flags.ShutdownAfterUpdate = true
 
@@ -61,13 +46,12 @@ func TestE2ESelfUpdate(t *testing.T) {
 		waiter = InProcessBoyar(t, ctx, logger, flags)
 
 		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
-			expectedChecksum, _ := hex.DecodeString(deps.binarySha256)
 			require.FileExists(t, targetPath)
 
-			checksum, err := calcSha256FromFile(targetPath)
+			checksum, err := crypto.CalculateFileHash(targetPath)
 			require.NoError(t, err)
 
-			require.EqualValues(t, expectedChecksum, checksum)
+			require.EqualValues(t, deps.binarySha256, checksum)
 		})
 
 		return

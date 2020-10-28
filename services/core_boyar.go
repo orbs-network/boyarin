@@ -11,10 +11,9 @@ import (
 )
 
 type BoyarService struct {
-	cache            *boyar.Cache
-	logger           log.Logger
-	healthy          bool
-	binaryTargetPath string
+	cache   *boyar.Cache
+	logger  log.Logger
+	healthy bool
 }
 
 func NewCoreBoyarService(logger log.Logger) *BoyarService {

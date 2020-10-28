@@ -96,6 +96,9 @@ If both these parameters are present, the node will also start service SSL traff
         --keys ./e2e-config/node3/keys.json \
         --daemonize
 
+It is recommended to run Boyar together with some kind of process manager (for example, [Supervisord](http://supervisord.org)).
+If autoupdate is enabled, it becomes crucial if you enable `--shutdown-after-update` feature for seamless automatic updates.
+
 ### Print configuration and exit
 
     boyar --config-url https://s3.amazonaws.com/boyar-bootstrap-test/boyar/config.json \

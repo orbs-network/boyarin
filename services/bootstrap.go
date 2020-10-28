@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/scribe/log"
 	"io/ioutil"
@@ -45,6 +46,7 @@ func Bootstrap(ctx context.Context, flags *config.Flags, logger log.Logger) (*co
 	coreBoyar := NewCoreBoyarService(logger)
 	if shouldExit := coreBoyar.CheckForUpdates(flags, cfg); shouldExit {
 		logger.Info("shutting down after updating boyar binary")
+		return flags, errors.New("restart needed after an update")
 	}
 
 	return newFlags, coreBoyar.OnConfigChange(ctx, cfg)

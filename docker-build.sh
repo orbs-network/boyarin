@@ -7,5 +7,8 @@ docker build --build-arg git_commit=$(./.circleci/hash.sh) -f Dockerfile.build -
 docker run --name orbs_build orbs:build sleep 1
 
 export SRC=/src
+export SERMVER=$(cat ./version)
 
-docker cp orbs_build:$SRC/boyar.bin .
+rm -rf _bin
+docker cp orbs_build:$SRC/_bin .
+

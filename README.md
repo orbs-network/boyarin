@@ -82,7 +82,7 @@ In case you ever need to regenerate the SSL certificate:
 
 `--auto-update` enables boyar binary auto update (default false)
 
-`shutdown-after-update` the process shuts down after automatic update is performed and **DOES NOT** restart; recommended to be used with an external process manager (default false)
+`--shutdown-after-update` the process shuts down after automatic update is performed and **DOES NOT** restart; recommended to be used with an external process manager (default false)
 
 `--version` show version, git commit and Docker API version
 
@@ -122,11 +122,16 @@ If autoupdate is enabled, it becomes crucial if you enable `--shutdown-after-upd
     }
   ],
   "orchestrator": { // orchestrator options (right now only Docker Swarm is supported)
-    "storage-driver": "rexray/ebs", // storage driver for AWS
+    "storage-driver": "local", // storage driver for docker
+    "storage-mount-type": "bind", // mounts to /var/efs
     "storage-options": { // parameters passed to storage driver (optional)
       "maxRetries": "10"
     },
-    "max-reload-time-delay": "1m" // optional
+    "max-reload-time-delay": "1m", // optional
+    "ExecutableImage": { // optional
+      "Url": "https://github.com/orbs-network/boyarin/releases/download/v1.8.0/boyar-v1.8.0.bin",
+      "Sha256": "0d7df92307b95ff7e2923dd7509e3b5bac23deb491b5c08d522b11ac08d78e02"
+    }
   },
   "chains": [
     {

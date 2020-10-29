@@ -10,6 +10,6 @@ rm -rf _bin
 go build -ldflags "-w -extldflags '-static' -X $CONFIG_PKG.SemanticVersion=$SEMVER -X $CONFIG_PKG.CommitVersion=$GIT_COMMIT" -tags "$BUILD_FLAG usergo netgo" -o _bin/boyar-${SEMVER}.bin -a ./boyar/main/main.go
 
 cd _bin
-shasum -a 256 boyar-${SEMVER}.bin > sha256checksums.txt
+shasum -a 256 *.bin > sha256checksums.txt
 cd -
 

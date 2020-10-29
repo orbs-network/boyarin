@@ -78,6 +78,11 @@ type DynamicManagementConfig struct {
 	Url string
 }
 
+type ExecutableImageOptions struct {
+	Url    string
+	Sha256 string
+}
+
 type OrchestratorOptions struct {
 	StorageDriver          string            `json:"storage-driver"`
 	StorageMountType       string            `json:"storage-mount-type"`
@@ -85,6 +90,8 @@ type OrchestratorOptions struct {
 	MaxReloadTimedDelayStr string            `json:"max-reload-time-delay"`
 
 	DynamicManagementConfig DynamicManagementConfig
+
+	ExecutableImage ExecutableImageOptions
 
 	// Testing purposes
 	HTTPPort uint32 `json:"http-port"`

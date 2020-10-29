@@ -80,6 +80,10 @@ In case you ever need to regenerate the SSL certificate:
 
 `--timeout` timeout for provisioning all virtual chains (duration: 1s, 1m, 1h, etc)
 
+`--auto-update` enables boyar binary auto update (default false)
+
+`shutdown-after-update` the process shuts down after automatic update is performed and **DOES NOT** restart; recommended to be used with an external process manager (default false)
+
 `--version` show version, git commit and Docker API version
 
 ### SSL options
@@ -95,6 +99,9 @@ If both these parameters are present, the node will also start service SSL traff
     boyar --config-url https://s3.amazonaws.com/boyar-bootstrap-test/boyar/config.json \
         --keys ./e2e-config/node3/keys.json \
         --daemonize
+
+It is recommended to run Boyar together with some kind of process manager (for example, [Supervisord](http://supervisord.org)).
+If autoupdate is enabled, it becomes crucial if you enable `--shutdown-after-update` feature for seamless automatic updates.
 
 ### Print configuration and exit
 

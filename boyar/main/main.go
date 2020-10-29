@@ -11,6 +11,7 @@ import (
 	"github.com/orbs-network/boyarin/version"
 	"github.com/orbs-network/scribe/log"
 	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -46,6 +47,9 @@ func main() {
 
 	showStatus := flag.Bool("show-status", false, "print status in json format and exit")
 
+	autoUpdate := flag.Bool("auto-update", false, "enables boyar binary auto update")
+	shutdownAfterUpdate := flag.Bool("shutdown-after-update", false, "the process shuts down after automatic update is performed and **DOES NOT** restart; recommended to be used with an external process manager")
+
 	flag.Parse()
 
 	if *showVersion {
@@ -67,6 +71,9 @@ func main() {
 		return
 	}
 
+	executable, _ := os.Executable()
+	executableWithoutSymlink, _ := filepath.EvalSymlinks(executable)
+
 	flags := &config.Flags{
 		ConfigUrl:           *configUrlPtr,
 		KeyPairConfigPath:   *keyPairConfigPathPtr,
@@ -82,6 +89,9 @@ func main() {
 		SSLCertificatePath:  *sslCertificatePathPtr,
 		SSLPrivateKeyPath:   *sslPrivateKeyPtr,
 		ManagementConfig:    *managementConfig,
+		AutoUpdate:          *autoUpdate,
+		ShutdownAfterUpdate: *shutdownAfterUpdate,
+		BoyarBinaryPath:     executableWithoutSymlink,
 	}
 
 	if *help {

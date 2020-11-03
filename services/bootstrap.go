@@ -21,6 +21,7 @@ func Bootstrap(ctx context.Context, flags *config.Flags, logger log.Logger) (*co
 		return nil, err
 	}
 
+	// FIXME find a better way to pass the flags
 	newFlags := &config.Flags{
 		ConfigUrl: cfg.OrchestratorOptions().DynamicManagementConfig.Url,
 
@@ -41,6 +42,9 @@ func Bootstrap(ctx context.Context, flags *config.Flags, logger log.Logger) (*co
 		MetricsFilePath: flags.MetricsFilePath,
 
 		WithNamespace: flags.WithNamespace,
+
+		AutoUpdate:          flags.AutoUpdate,
+		ShutdownAfterUpdate: flags.AutoUpdate,
 	}
 
 	coreBoyar := NewCoreBoyarService(logger)

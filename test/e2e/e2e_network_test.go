@@ -58,7 +58,7 @@ func TestE2ERunFullNetwork(t *testing.T) {
 
 	helpers.RequireEventually(t, NUM_VCS*DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
 		metrics := GetVChainMetrics(t, basePort*2, vcs[0])
-		require.GreaterOrEqual(t, 3, metrics.Uint64("BlockStorage.BlockHeight"))
+		require.GreaterOrEqual(t, uint64(3), metrics.Uint64("BlockStorage.BlockHeight"))
 	})
 
 }

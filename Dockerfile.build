@@ -2,7 +2,7 @@ FROM golang:1.15-alpine
 
 ARG git_commit
 
-RUN apk add --no-cache gcc linux-headers libc-dev git
+RUN apk add --no-cache gcc linux-headers libc-dev git perl-utils
 
 RUN env
 

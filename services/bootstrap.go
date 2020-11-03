@@ -45,6 +45,7 @@ func Bootstrap(ctx context.Context, flags *config.Flags, logger log.Logger) (*co
 
 		AutoUpdate:          flags.AutoUpdate,
 		ShutdownAfterUpdate: flags.AutoUpdate,
+		BoyarBinaryPath:     flags.BoyarBinaryPath,
 	}
 
 	coreBoyar := NewCoreBoyarService(logger)

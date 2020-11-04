@@ -17,14 +17,24 @@ func (d *dockerSwarmOrchestrator) GetStatus(ctx context.Context, since time.Dura
 			name, _ := d.getServiceName(ctx, task.ServiceID)
 			logs, _ := d.getLogs(ctx, task.ServiceID, since)
 
-			results = append(results, &ContainerStatus{
+			status := &ContainerStatus{
 				Name:      name,
 				State:     task.Status.Message,
 				Error:     task.Status.Err,
 				NodeID:    task.NodeID,
 				CreatedAt: task.CreatedAt,
 				Logs:      logs,
-			})
+			}
+
+			if task.Status.ContainerStatus != nil {
+				containerId := task.Status.ContainerStatus.ContainerID
+				containerJSON, err := d.client.ContainerInspect(ctx, containerId)
+				if err == nil { // skipping because it only works on the same machine
+					status.Debug.ContainerState = containerJSON.State
+				}
+			}
+
+			results = append(results, status)
 		}
 	}
 

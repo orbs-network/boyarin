@@ -2,6 +2,7 @@ package adapter
 
 import (
 	"context"
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/mount"
 	"io"
 	"time"
@@ -44,6 +45,10 @@ type ServiceConfig struct {
 	LogsMountPointNames map[string]string // simple name -> namespaced name
 }
 
+type ContainerDebugStatus struct {
+	ContainerState *types.ContainerState
+}
+
 type ContainerStatus struct {
 	Name   string
 	NodeID string
@@ -51,6 +56,8 @@ type ContainerStatus struct {
 	Error  string
 
 	Logs string
+
+	Debug ContainerDebugStatus
 
 	CreatedAt time.Time
 }

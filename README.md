@@ -23,21 +23,17 @@ Staring from version 0.17.0, Boyar only works with Docker version higher than 19
 
 ## Building
 
-```bash
-export GOOS=linux
-./build-binaries.sh
-```
-
-Alternatively, building in Docker:
+Building in Docker:
 
 ```
 ./docker-build.sh
 ```
 
-To publish new version to S3: update `.version` file and run this command:
+Alternative faster build:
 
 ```bash
-./.circleci/export.sh
+export GOOS=linux
+./build-binaries.sh
 ```
 
 ## Tips

@@ -6,7 +6,7 @@ import (
 )
 
 func TestDockerSwarm_getVolumeDriverOptionsDefaults(t *testing.T) {
-	orchestratorOptions := OrchestratorOptions{}
+	orchestratorOptions := &OrchestratorOptions{}
 	_, options := getVolumeDriverOptions("myVolume", orchestratorOptions)
 
 	require.Empty(t, options)
@@ -17,7 +17,7 @@ func TestDockerSwarm_getVolumeDriverOptionsWithStorageOptions(t *testing.T) {
 	storageOptions["artist"] = "Iggy Pop"
 	storageOptions["song"] = "Passenger"
 
-	orchestratorOptions := OrchestratorOptions{
+	orchestratorOptions := &OrchestratorOptions{
 		StorageOptions: storageOptions,
 	}
 	_, options := getVolumeDriverOptions("myVolume", orchestratorOptions)
@@ -28,7 +28,7 @@ func TestDockerSwarm_getVolumeDriverOptionsWithStorageOptions(t *testing.T) {
 }
 
 func TestDockerSwarm_getVolumeDriverOptionsWithRexray(t *testing.T) {
-	orchestratorOptions := OrchestratorOptions{
+	orchestratorOptions := &OrchestratorOptions{
 		StorageDriver: "rexray/ebs",
 	}
 	_, options := getVolumeDriverOptions("myVolume", orchestratorOptions)
@@ -40,7 +40,7 @@ func TestDockerSwarm_getVolumeDriverWithLocalNFS(t *testing.T) {
 	storageOptions := make(map[string]string)
 	storageOptions["type"] = "nfs"
 
-	orchestratorOptions := OrchestratorOptions{
+	orchestratorOptions := &OrchestratorOptions{
 		StorageOptions: storageOptions,
 	}
 	_, options := getVolumeDriverOptions("myVolume", orchestratorOptions)
@@ -54,7 +54,7 @@ func TestDockerSwarm_getVolumeDriverWithBindMounts(t *testing.T) {
 	storageOptions := make(map[string]string)
 	storageOptions["type"] = "nfs"
 
-	orchestratorOptions := OrchestratorOptions{
+	orchestratorOptions := &OrchestratorOptions{
 		StorageOptions:   storageOptions,
 		StorageMountType: "bind",
 	}

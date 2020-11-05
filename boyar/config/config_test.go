@@ -53,7 +53,7 @@ func Test_StringConfigurationSource(t *testing.T) {
 }
 
 func Test_StringConfigurationSourceFromEmptyConfig(t *testing.T) {
-	cfg, err := NewStringConfigurationSource("{}", "", fakeKeyPair, false)
+	cfg, err := NewStringConfigurationSource(`{"orchestrator":{}}`, "", fakeKeyPair, false)
 	require.NoError(t, err)
 
 	require.NotEmpty(t, cfg.Hash())

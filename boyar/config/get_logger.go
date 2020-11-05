@@ -40,7 +40,7 @@ func GetLogger(flags *Flags) (log.Logger, error) {
 		WithTags(tags...).
 		WithOutput(outputs...)
 
-	cfg, _ := NewStringConfigurationSource("{}", "", flags.KeyPairConfigPath, false)
+	cfg, _ := NewStringConfigurationSource(`{"orchestrator":{}}`, "", flags.KeyPairConfigPath, false)
 	if err := cfg.VerifyConfig(); err != nil {
 		logger.Error("Invalid configuration", log.Error(err))
 		return nil, err

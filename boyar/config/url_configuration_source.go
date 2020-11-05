@@ -14,6 +14,10 @@ func NewUrlConfigurationSource(url string, ethereumEndpoint string, keyConfigPat
 
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("management config url returned with status %s", resp.Status)
+	}
+
 	input, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("could not read configuration from source: %s", err)

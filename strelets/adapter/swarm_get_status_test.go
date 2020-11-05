@@ -24,7 +24,7 @@ func TestDockerSwarm_GetStatusIfUnableToStart(t *testing.T) {
 		serviceId := startDefunctContainer(t)
 		defer destroyDefunctContainer(t, serviceId)
 
-		swarm, err := NewDockerSwarm(OrchestratorOptions{}, log.GetLogger())
+		swarm, err := NewDockerSwarm(&OrchestratorOptions{}, log.GetLogger())
 		require.NoError(t, err)
 
 		require.True(t, helpers.Eventually(30*time.Second, func() bool {
@@ -50,7 +50,7 @@ func TestDockerSwarm_GetStatusIfExitsImmediately(t *testing.T) {
 		serviceId := startReloadingContainer(t)
 		defer destroyDefunctContainer(t, serviceId)
 
-		swarm, err := NewDockerSwarm(OrchestratorOptions{}, log.GetLogger())
+		swarm, err := NewDockerSwarm(&OrchestratorOptions{}, log.GetLogger())
 		require.NoError(t, err)
 
 		require.True(t, helpers.Eventually(30*time.Second, func() bool {
@@ -76,7 +76,7 @@ func TestDockerSwarm_GetStatusOfUnhealthyContainer(t *testing.T) {
 		serviceId := startUnhealthyContainer(t)
 		defer destroyDefunctContainer(t, serviceId)
 
-		swarm, err := NewDockerSwarm(OrchestratorOptions{}, log.GetLogger())
+		swarm, err := NewDockerSwarm(&OrchestratorOptions{}, log.GetLogger())
 		require.NoError(t, err)
 
 		require.True(t, helpers.Eventually(30*time.Second, func() bool {

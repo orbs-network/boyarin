@@ -14,7 +14,7 @@ import (
 
 type dockerSwarmOrchestrator struct {
 	client  *client.Client
-	options OrchestratorOptions
+	options *OrchestratorOptions
 	logger  log.Logger
 }
 
@@ -31,9 +31,12 @@ type dockerSwarmNginxSecretsConfig struct {
 	sslPrivateKeyId  string
 }
 
-func NewDockerSwarm(options OrchestratorOptions, logger log.Logger) (Orchestrator, error) {
-	client, err := client.NewClientWithOpts(client.WithVersion(DOCKER_API_VERSION))
+func NewDockerSwarm(options *OrchestratorOptions, logger log.Logger) (Orchestrator, error) {
+	if options == nil {
+		return nil, fmt.Errorf("orchestration options are empty, can't instantiate Docker Swarm orchestrator")
+	}
 
+	client, err := client.NewClientWithOpts(client.WithVersion(DOCKER_API_VERSION))
 	if err != nil {
 		return nil, err
 	}

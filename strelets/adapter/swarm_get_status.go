@@ -14,8 +14,8 @@ func (d *dockerSwarmOrchestrator) GetStatus(ctx context.Context, since time.Dura
 		return nil, fmt.Errorf("failed to retrieve task list: %s", err)
 	} else {
 		for _, task := range tasks {
-			name, _ := d.getServiceName(ctx, task.ServiceID)
-			logs, _ := d.getLogs(ctx, task.ServiceID, since)
+			name, _ := d.getServiceName(ctx, task.ServiceID) // FIXME handle error for non existing service
+			logs, _ := d.getLogs(ctx, task.ServiceID, since) // FIXME handle more errors
 
 			status := &ContainerStatus{
 				Name:      name,

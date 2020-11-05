@@ -44,7 +44,7 @@ func (d *dockerSwarmOrchestrator) provisionCacheVolume(ctx context.Context, serv
 	return d.provisionVolume(ctx, getServiceVolumeName(serviceName, "cache"), ORBS_CACHE_TARGET, d.options)
 }
 
-func (d *dockerSwarmOrchestrator) provisionVolume(ctx context.Context, volumeName string, target string, orchestratorOptions OrchestratorOptions) (mount.Mount, error) {
+func (d *dockerSwarmOrchestrator) provisionVolume(ctx context.Context, volumeName string, target string, orchestratorOptions *OrchestratorOptions) (mount.Mount, error) {
 	if orchestratorOptions.StorageDriver == REXRAY_EBS_DRIVER {
 		return mount.Mount{}, errors.Errorf("%s storage driver is no longer supported, please consult how to enable EFS instead", REXRAY_EBS_DRIVER)
 	}
@@ -71,7 +71,7 @@ func (d *dockerSwarmOrchestrator) provisionVolume(ctx context.Context, volumeNam
 	}, nil
 }
 
-func getVolumeOptions(orchestratorOptions OrchestratorOptions, driverName string, driverOptions map[string]string) *mount.VolumeOptions {
+func getVolumeOptions(orchestratorOptions *OrchestratorOptions, driverName string, driverOptions map[string]string) *mount.VolumeOptions {
 	switch orchestratorOptions.MountType() {
 	case mount.TypeVolume:
 		return &mount.VolumeOptions{
@@ -85,7 +85,7 @@ func getVolumeOptions(orchestratorOptions OrchestratorOptions, driverName string
 	return nil
 }
 
-func getVolumeDriverOptions(volumeName string, orchestratorOptions OrchestratorOptions) (string, map[string]string) {
+func getVolumeDriverOptions(volumeName string, orchestratorOptions *OrchestratorOptions) (string, map[string]string) {
 	driverOptions := make(map[string]string)
 	for k, v := range orchestratorOptions.StorageOptions {
 		driverOptions[k] = v

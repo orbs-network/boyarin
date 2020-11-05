@@ -76,7 +76,7 @@ func statusResponseWithError(flags *config.Flags, err error) StatusResponse {
 
 func GetStatusAndMetrics(ctx context.Context, logger log.Logger, flags *config.Flags, startupTimestamp time.Time, dockerStatusPeriod time.Duration) (status StatusResponse, metrics Metrics) {
 	// We really don't need any options here since we're just observing
-	orchestrator, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{}, logger)
+	orchestrator, err := adapter.NewDockerSwarm(&adapter.OrchestratorOptions{}, logger)
 	if err != nil {
 		status = statusResponseWithError(flags, err)
 	} else {

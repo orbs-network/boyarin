@@ -50,6 +50,8 @@ func main() {
 	autoUpdate := flag.Bool("auto-update", false, "enables boyar binary auto update")
 	shutdownAfterUpdate := flag.Bool("shutdown-after-update", false, "the process shuts down after automatic update is performed and **DOES NOT** restart; recommended to be used with an external process manager")
 
+	bootstrapResetTimeout := flag.Duration("bootstrap-reset-timeout", 0, "if the process is unable to receive valid configuration within a limited timeframe (duration: 1s, 1m, 1h, etc), it will exit with an error; recommended to be used with an external process manager, (default 0s, off)")
+
 	flag.Parse()
 
 	if *showVersion {
@@ -64,23 +66,24 @@ func main() {
 	executableWithoutSymlink, _ := filepath.EvalSymlinks(executable)
 
 	flags := &config.Flags{
-		ConfigUrl:           *configUrlPtr,
-		KeyPairConfigPath:   *keyPairConfigPathPtr,
-		LogFilePath:         *logFilePath,
-		StatusFilePath:      *statusFilePath,
-		MetricsFilePath:     *metricsFilePath,
-		PollingInterval:     *pollingIntervalPtr,
-		Timeout:             *timeoutPtr,
-		MaxReloadTimeDelay:  *maxReloadTimePtr,
-		EthereumEndpoint:    *ethereumEndpointPtr,
-		LoggerHttpEndpoint:  *loggerHttpEndpointPtr,
-		OrchestratorOptions: *orchestratorOptionsPtr,
-		SSLCertificatePath:  *sslCertificatePathPtr,
-		SSLPrivateKeyPath:   *sslPrivateKeyPtr,
-		ManagementConfig:    *managementConfig,
-		AutoUpdate:          *autoUpdate,
-		ShutdownAfterUpdate: *shutdownAfterUpdate,
-		BoyarBinaryPath:     executableWithoutSymlink,
+		ConfigUrl:             *configUrlPtr,
+		KeyPairConfigPath:     *keyPairConfigPathPtr,
+		LogFilePath:           *logFilePath,
+		StatusFilePath:        *statusFilePath,
+		MetricsFilePath:       *metricsFilePath,
+		PollingInterval:       *pollingIntervalPtr,
+		Timeout:               *timeoutPtr,
+		MaxReloadTimeDelay:    *maxReloadTimePtr,
+		EthereumEndpoint:      *ethereumEndpointPtr,
+		LoggerHttpEndpoint:    *loggerHttpEndpointPtr,
+		OrchestratorOptions:   *orchestratorOptionsPtr,
+		SSLCertificatePath:    *sslCertificatePathPtr,
+		SSLPrivateKeyPath:     *sslPrivateKeyPtr,
+		ManagementConfig:      *managementConfig,
+		AutoUpdate:            *autoUpdate,
+		ShutdownAfterUpdate:   *shutdownAfterUpdate,
+		BoyarBinaryPath:       executableWithoutSymlink,
+		BootstrapResetTimeout: *bootstrapResetTimeout,
 	}
 
 	if *showStatus {

@@ -53,7 +53,7 @@ func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) (govnr
 		if cfg == nil {
 			logger.Error("unexpected empty configuration received and ignored")
 
-			if time.Since(configUpdateTimestamp).Nanoseconds() >= flags.BootstrapResetTimeout.Nanoseconds() {
+			if resetInNanos := flags.BootstrapResetTimeout.Nanoseconds(); resetInNanos > 0 && time.Since(configUpdateTimestamp).Nanoseconds() >= resetInNanos {
 				logger.Error(fmt.Sprintf("did not receive new valid configuratin for %s, shutting down", flags.BootstrapResetTimeout))
 				cancelAndExit()
 			}

@@ -50,7 +50,7 @@ func main() {
 	autoUpdate := flag.Bool("auto-update", false, "enables boyar binary auto update")
 	shutdownAfterUpdate := flag.Bool("shutdown-after-update", false, "the process shuts down after automatic update is performed and **DOES NOT** restart; recommended to be used with an external process manager")
 
-	bootstrapResetTimeout := flag.Duration("bootstrap-reset-timeout", 30*time.Minute, "if the process is unable to receive valid configuration within a limited timeframe (duration: 1s, 1m, 1h, etc), it will exit with an error; recommended to be used with an external process manager")
+	bootstrapResetTimeout := flag.Duration("bootstrap-reset-timeout", 0, "if the process is unable to receive valid configuration within a limited timeframe (duration: 1s, 1m, 1h, etc), it will exit with an error; recommended to be used with an external process manager, (default 0s, off)")
 
 	flag.Parse()
 

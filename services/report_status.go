@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/utils"
 	"github.com/orbs-network/boyarin/version"
@@ -16,7 +17,7 @@ import (
 const SERVICE_STATUS_REPORT_PERIOD = 30 * time.Second
 const SERVICE_STATUS_REPORT_TIMEOUT = 15 * time.Second
 
-func WatchAndReportStatusAndMetrics(ctx context.Context, logger log.Logger, statusFilePath string, metricsFilePath string) govnr.ShutdownWaiter {
+func WatchAndReportStatusAndMetrics(ctx context.Context, logger log.Logger, flags *config.Flags) govnr.ShutdownWaiter {
 	errorHandler := utils.NewLogErrors("service status reporter", logger)
 	startupTimestamp := time.Now()
 	return govnr.Forever(ctx, "service status reporter", errorHandler, func() {
@@ -24,22 +25,22 @@ func WatchAndReportStatusAndMetrics(ctx context.Context, logger log.Logger, stat
 		ctxWithTimeout, cancel := context.WithTimeout(ctx, SERVICE_STATUS_REPORT_TIMEOUT)
 		defer cancel()
 
-		status, metrics := GetStatusAndMetrics(ctxWithTimeout, logger, startupTimestamp, SERVICE_STATUS_REPORT_PERIOD)
+		status, metrics := GetStatusAndMetrics(ctxWithTimeout, logger, flags, startupTimestamp, SERVICE_STATUS_REPORT_PERIOD)
 
-		if statusFilePath != "" {
+		if flags.StatusFilePath != "" {
 			rawJSON, _ := json.MarshalIndent(status, "  ", "  ")
-			if err := ioutil.WriteFile(statusFilePath, rawJSON, 0644); err != nil {
+			if err := ioutil.WriteFile(flags.StatusFilePath, rawJSON, 0644); err != nil {
 				logger.Error("failed to write status file", log.Error(err))
 			}
 		}
 
-		if metricsFilePath != "" {
+		if flags.MetricsFilePath != "" {
 			registry := prometheus.NewRegistry()
 			InitializeAndUpdatePrometheusMetrics(registry, metrics)
 			if serializedMetrics, err := GetSerializedMetrics(registry); err != nil {
 				logger.Error("failed to serialize metrics", log.Error(err))
 			} else {
-				if err := ioutil.WriteFile(metricsFilePath, []byte(serializedMetrics), 0644); err != nil {
+				if err := ioutil.WriteFile(flags.MetricsFilePath, []byte(serializedMetrics), 0644); err != nil {
 					logger.Error("failed to write metrics file", log.Error(err))
 				}
 			}
@@ -61,28 +62,29 @@ type StatusResponse struct {
 	Payload   map[string]interface{}
 }
 
-func statusResponseWithError(err error) StatusResponse {
+func statusResponseWithError(flags *config.Flags, err error) StatusResponse {
 	return StatusResponse{
 		Status:    "Failed to query Docker Swarm",
 		Timestamp: time.Now(),
 		Error:     err.Error(),
 		Payload: map[string]interface{}{
 			"Version": version.GetVersion(),
+			"Config":  flags,
 		},
 	}
 }
 
-func GetStatusAndMetrics(ctx context.Context, logger log.Logger, startupTimestamp time.Time, dockerStatusPeriod time.Duration) (status StatusResponse, metrics Metrics) {
+func GetStatusAndMetrics(ctx context.Context, logger log.Logger, flags *config.Flags, startupTimestamp time.Time, dockerStatusPeriod time.Duration) (status StatusResponse, metrics Metrics) {
 	// We really don't need any options here since we're just observing
 	orchestrator, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{}, logger)
 	if err != nil {
-		status = statusResponseWithError(err)
+		status = statusResponseWithError(flags, err)
 	} else {
 		defer orchestrator.Close()
 
 		containerStatus, err := orchestrator.GetStatus(ctx, dockerStatusPeriod)
 		if err != nil {
-			status = statusResponseWithError(err)
+			status = statusResponseWithError(flags, err)
 		} else {
 			services := make(map[string][]*adapter.ContainerStatus)
 			for _, s := range containerStatus {
@@ -95,6 +97,7 @@ func GetStatusAndMetrics(ctx context.Context, logger log.Logger, startupTimestam
 				Payload: map[string]interface{}{
 					"Version":  version.GetVersion(),
 					"Services": services,
+					"Config":   flags,
 				},
 			}
 		}

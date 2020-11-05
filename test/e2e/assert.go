@@ -26,7 +26,7 @@ func AssertGossipServer(t helpers.TestingT, vc VChainArgument) {
 }
 
 func AssertServiceUp(t helpers.TestingT, ctx context.Context, serviceName string) {
-	orchestrator, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{}, helpers.DefaultTestLogger())
+	orchestrator, err := adapter.NewDockerSwarm(&adapter.OrchestratorOptions{}, helpers.DefaultTestLogger())
 	require.NoError(t, err)
 
 	statuses, err := orchestrator.GetStatus(ctx, 1*time.Second)
@@ -57,7 +57,7 @@ func AssertVolumeExists(t helpers.TestingT, ctx context.Context, volume string) 
 }
 
 func AssertServiceDown(t helpers.TestingT, ctx context.Context, serviceName string) {
-	orchestrator, err := adapter.NewDockerSwarm(adapter.OrchestratorOptions{}, helpers.DefaultTestLogger())
+	orchestrator, err := adapter.NewDockerSwarm(&adapter.OrchestratorOptions{}, helpers.DefaultTestLogger())
 	require.NoError(t, err)
 
 	statuses, err := orchestrator.GetStatus(ctx, 1*time.Second)

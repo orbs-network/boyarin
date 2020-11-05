@@ -49,7 +49,7 @@ func TestPurgeServiceData(t *testing.T) {
 		logger := log.GetLogger()
 		orchestrator := &dockerSwarmOrchestrator{
 			client: helpers.DockerClient(t),
-			options: OrchestratorOptions{
+			options: &OrchestratorOptions{
 				StorageDriver:    LOCAL_DRIVER,
 				StorageMountType: "bind",
 			},
@@ -80,7 +80,7 @@ func TestPurgeVirtualChainData(t *testing.T) {
 		logger := log.GetLogger()
 		orchestrator := &dockerSwarmOrchestrator{
 			client: helpers.DockerClient(t),
-			options: OrchestratorOptions{
+			options: &OrchestratorOptions{
 				StorageDriver:    LOCAL_DRIVER,
 				StorageMountType: "bind",
 			},

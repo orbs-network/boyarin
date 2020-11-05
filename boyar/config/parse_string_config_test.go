@@ -63,3 +63,16 @@ func TestNewUrlConfigurationSource(t *testing.T) {
 	require.NoError(t, err)
 	verifySource(t, source)
 }
+
+func TestNewUrlConfigurationSourceWithFaultyConfig(t *testing.T) {
+	server := helpers.CreateHttpServer("/", 0, func(writer http.ResponseWriter, request *http.Request) {
+		writer.WriteHeader(http.StatusInternalServerError)
+	})
+	server.Start()
+	defer server.Shutdown()
+
+	source, err := NewUrlConfigurationSource(server.Url(), "", fakeKeyPair, false)
+
+	require.EqualError(t, err, "management config url returned with status 500 Internal Server Error")
+	require.Nil(t, source)
+}

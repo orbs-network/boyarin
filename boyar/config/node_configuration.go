@@ -11,7 +11,7 @@ import (
 type NodeConfiguration interface {
 	FederationNodes() []*FederationNode
 	Chains() []*VirtualChain
-	OrchestratorOptions() adapter.OrchestratorOptions
+	OrchestratorOptions() *adapter.OrchestratorOptions
 	KeyConfigPath() string
 	KeyConfig() KeyConfig
 	ReloadTimeDelay(maxDelay time.Duration) time.Duration
@@ -30,16 +30,16 @@ type MutableNodeConfiguration interface {
 	NodeConfiguration
 
 	SetEthereumEndpoint(ethereumEndpoint string) MutableNodeConfiguration
-	SetOrchestratorOptions(options adapter.OrchestratorOptions) MutableNodeConfiguration
+	SetOrchestratorOptions(options *adapter.OrchestratorOptions) MutableNodeConfiguration
 	SetSSLOptions(options adapter.SSLOptions) MutableNodeConfiguration
 	UpdateDefaultServiceConfig() MutableNodeConfiguration
 }
 
 type nodeConfiguration struct {
-	Chains              []*VirtualChain             `json:"chains"`
-	FederationNodes     []*FederationNode           `json:"network"`
-	OrchestratorOptions adapter.OrchestratorOptions `json:"orchestrator"`
-	Services            Services                    `json:"services"`
+	Chains              []*VirtualChain              `json:"chains"`
+	FederationNodes     []*FederationNode            `json:"network"`
+	OrchestratorOptions *adapter.OrchestratorOptions `json:"orchestrator"`
+	Services            Services                     `json:"services"`
 }
 
 type nodeConfigurationContainer struct {
@@ -71,7 +71,7 @@ func (c *nodeConfigurationContainer) KeyConfigPath() string {
 	return c.keyConfigPath
 }
 
-func (c *nodeConfigurationContainer) OrchestratorOptions() adapter.OrchestratorOptions {
+func (c *nodeConfigurationContainer) OrchestratorOptions() *adapter.OrchestratorOptions {
 	return c.value.OrchestratorOptions
 }
 
@@ -84,6 +84,10 @@ func (c *nodeConfigurationContainer) VerifyConfig() error {
 	_, err := c.readKeysConfig()
 	if err != nil {
 		return err
+	}
+
+	if c.OrchestratorOptions() == nil {
+		return fmt.Errorf("config is missing orchestrator options")
 	}
 
 	return nil
@@ -107,7 +111,7 @@ func (c *nodeConfigurationContainer) SetEthereumEndpoint(ethereumEndpoint string
 	return c
 }
 
-func (c *nodeConfigurationContainer) SetOrchestratorOptions(options adapter.OrchestratorOptions) MutableNodeConfiguration {
+func (c *nodeConfigurationContainer) SetOrchestratorOptions(options *adapter.OrchestratorOptions) MutableNodeConfiguration {
 	c.value.OrchestratorOptions = options
 	return c
 }

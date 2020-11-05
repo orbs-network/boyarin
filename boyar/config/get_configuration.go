@@ -21,7 +21,7 @@ func GetConfiguration(flags *Flags) (NodeConfiguration, error) {
 			return nil, err
 		}
 
-		config.SetOrchestratorOptions(orchestratorOptions)
+		config.SetOrchestratorOptions(&orchestratorOptions)
 	}
 
 	if err := config.VerifyConfig(); err != nil {

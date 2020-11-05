@@ -31,7 +31,7 @@ func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) (govnr
 	if flags.StatusFilePath == "" && flags.MetricsFilePath == "" {
 		logger.Info("status file path and metrics file path are empty, periodical report disabled")
 	} else {
-		supervisor.Supervise(WatchAndReportStatusAndMetrics(ctxWithCancel, logger, flags.StatusFilePath, flags.MetricsFilePath))
+		supervisor.Supervise(WatchAndReportStatusAndMetrics(ctxWithCancel, logger, flags))
 	}
 
 	cfgFetcher := NewConfigurationPollService(flags, logger)

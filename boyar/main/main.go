@@ -60,17 +60,6 @@ func main() {
 
 	basicLogger := log.GetLogger()
 
-	if *showStatus {
-		ctx, cancel := context.WithTimeout(context.Background(), services.SERVICE_STATUS_REPORT_TIMEOUT)
-		defer cancel()
-
-		status, _ := services.GetStatusAndMetrics(ctx, basicLogger, time.Now(), services.SERVICE_STATUS_REPORT_TIMEOUT)
-		rawJSON, _ := json.MarshalIndent(status, "  ", "  ")
-		fmt.Println(string(rawJSON))
-
-		return
-	}
-
 	executable, _ := os.Executable()
 	executableWithoutSymlink, _ := filepath.EvalSymlinks(executable)
 
@@ -92,6 +81,17 @@ func main() {
 		AutoUpdate:          *autoUpdate,
 		ShutdownAfterUpdate: *shutdownAfterUpdate,
 		BoyarBinaryPath:     executableWithoutSymlink,
+	}
+
+	if *showStatus {
+		ctx, cancel := context.WithTimeout(context.Background(), services.SERVICE_STATUS_REPORT_TIMEOUT)
+		defer cancel()
+
+		status, _ := services.GetStatusAndMetrics(ctx, basicLogger, flags, time.Now(), services.SERVICE_STATUS_REPORT_TIMEOUT)
+		rawJSON, _ := json.MarshalIndent(status, "  ", "  ")
+		fmt.Println(string(rawJSON))
+
+		return
 	}
 
 	if *help {

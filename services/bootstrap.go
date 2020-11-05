@@ -54,5 +54,9 @@ func Bootstrap(ctx context.Context, flags *config.Flags, logger log.Logger) (*co
 		return flags, errors.New("restart needed after an update")
 	}
 
+	ctxWithCancel, cancel := context.WithCancel(ctx)
+	defer cancel()
+	WatchAndReportStatusAndMetrics(ctxWithCancel, logger, flags)
+
 	return newFlags, coreBoyar.OnConfigChange(ctx, cfg)
 }

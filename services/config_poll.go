@@ -14,10 +14,10 @@ type ConfigurationPollService struct {
 	logger       log.Logger
 	output       chan config.NodeConfiguration
 	Output       <-chan config.NodeConfiguration
-	configCache  *utils.CacheFilter
 	errorHandler govnr.Errorer
 }
 
+// FIXME completely remove in the future
 func NewConfigurationPollService(flags *config.Flags, logger log.Logger) *ConfigurationPollService {
 	output := make(chan config.NodeConfiguration)
 	return &ConfigurationPollService{
@@ -25,7 +25,6 @@ func NewConfigurationPollService(flags *config.Flags, logger log.Logger) *Config
 		logger:       logger,
 		output:       output,
 		Output:       output,
-		configCache:  utils.NewCacheFilter(),
 		errorHandler: utils.NewLogErrors("configuration polling", logger),
 	}
 }
@@ -44,19 +43,11 @@ func (service *ConfigurationPollService) Start(ctx context.Context) govnr.Shutdo
 			return
 		}
 
-		if service.configCache.CheckNewValue(cfg) {
-			service.output <- cfg
-		} else {
-			service.logger.Info("configuration has not changed")
-		}
+		service.output <- cfg
 	})
 	go func() {
 		<-handle.Done()
 		close(service.output)
 	}()
 	return handle
-}
-
-func (service *ConfigurationPollService) Resend() {
-	service.configCache.Clear()
 }

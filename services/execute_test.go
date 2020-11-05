@@ -6,6 +6,7 @@ import (
 	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/orbs-network/scribe/log"
 	"github.com/stretchr/testify/require"
+	"net/http"
 	"testing"
 	"time"
 )
@@ -26,8 +27,22 @@ func TestExecuteWithInvalidFlags(t *testing.T) {
 	})
 }
 
+// FIXME get to the bottom of docker socket issues
 func TestExecuteWithInvalidConfig(t *testing.T) {
 	helpers.WithContext(func(ctx context.Context) {
+		successfulAttempts := 0
+		maxSuccessfulAttempts := 3
+		server := helpers.CreateHttpServer("/", 0, func(writer http.ResponseWriter, request *http.Request) {
+			if successfulAttempts < maxSuccessfulAttempts {
+				successfulAttempts++
+				writer.Write([]byte(`{"orchestrator":{}}`))
+			} else {
+				writer.Write([]byte("{}"))
+			}
+		})
+		server.Start()
+		defer server.Shutdown()
+
 		logger := log.GetLogger()
 		executionCtx := context.Background()
 
@@ -36,7 +51,7 @@ func TestExecuteWithInvalidConfig(t *testing.T) {
 		resetTimeout := 1 * time.Second
 		pollingInterval := 100 * time.Millisecond
 		waiter, err := Execute(ctx, &config.Flags{
-			ConfigUrl:             "http://localhost/fake-url",
+			ConfigUrl:             server.Url(),
 			KeyPairConfigPath:     "../boyar/config/test/fake-key-pair.json",
 			PollingInterval:       pollingInterval,
 			BootstrapResetTimeout: resetTimeout,
@@ -45,6 +60,6 @@ func TestExecuteWithInvalidConfig(t *testing.T) {
 
 		waiter.WaitUntilShutdown(executionCtx)
 
-		require.InDelta(t, resetTimeout, time.Since(startTime).Nanoseconds(), float64(2*pollingInterval.Nanoseconds()))
+		require.InDelta(t, resetTimeout, time.Since(startTime).Nanoseconds(), float64(4*pollingInterval.Nanoseconds()))
 	})
 }

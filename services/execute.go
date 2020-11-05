@@ -41,6 +41,7 @@ func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) (govnr
 
 	cfgFetcher := NewConfigurationPollService(flags, logger)
 	coreBoyar := NewCoreBoyarService(logger)
+	configCache := utils.NewCacheFilter()
 
 	configUpdateTimestamp := time.Now()
 
@@ -51,12 +52,11 @@ func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) (govnr
 		case <-ctx.Done():
 			return
 		case <-time.After(flags.BootstrapResetTimeout):
+			logger.Error("bootstrap reset timeout reached", log.String("configUpdateTimestamp", configUpdateTimestamp.Format(time.RFC3339)))
 		case cfg = <-cfgFetcher.Output:
 		}
 
 		if cfg == nil {
-			logger.Error("unexpected empty configuration received and ignored")
-
 			if resetInNanos := flags.BootstrapResetTimeout.Nanoseconds(); resetInNanos > 0 && time.Since(configUpdateTimestamp).Nanoseconds() >= resetInNanos {
 				logger.Error(fmt.Sprintf("did not receive new valid configuratin for %s, shutting down", flags.BootstrapResetTimeout))
 				cancelAndExit()
@@ -66,6 +66,12 @@ func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) (govnr
 		}
 
 		configUpdateTimestamp = time.Now()
+		logger.Info("last valid configuration timestamp updated", log.String("configUpdateTimestamp", configUpdateTimestamp.Format(time.RFC3339)))
+
+		if !configCache.CheckNewValue(cfg) {
+			logger.Info("configuration has not changed")
+			return
+		}
 
 		// random delay when provisioning change (that is, not bootstrap flow or repairing broken system)
 		if coreBoyar.healthy {
@@ -86,7 +92,7 @@ func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) (govnr
 		err := coreBoyar.OnConfigChange(ctxWithTimeout, cfg)
 		if err != nil {
 			logger.Error("error executing configuration", log.Error(err))
-			cfgFetcher.Resend()
+			configCache.Clear()
 		}
 
 		if ctxWithTimeout.Err() != nil {

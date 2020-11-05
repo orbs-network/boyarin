@@ -29,7 +29,7 @@ func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) (govnr
 	os.Remove(flags.MetricsFilePath)
 	os.Remove(flags.StatusFilePath)
 
-	if flags.BootstrapResetTimeout.Nanoseconds() <= flags.PollingInterval.Nanoseconds() {
+	if flags.BootstrapResetTimeout > 0 && flags.BootstrapResetTimeout.Nanoseconds() <= flags.PollingInterval.Nanoseconds() {
 		return nil, fmt.Errorf("invalid configuration: bootstrap reset timeout is less or equal to config polling interval")
 	}
 
@@ -39,7 +39,6 @@ func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) (govnr
 		supervisor.Supervise(WatchAndReportStatusAndMetrics(ctxWithCancel, logger, flags))
 	}
 
-	cfgFetcher := NewConfigurationPollService(flags, logger)
 	coreBoyar := NewCoreBoyarService(logger)
 	configCache := utils.NewCacheFilter()
 
@@ -48,12 +47,21 @@ func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) (govnr
 	// wire cfg and boyar
 	supervisor.Supervise(govnr.Forever(ctxWithCancel, "apply config changes", utils.NewLogErrors("apply config changes", logger), func() {
 		var cfg config.NodeConfiguration = nil
+		var err error
+
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(flags.BootstrapResetTimeout):
+		case <-timeout(flags.BootstrapResetTimeout):
 			logger.Error("bootstrap reset timeout reached", log.String("configUpdateTimestamp", configUpdateTimestamp.Format(time.RFC3339)))
-		case cfg = <-cfgFetcher.Output:
+		case <-time.After(flags.PollingInterval):
+			cfg, err = config.GetConfiguration(flags)
+			if err != nil {
+				logger.Error("invalid configuration", log.Error(err))
+			} else {
+				configUpdateTimestamp = time.Now()
+				logger.Info("last valid configuration timestamp updated", log.String("configUpdateTimestamp", configUpdateTimestamp.Format(time.RFC3339)))
+			}
 		}
 
 		if cfg == nil {
@@ -64,9 +72,6 @@ func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) (govnr
 
 			return
 		}
-
-		configUpdateTimestamp = time.Now()
-		logger.Info("last valid configuration timestamp updated", log.String("configUpdateTimestamp", configUpdateTimestamp.Format(time.RFC3339)))
 
 		if !configCache.CheckNewValue(cfg) {
 			logger.Info("configuration has not changed")
@@ -89,7 +94,7 @@ func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) (govnr
 		ctxWithTimeout, cancel := context.WithTimeout(ctxWithCancel, flags.Timeout)
 		defer cancel()
 
-		err := coreBoyar.OnConfigChange(ctxWithTimeout, cfg)
+		err = coreBoyar.OnConfigChange(ctxWithTimeout, cfg)
 		if err != nil {
 			logger.Error("error executing configuration", log.Error(err))
 			configCache.Clear()
@@ -101,7 +106,13 @@ func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) (govnr
 		}
 	}))
 
-	supervisor.Supervise(cfgFetcher.Start(ctxWithCancel))
-
 	return supervisor, nil
+}
+
+func timeout(duration time.Duration) <-chan time.Time {
+	if duration == 0 {
+		return make(chan time.Time) // empty channel that nobody for waiting forever
+	}
+
+	return time.After(duration)
 }

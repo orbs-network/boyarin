@@ -10,6 +10,22 @@ import (
 	"time"
 )
 
+func TestExecuteWithInvalidFlags(t *testing.T) {
+	helpers.WithContext(func(ctx context.Context) {
+		logger := log.GetLogger()
+
+		resetTimeout := 1 * time.Second
+		pollingInterval := 2 * time.Second
+		_, err := Execute(ctx, &config.Flags{
+			ConfigUrl:             "http://localhost/fake-url",
+			KeyPairConfigPath:     "../boyar/config/test/fake-key-pair.json",
+			PollingInterval:       pollingInterval,
+			BootstrapResetTimeout: resetTimeout,
+		}, logger)
+		require.EqualError(t, err, "invalid configuration: bootstrap reset timeout is less or equal to config polling interval")
+	})
+}
+
 func TestExecuteWithInvalidConfig(t *testing.T) {
 	helpers.WithContext(func(ctx context.Context) {
 		logger := log.GetLogger()

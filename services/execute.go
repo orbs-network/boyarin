@@ -29,6 +29,10 @@ func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) (govnr
 	os.Remove(flags.MetricsFilePath)
 	os.Remove(flags.StatusFilePath)
 
+	if flags.BootstrapResetTimeout.Nanoseconds() <= flags.PollingInterval.Nanoseconds() {
+		return nil, fmt.Errorf("invalid configuration: bootstrap reset timeout is less or equal to config polling interval")
+	}
+
 	if flags.StatusFilePath == "" && flags.MetricsFilePath == "" {
 		logger.Info("status file path and metrics file path are empty, periodical report disabled")
 	} else {
@@ -60,6 +64,9 @@ func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) (govnr
 
 			return
 		}
+
+		configUpdateTimestamp = time.Now()
+
 		// random delay when provisioning change (that is, not bootstrap flow or repairing broken system)
 		if coreBoyar.healthy {
 			maybeDelayConfigUpdate(ctxWithCancel, cfg, flags.MaxReloadTimeDelay, coreBoyar.logger)

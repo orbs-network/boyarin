@@ -8,6 +8,7 @@ import (
 	"github.com/orbs-network/govnr"
 	"github.com/orbs-network/scribe/log"
 	"os"
+	"time"
 )
 
 func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) (govnr.ShutdownWaiter, error) {
@@ -37,15 +38,26 @@ func Execute(ctx context.Context, flags *config.Flags, logger log.Logger) (govnr
 	cfgFetcher := NewConfigurationPollService(flags, logger)
 	coreBoyar := NewCoreBoyarService(logger)
 
+	configUpdateTimestamp := time.Now()
+
 	// wire cfg and boyar
 	supervisor.Supervise(govnr.Forever(ctxWithCancel, "apply config changes", utils.NewLogErrors("apply config changes", logger), func() {
 		var cfg config.NodeConfiguration = nil
 		select {
 		case <-ctx.Done():
 			return
+		case <-time.After(flags.BootstrapResetTimeout):
 		case cfg = <-cfgFetcher.Output:
 		}
+
 		if cfg == nil {
+			logger.Error("unexpected empty configuration received and ignored")
+
+			if time.Since(configUpdateTimestamp).Nanoseconds() >= flags.BootstrapResetTimeout.Nanoseconds() {
+				logger.Error(fmt.Sprintf("did not receive new valid configuratin for %s, shutting down", flags.BootstrapResetTimeout))
+				cancelAndExit()
+			}
+
 			return
 		}
 		// random delay when provisioning change (that is, not bootstrap flow or repairing broken system)

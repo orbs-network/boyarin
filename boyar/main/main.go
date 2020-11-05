@@ -81,6 +81,7 @@ func main() {
 		AutoUpdate:          *autoUpdate,
 		ShutdownAfterUpdate: *shutdownAfterUpdate,
 		BoyarBinaryPath:     executableWithoutSymlink,
+		// FIXME set BootstrapResetTimeout parameter
 	}
 
 	if *showStatus {

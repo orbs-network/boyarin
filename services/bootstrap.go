@@ -27,8 +27,10 @@ func Bootstrap(ctx context.Context, flags *config.Flags, logger log.Logger) (*co
 
 		KeyPairConfigPath: flags.KeyPairConfigPath,
 
-		Timeout:         flags.Timeout,
-		PollingInterval: flags.PollingInterval,
+		Timeout:               flags.Timeout,
+		PollingInterval:       flags.PollingInterval,
+		MaxReloadTimeDelay:    flags.MaxReloadTimeDelay,
+		BootstrapResetTimeout: flags.BootstrapResetTimeout,
 
 		SSLPrivateKeyPath:  flags.SSLPrivateKeyPath,
 		SSLCertificatePath: flags.SSLCertificatePath,

@@ -29,7 +29,7 @@ func Test_VerifyConfigWithCorruptConfig(t *testing.T) {
 	defer server.Shutdown()
 
 	source, err := GetConfiguration(&Flags{
-		ConfigUrl:         server.Url(), // FIXME
+		ConfigUrl:         server.Url(),
 		KeyPairConfigPath: fakeKeyPair,
 	})
 

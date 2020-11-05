@@ -9,9 +9,10 @@ type Flags struct {
 	SSLCertificatePath string
 	SSLPrivateKeyPath  string
 
-	PollingInterval    time.Duration
-	Timeout            time.Duration
-	MaxReloadTimeDelay time.Duration
+	PollingInterval       time.Duration
+	Timeout               time.Duration
+	MaxReloadTimeDelay    time.Duration
+	BootstrapResetTimeout time.Duration
 
 	EthereumEndpoint string
 

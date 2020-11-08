@@ -4,18 +4,19 @@
 
 ![Boyars, Russian 17th century administrators and warlords](boyars.jpg)
 
-Management layer that provisions virtual chains for [ORBS blockchain](https://github.com/orbs-network/orbs-network-go/).
+Management layer that provisions virtual chains for [ORBS blockchain](https://github.com/orbs-network/orbs-network-go/). Works together with [Polygon](https://github.com/orbs-network/polygon).
 
-Works together with [Nebula](https://github.com/orbs-network/nebula).
-
+Architecture and workflows implemented are described in relevant parts of [ORBS spec](https://github.com/orbs-network/orbs-spec/blob/master/node-architecture/BOYAR.md).
 
 ## Changelog
+
+### Breaking changes in v1.10.0
+
+`orchestrator` is now **mandatory** part of the config. If this section is not found in the config, Boyar will treat it as invalid and can revert to bootstrap flow (if `boostrap-reset-timeout` option was used).
 
 ### Breaking changes in v1.0.0
 
 Services has become **mandatory** part of the config.
-
-**FIXME** update config to reflect latest changes.
 
 ### v0.17.0
 

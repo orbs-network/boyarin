@@ -76,7 +76,7 @@ location ~ ^/vchains/{{.Id}}/status$ {
 	error_page 403 = @error403;
 }
 location ~ ^/vchains/{{.Id}}(/?)(.*) {
-	proxy_pass http://$vc{{.Id}}:{{.Port}}/$2;
+	proxy_pass http://$vc{{.Id}}:{{.Port}}/$2$is_args$args;
 	error_page 502 = @error502;
 }
 {{- end }} {{- /* range .Chains */ -}}

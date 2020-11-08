@@ -65,7 +65,7 @@ location ~ ^/vchains/42/status$ {
 	error_page 403 = @error403;
 }
 location ~ ^/vchains/42(/?)(.*) {
-	proxy_pass http://$vc42:8080/$2;
+	proxy_pass http://$vc42:8080/$2$is_args$args;
 	error_page 502 = @error502;
 }
 location ~ ^/services/boyar/logs/(.*) {
@@ -298,7 +298,7 @@ location ~ ^/vchains/42/status$ {
 	error_page 403 = @error403;
 }
 location ~ ^/vchains/42(/?)(.*) {
-	proxy_pass http://$vc42:8080/$2;
+	proxy_pass http://$vc42:8080/$2$is_args$args;
 	error_page 502 = @error502;
 }
 set $vc1991 chain-1991;
@@ -341,7 +341,7 @@ location ~ ^/vchains/1991/status$ {
 	error_page 403 = @error403;
 }
 location ~ ^/vchains/1991(/?)(.*) {
-	proxy_pass http://$vc1991:8080/$2;
+	proxy_pass http://$vc1991:8080/$2$is_args$args;
 	error_page 502 = @error502;
 }
 location ~ ^/services/boyar/logs/(.*) {
@@ -577,7 +577,7 @@ location ~ ^/vchains/42/status$ {
 	error_page 403 = @error403;
 }
 location ~ ^/vchains/42(/?)(.*) {
-	proxy_pass http://$vc42:8080/$2;
+	proxy_pass http://$vc42:8080/$2$is_args$args;
 	error_page 502 = @error502;
 }
 location ~ ^/services/boyar/logs/(.*) {
@@ -804,7 +804,7 @@ location ~ ^/vchains/42/status$ {
 	error_page 403 = @error403;
 }
 location ~ ^/vchains/42(/?)(.*) {
-	proxy_pass http://$vc42:8080/$2;
+	proxy_pass http://$vc42:8080/$2$is_args$args;
 	error_page 502 = @error502;
 }
 location ~ ^/services/boyar/logs/(.*) {

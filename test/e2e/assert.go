@@ -152,3 +152,15 @@ func AssertServiceLogsExist(t helpers.TestingT, port int, service string) {
 	require.NoError(t, err)
 	require.NotEmpty(t, body)
 }
+
+func AssertVchainProfilingInfoExist(t helpers.TestingT, port int, vc VChainArgument) {
+	resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/vchains/%d/debug/pprof/goroutine?debug=2", port, vc.Id))
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	require.Equal(t, "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
+
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+	require.NotEmpty(t, body)
+}

@@ -129,6 +129,7 @@ func managementConfigJson(deps boyarDependencies, vChains []VChainArgument, node
 			"Config": map[string]interface{}{
 				"active-consensus-algo": 2,
 				"management-file-path":  vchainManagementFileUrl,
+				"profiling":             true,
 				//"lean-helix-show-debug":                             true,
 				//"logger-full-log":                                   true,
 

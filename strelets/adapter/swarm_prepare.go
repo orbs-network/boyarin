@@ -125,7 +125,7 @@ func getVirtualChainServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.S
 
 	spec := swarm.ServiceSpec{
 		TaskTemplate: swarm.TaskSpec{
-			ContainerSpec: getServiceContainerSpec(serviceConfig.ImageName, serviceConfig.ExecutablePath, secrets, mounts),
+			ContainerSpec: getContainerSpec(serviceConfig.ImageName, secrets, mounts),
 			RestartPolicy: &swarm.RestartPolicy{
 				Delay:     &VIRTUAL_CHAIN_RESTART_DELAY,
 				Window:    &VIRTUAL_CHAIN_RESTART_SUCCESS_WINDOW,
@@ -150,6 +150,26 @@ func getVirtualChainServiceSpec(serviceConfig *ServiceConfig, secrets []*swarm.S
 	spec.Name = serviceConfig.ContainerName
 
 	return spec
+}
+
+func getContainerSpec(imageName string, secrets []*swarm.SecretReference, mounts []mount.Mount) *swarm.ContainerSpec {
+	command := []string{
+		"/opt/orbs/orbs-node",
+		"--silent",
+		"--log", "/opt/orbs/logs/node.log",
+	}
+
+	for _, secret := range secrets {
+		command = append(command, "--config", "/var/run/secrets/"+secret.File.Name)
+	}
+
+	return &swarm.ContainerSpec{
+		Image:   imageName,
+		Command: command,
+		Secrets: secrets,
+		Sysctls: GetSysctls(),
+		Mounts:  mounts,
+	}
 }
 
 func (d *dockerSwarmOrchestrator) getNetwork(ctx context.Context, name string) (network swarm.NetworkAttachmentConfig, err error) {

@@ -12,8 +12,12 @@ import (
 	"github.com/prometheus/common/expfmt"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/mem"
+	"github.com/shirou/gopsutil/process"
+	"math"
 	"os"
 	"path/filepath"
+	"sort"
+	"strconv"
 	"time"
 )
 
@@ -42,6 +46,13 @@ type DiskMetric struct {
 	UsedPercent float64
 }
 
+type ProcessMetric struct {
+	Name             string
+	MemoryUsedMbytes float64
+	PID              int32
+	ParentPID        int32
+}
+
 type Metrics struct {
 	BoyarUptime       float64
 	CPULoadPercent    float64
@@ -50,6 +61,7 @@ type Metrics struct {
 	MemoryTotalMBytes float64
 	EFSAccessTimeMs   uint64
 	Disks             []DiskMetric
+	Processes         []ProcessMetric
 }
 
 type PrometheusMetrics struct {
@@ -115,6 +127,19 @@ func InitializeAndUpdatePrometheusMetrics(registry *prometheus.Registry, metrics
 		diskUsedMbs.Set(diskMetric.UsedMbytes)
 		diskUsedPercent.Set(diskMetric.UsedPercent)
 	}
+
+	for _, processMetric := range metrics.Processes {
+		processMemoryUsedMbs := promauto.With(registry).NewGauge(prometheus.GaugeOpts{
+			Name: "process_memory_used_mbs",
+			ConstLabels: map[string]string{
+				"name":   processMetric.Name,
+				"pid":    strconv.FormatInt(int64(processMetric.PID), 10),
+				"parent": strconv.FormatInt(int64(processMetric.ParentPID), 10),
+			},
+		})
+
+		processMemoryUsedMbs.Set(processMetric.MemoryUsedMbytes)
+	}
 }
 
 func measureEFSAccessTime(ctx context.Context) (uint64, error) {
@@ -129,6 +154,51 @@ func measureEFSAccessTime(ctx context.Context) (uint64, error) {
 
 		return uint64(time.Since(start).Milliseconds()), err
 	}
+}
+
+func toMB(value uint64) float64 {
+	return float64(value) / 1000 / 1000
+}
+
+func getProcessMetrics(ctx context.Context) (processMetrics []ProcessMetric, err error) {
+	if processes, err := process.ProcessesWithContext(ctx); err != nil {
+		return nil, fmt.Errorf("failed to retrieve the list of processes: %s", err)
+	} else {
+		for _, p := range processes {
+			var name string
+			var memoryInfo *process.MemoryInfoStat
+			var memoryUsed uint64
+			var parentPID int32
+
+			name, _ = p.NameWithContext(ctx)
+			memoryInfo, _ = p.MemoryInfoWithContext(ctx)
+
+			if memoryInfo != nil {
+				memoryUsed = memoryInfo.RSS
+			}
+
+			parent, _ := p.ParentWithContext(ctx)
+			if parent != nil {
+				parentPID = parent.Pid
+			}
+
+			processMetric := ProcessMetric{
+				Name:             name,
+				PID:              p.Pid,
+				ParentPID:        parentPID,
+				MemoryUsedMbytes: toMB(memoryUsed),
+			}
+
+			processMetrics = append(processMetrics, processMetric)
+		}
+	}
+
+	sort.Slice(processMetrics, func(i, j int) bool {
+		return processMetrics[i].MemoryUsedMbytes > processMetrics[j].MemoryUsedMbytes
+	})
+
+	top10 := int(math.Min(10, float64(len(processMetrics))))
+	return processMetrics[0:top10], nil
 }
 
 func CollectMetrics(ctx context.Context, logger log.Logger, startupTimestamp time.Time) (metrics Metrics, aggregateError error) {
@@ -147,8 +217,8 @@ func CollectMetrics(ctx context.Context, logger log.Logger, startupTimestamp tim
 		errors = append(errors, fmt.Errorf("failed to read memory info: %s", err))
 		logger.Error("failed to read memory info", log.Error(err))
 	} else {
-		metrics.MemoryTotalMBytes = float64(memInfo.Total) / 1000 / 1000
-		metrics.MemoryUsedMBytes = float64(memInfo.Used) / 1000 / 1000
+		metrics.MemoryTotalMBytes = toMB(memInfo.Total)
+		metrics.MemoryUsedMBytes = toMB(memInfo.Used)
 		metrics.MemoryUsedPercent = memInfo.UsedPercent
 	}
 
@@ -162,6 +232,12 @@ func CollectMetrics(ctx context.Context, logger log.Logger, startupTimestamp tim
 		logger.Error("failed to measure EFS access time", log.Error(err))
 	}
 	metrics.EFSAccessTimeMs = accessTime
+
+	if processMetrics, processMetricsError := getProcessMetrics(ctx); processMetricsError != nil {
+		errors = append(errors, processMetricsError)
+	} else {
+		metrics.Processes = processMetrics
+	}
 
 	return metrics, utils.AggregateErrors(errors)
 }

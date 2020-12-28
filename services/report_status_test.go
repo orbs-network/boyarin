@@ -24,7 +24,7 @@ func TestDockerVersion(t *testing.T) {
 
 		require.Regexp(t, "RAM.*CPU.*EFSAccess.*", status.Status)
 
-		version := status.Payload["Docker"]
+		version := status.Payload["SystemDocker"]
 		require.NotNil(t, version)
 
 		raw, _ := json.MarshalIndent(status, "", "  ")

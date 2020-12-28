@@ -72,9 +72,9 @@ func statusResponseWithError(flags *config.Flags, dockerInfo interface{}, err er
 		Timestamp: time.Now(),
 		Error:     err.Error(),
 		Payload: map[string]interface{}{
-			"Version": version.GetVersion(),
-			"Docker":  dockerInfo,
-			"Config":  flags,
+			"Version":      version.GetVersion(),
+			"SystemDocker": dockerInfo,
+			"Config":       flags,
 		},
 	}
 }
@@ -107,10 +107,10 @@ func GetStatusAndMetrics(ctx context.Context, logger log.Logger, flags *config.F
 				Status:    "OK",
 				Timestamp: time.Now(),
 				Payload: map[string]interface{}{
-					"Version":  version.GetVersion(),
-					"Docker":   dockerInfo,
-					"Services": services,
-					"Config":   flags,
+					"Version":      version.GetVersion(),
+					"SystemDocker": dockerInfo,
+					"Services":     services,
+					"Config":       flags,
 				},
 			}
 		}

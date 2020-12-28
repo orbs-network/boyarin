@@ -19,7 +19,7 @@ const SERVICE_STATUS_REPORT_PERIOD = 30 * time.Second
 const SERVICE_STATUS_REPORT_TIMEOUT = 15 * time.Second
 
 const MAX_CPU_LOAD = 75
-const MAX_MEMORY_LOAD = 75
+const MAX_MEMORY_USED = 75
 
 func WatchAndReportStatusAndMetrics(ctx context.Context, logger log.Logger, flags *config.Flags) govnr.ShutdownWaiter {
 	errorHandler := utils.NewLogErrors("service status reporter", logger)
@@ -130,8 +130,11 @@ func GetStatusAndMetrics(ctx context.Context, logger log.Logger, flags *config.F
 	if metrics.MemoryUsedPercent >= 75 {
 		status.Status = "Memory usage is too high"
 		status.Error = fmt.Sprintf("Memory usage is higher that %d%% (currently at %f%%)",
-			MAX_MEMORY_LOAD, metrics.MemoryUsedPercent)
+			MAX_MEMORY_USED, metrics.MemoryUsedPercent)
 	}
+
+	logger.Info("cpu load", log.Float64("cpuLoad", metrics.CPULoadPercent))
+	logger.Info("memory load", log.Float64("memoryUsed", metrics.MemoryUsedPercent))
 
 	status.Payload["Metrics"] = metrics
 

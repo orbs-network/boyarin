@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/utils"
@@ -16,6 +17,9 @@ import (
 
 const SERVICE_STATUS_REPORT_PERIOD = 30 * time.Second
 const SERVICE_STATUS_REPORT_TIMEOUT = 15 * time.Second
+
+const MAX_CPU_LOAD = 75
+const MAX_MEMORY_LOAD = 75
 
 func WatchAndReportStatusAndMetrics(ctx context.Context, logger log.Logger, flags *config.Flags) govnr.ShutdownWaiter {
 	errorHandler := utils.NewLogErrors("service status reporter", logger)
@@ -115,6 +119,18 @@ func GetStatusAndMetrics(ctx context.Context, logger log.Logger, flags *config.F
 	if err != nil {
 		status.Status = "Failed to collect metrics"
 		status.Error = err.Error()
+	}
+
+	if metrics.CPULoadPercent >= 75 {
+		status.Status = "CPU usage is too high"
+		status.Error = fmt.Sprintf("CPU usage is higher that %d%% (currently at %f%%)",
+			MAX_CPU_LOAD, metrics.CPULoadPercent)
+	}
+
+	if metrics.MemoryUsedPercent >= 75 {
+		status.Status = "Memory usage is too high"
+		status.Error = fmt.Sprintf("Memory usage is higher that %d%% (currently at %f%%)",
+			MAX_MEMORY_LOAD, metrics.MemoryUsedPercent)
 	}
 
 	status.Payload["Metrics"] = metrics

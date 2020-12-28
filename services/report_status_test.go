@@ -22,7 +22,7 @@ func TestDockerVersion(t *testing.T) {
 			ConfigUrl: "http://some/fake/url",
 		}, time.Now(), 5*time.Second)
 
-		require.EqualValues(t, status.Status, "OK")
+		require.Regexp(t, "RAM.*CPU.*EFSAccess.*", status.Status)
 
 		version := status.Payload["Docker"].(map[string]interface{})["Version"]
 		require.NotNil(t, version)

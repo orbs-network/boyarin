@@ -81,6 +81,11 @@ func statusResponseWithError(flags *config.Flags, dockerVersion interface{}, err
 	}
 }
 
+func statusFromMetrics(metrics Metrics) string {
+	return fmt.Sprintf("RAM = %dmb, CPU = %.2f%%, EFSAccess = %dms",
+		int(metrics.MemoryUsedMBytes), metrics.CPULoadPercent, metrics.EFSAccessTimeMs)
+}
+
 func GetStatusAndMetrics(ctx context.Context, logger log.Logger, flags *config.Flags, startupTimestamp time.Time, dockerStatusPeriod time.Duration) (status StatusResponse, metrics Metrics) {
 	// We really don't need any options here since we're just observing
 	orchestrator, err := adapter.NewDockerSwarm(&adapter.OrchestratorOptions{}, logger)
@@ -137,6 +142,7 @@ func GetStatusAndMetrics(ctx context.Context, logger log.Logger, flags *config.F
 	logger.Info("memory load", log.Float64("memoryUsed", metrics.MemoryUsedPercent))
 
 	status.Payload["Metrics"] = metrics
+	status.Status = statusFromMetrics(metrics)
 
 	return
 }

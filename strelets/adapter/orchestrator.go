@@ -78,7 +78,7 @@ type Orchestrator interface {
 	PurgeServiceData(ctx context.Context, containerName string) error
 	PurgeVirtualChainData(ctx context.Context, nodeAddress string, vcId uint32, containerName string) error
 
-	Version(ctx context.Context) (interface{}, error)
+	Info(ctx context.Context) (interface{}, error)
 
 	io.Closer
 }

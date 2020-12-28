@@ -13,7 +13,7 @@ import (
 )
 
 func TestDockerVersion(t *testing.T) {
-	helpers.SkipUnlessSwarmIsEnabled(t)
+	//helpers.SkipUnlessSwarmIsEnabled(t)
 
 	helpers.WithContext(func(ctx context.Context) {
 		logger := log.DefaultTestingLogger(t)
@@ -24,7 +24,7 @@ func TestDockerVersion(t *testing.T) {
 
 		require.Regexp(t, "RAM.*CPU.*EFSAccess.*", status.Status)
 
-		version := status.Payload["Docker"].(map[string]interface{})["Version"]
+		version := status.Payload["Docker"]
 		require.NotNil(t, version)
 
 		raw, _ := json.MarshalIndent(status, "", "  ")

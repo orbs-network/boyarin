@@ -92,6 +92,6 @@ func (d *dockerSwarmOrchestrator) Close() error {
 	return d.client.Close()
 }
 
-func (d *dockerSwarmOrchestrator) Version(ctx context.Context) (interface{}, error) {
-	return d.client.ServerVersion(ctx)
+func (d *dockerSwarmOrchestrator) Info(ctx context.Context) (interface{}, error) {
+	return d.client.Info(ctx)
 }

@@ -48,6 +48,7 @@ type DiskMetric struct {
 
 type ProcessMetric struct {
 	Name             string
+	Command          string
 	MemoryUsedMbytes float64
 	PID              int32
 	ParentPID        int32
@@ -166,12 +167,21 @@ func getProcessMetrics(ctx context.Context) (processMetrics []ProcessMetric, err
 	} else {
 		for _, p := range processes {
 			var name string
+			var cmdline string
 			var memoryInfo *process.MemoryInfoStat
 			var memoryUsed uint64
 			var parentPID int32
 
 			name, _ = p.NameWithContext(ctx)
 			memoryInfo, _ = p.MemoryInfoWithContext(ctx)
+			cmdline, _ = p.CmdlineWithContext(ctx)
+			cmdLineSlice, _ := p.CmdlineSliceWithContext(ctx)
+
+			var baseCmdLength float64
+			if cmdLineSliceLen := len(cmdLineSlice); cmdLineSliceLen >= 1 {
+				baseCmdLength = float64(len(cmdLineSlice[0]))
+			}
+			max50 := int(math.Min(baseCmdLength+50, float64(len(cmdline))))
 
 			if memoryInfo != nil {
 				memoryUsed = memoryInfo.RSS
@@ -184,6 +194,7 @@ func getProcessMetrics(ctx context.Context) (processMetrics []ProcessMetric, err
 
 			processMetric := ProcessMetric{
 				Name:             name,
+				Command:          cmdline[0:max50],
 				PID:              p.Pid,
 				ParentPID:        parentPID,
 				MemoryUsedMbytes: toMB(memoryUsed),

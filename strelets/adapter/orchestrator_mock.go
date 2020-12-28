@@ -2,6 +2,7 @@ package adapter
 
 import (
 	"context"
+	"github.com/docker/docker/api/types"
 	"github.com/stretchr/testify/mock"
 	"time"
 )
@@ -58,4 +59,10 @@ func (a *OrchestratorMock) PurgeServiceData(ctx context.Context, containerName s
 func (a *OrchestratorMock) PurgeVirtualChainData(ctx context.Context, nodeAddress string, vcId uint32, containerName string) error {
 	res := a.MethodCalled("PurgeVirtualChainData", ctx, nodeAddress, vcId, containerName)
 	return res.Error(1)
+}
+
+func (a *OrchestratorMock) Info(ctx context.Context) (interface{}, error) {
+	return types.Info{
+		ServerVersion: "Mock",
+	}, nil
 }

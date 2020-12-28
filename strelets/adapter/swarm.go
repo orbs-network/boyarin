@@ -91,3 +91,7 @@ func (d *dockerSwarmOrchestrator) RemoveService(ctx context.Context, serviceName
 func (d *dockerSwarmOrchestrator) Close() error {
 	return d.client.Close()
 }
+
+func (d *dockerSwarmOrchestrator) Info(ctx context.Context) (interface{}, error) {
+	return d.client.Info(ctx)
+}

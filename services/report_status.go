@@ -62,14 +62,17 @@ type StatusResponse struct {
 	Payload   map[string]interface{}
 }
 
-func statusResponseWithError(flags *config.Flags, err error) StatusResponse {
+func statusResponseWithError(flags *config.Flags, dockerVersion interface{}, err error) StatusResponse {
 	return StatusResponse{
 		Status:    "Failed to query Docker Swarm",
 		Timestamp: time.Now(),
 		Error:     err.Error(),
 		Payload: map[string]interface{}{
 			"Version": version.GetVersion(),
-			"Config":  flags,
+			"Docker": map[string]interface{}{
+				"Version": dockerVersion,
+			},
+			"Config": flags,
 		},
 	}
 }
@@ -78,13 +81,15 @@ func GetStatusAndMetrics(ctx context.Context, logger log.Logger, flags *config.F
 	// We really don't need any options here since we're just observing
 	orchestrator, err := adapter.NewDockerSwarm(&adapter.OrchestratorOptions{}, logger)
 	if err != nil {
-		status = statusResponseWithError(flags, err)
+		status = statusResponseWithError(flags, nil, err)
 	} else {
 		defer orchestrator.Close()
 
+		dockerVersion, _ := orchestrator.Version(ctx)
+
 		containerStatus, err := orchestrator.GetStatus(ctx, dockerStatusPeriod)
 		if err != nil {
-			status = statusResponseWithError(flags, err)
+			status = statusResponseWithError(flags, dockerVersion, err)
 		} else {
 			services := make(map[string][]*adapter.ContainerStatus)
 			for _, s := range containerStatus {
@@ -95,7 +100,10 @@ func GetStatusAndMetrics(ctx context.Context, logger log.Logger, flags *config.F
 				Status:    "OK",
 				Timestamp: time.Now(),
 				Payload: map[string]interface{}{
-					"Version":  version.GetVersion(),
+					"Version": version.GetVersion(),
+					"Docker": map[string]interface{}{
+						"Version": dockerVersion,
+					},
 					"Services": services,
 					"Config":   flags,
 				},

@@ -13,7 +13,7 @@ import (
 )
 
 func TestDockerVersion(t *testing.T) {
-	//helpers.SkipUnlessSwarmIsEnabled(t)
+	helpers.SkipUnlessSwarmIsEnabled(t)
 
 	helpers.WithContext(func(ctx context.Context) {
 		logger := log.DefaultTestingLogger(t)

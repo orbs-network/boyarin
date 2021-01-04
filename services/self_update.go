@@ -39,9 +39,11 @@ func (coreBoyar *BoyarService) CheckForUpdates(flags *config.Flags, options adap
 			return
 		}
 
-		if currentHash == options.Sha256 { // already the correct version
-			return
-		}
+		coreBoyar.logger.Info("comparing hashes", log.String("currentHash", currentHash), log.String("updateHash", options.Sha256))
+		// always update
+		//if currentHash == options.Sha256 { // already the correct version
+		//	return
+		//}
 
 		if err := coreBoyar.SelfUpdate(flags.BoyarBinaryPath, options); err != nil {
 			coreBoyar.logger.Error("failed to update self", log.Error(err))

@@ -54,8 +54,8 @@ location @error404 { return 404 '{{DefaultResponse "Not found"}}'; }
 location @error502 { return 502 '{{DefaultResponse "Bad gateway"}}'; }
 {{- range .Chains }}
 set $vc{{.Id}} {{.ServiceId}};
-location ~ ^/vchains/{{.Id}}/logs/(.*) {
-	alias {{.LogsVolume}}/$1;
+location ~ ^/vchains/{{.Id}}/logs/(?<filename>.*) {
+	alias {{.LogsVolume}}/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -64,8 +64,8 @@ location ~ ^/vchains/{{.Id}}/logs$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/vchains/{{.Id}}/status/(.*) {
-	alias {{.StatusVolume}}/$1;
+location ~ ^/vchains/{{.Id}}/status/(?<filename>.*) {
+	alias {{.StatusVolume}}/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -75,14 +75,14 @@ location ~ ^/vchains/{{.Id}}/status$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/vchains/{{.Id}}(/?)(.*) {
-	proxy_pass http://$vc{{.Id}}:{{.Port}}/$2$is_args$args;
+location ~ ^/vchains/{{.Id}}(/?)(?<filename>.*) {
+	proxy_pass http://$vc{{.Id}}:{{.Port}}/$filename$is_args$args;
 	error_page 502 = @error502;
 }
 {{- end }} {{- /* range .Chains */ -}}
 {{- range .Services }}
-location ~ ^/services/{{.ServiceId}}/logs/(.*) {
-	alias {{.LogsVolume}}/$1;
+location ~ ^/services/{{.ServiceId}}/logs/(?<filename>.*) {
+	alias {{.LogsVolume}}/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -91,9 +91,9 @@ location ~ ^/services/{{.ServiceId}}/logs$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/services/{{.ServiceId}}/status/(.*) {
+location ~ ^/services/{{.ServiceId}}/status/(?<filename>.*) {
 {{ CORS }}
-	alias {{.StatusVolume}}/$1;
+	alias {{.StatusVolume}}/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -175,7 +175,7 @@ func getCORS() string {
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 

@@ -208,4 +208,22 @@ If autoupdate is enabled, it becomes crucial if you enable `--shutdown-after-upd
   }
 }
 
+### Build and Release
+
+#### Prerequisites 
+- go1.13 or later must be installed
+- Access to this repository
+
+#### Prepare
+- .version file should be updated
+- commit and push all changes to git. During build we rely on the commit hash.
+
+#### Build 
+```bash
+./build-binaries.sh
 ```
+
+#### Release 
+- Create a new release in this repository
+- Attach all files found in `_bin` folder as attachments to the new release
+- In order to deploy the new version on existing and new Orbs nodes, a new version of [Management Service](https://github.com/orbs-network/management-service) must be deployed referencing the new versions binary and checksum files. see [here](https://github.com/orbs-network/management-service) for more details.

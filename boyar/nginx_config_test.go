@@ -26,8 +26,8 @@ location @error403 { return 403 '{"Status":"Forbidden","Description":"ORBS block
 location @error404 { return 404 '{"Status":"Not found","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 location @error502 { return 502 '{"Status":"Bad gateway","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 set $vc42 chain-42;
-location ~ ^/vchains/42/logs/(.*) {
-	alias /opt/orbs/logs/chain-42/$1;
+location ~ ^/vchains/42/logs/(?<filename>.*) {
+	alias /opt/orbs/logs/chain-42/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -36,8 +36,8 @@ location ~ ^/vchains/42/logs$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/vchains/42/status/(.*) {
-	alias /opt/orbs/status/chain-42/$1;
+location ~ ^/vchains/42/status/(?<filename>.*) {
+	alias /opt/orbs/status/chain-42/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -46,7 +46,7 @@ location ~ ^/vchains/42/status$ {
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 
@@ -64,12 +64,12 @@ location ~ ^/vchains/42/status$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/vchains/42(/?)(.*) {
-	proxy_pass http://$vc42:8080/$2$is_args$args;
+location ~ ^/vchains/42(/?)(?<filename>.*) {
+	proxy_pass http://$vc42:8080/$filename$is_args$args;
 	error_page 502 = @error502;
 }
-location ~ ^/services/boyar/logs/(.*) {
-	alias /opt/orbs/logs/boyar/$1;
+location ~ ^/services/boyar/logs/(?<filename>.*) {
+	alias /opt/orbs/logs/boyar/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -78,12 +78,12 @@ location ~ ^/services/boyar/logs$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/services/boyar/status/(.*) {
+location ~ ^/services/boyar/status/(?<filename>.*) {
 
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 
@@ -97,7 +97,7 @@ location ~ ^/services/boyar/status/(.*) {
 
     # CORS end
 
-	alias /opt/orbs/status/boyar/$1;
+	alias /opt/orbs/status/boyar/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -106,7 +106,7 @@ location ~ ^/services/boyar/status$ {
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 
@@ -124,8 +124,8 @@ location ~ ^/services/boyar/status$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/services/management-service/logs/(.*) {
-	alias /opt/orbs/logs/management-service/$1;
+location ~ ^/services/management-service/logs/(?<filename>.*) {
+	alias /opt/orbs/logs/management-service/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -134,12 +134,12 @@ location ~ ^/services/management-service/logs$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/services/management-service/status/(.*) {
+location ~ ^/services/management-service/status/(?<filename>.*) {
 
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 
@@ -153,7 +153,7 @@ location ~ ^/services/management-service/status/(.*) {
 
     # CORS end
 
-	alias /opt/orbs/status/management-service/$1;
+	alias /opt/orbs/status/management-service/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -162,7 +162,7 @@ location ~ ^/services/management-service/status$ {
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 
@@ -180,8 +180,8 @@ location ~ ^/services/management-service/status$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/services/signer/logs/(.*) {
-	alias /opt/orbs/logs/signer/$1;
+location ~ ^/services/signer/logs/(?<filename>.*) {
+	alias /opt/orbs/logs/signer/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -190,12 +190,12 @@ location ~ ^/services/signer/logs$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/services/signer/status/(.*) {
+location ~ ^/services/signer/status/(?<filename>.*) {
 
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 
@@ -209,7 +209,7 @@ location ~ ^/services/signer/status/(.*) {
 
     # CORS end
 
-	alias /opt/orbs/status/signer/$1;
+	alias /opt/orbs/status/signer/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -218,7 +218,7 @@ location ~ ^/services/signer/status$ {
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 
@@ -259,8 +259,8 @@ location @error403 { return 403 '{"Status":"Forbidden","Description":"ORBS block
 location @error404 { return 404 '{"Status":"Not found","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 location @error502 { return 502 '{"Status":"Bad gateway","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 set $vc42 chain-42;
-location ~ ^/vchains/42/logs/(.*) {
-	alias /opt/orbs/logs/chain-42/$1;
+location ~ ^/vchains/42/logs/(?<filename>.*) {
+	alias /opt/orbs/logs/chain-42/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -269,8 +269,8 @@ location ~ ^/vchains/42/logs$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/vchains/42/status/(.*) {
-	alias /opt/orbs/status/chain-42/$1;
+location ~ ^/vchains/42/status/(?<filename>.*) {
+	alias /opt/orbs/status/chain-42/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -279,7 +279,7 @@ location ~ ^/vchains/42/status$ {
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 
@@ -297,13 +297,13 @@ location ~ ^/vchains/42/status$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/vchains/42(/?)(.*) {
-	proxy_pass http://$vc42:8080/$2$is_args$args;
+location ~ ^/vchains/42(/?)(?<filename>.*) {
+	proxy_pass http://$vc42:8080/$filename$is_args$args;
 	error_page 502 = @error502;
 }
 set $vc1991 chain-1991;
-location ~ ^/vchains/1991/logs/(.*) {
-	alias /opt/orbs/logs/chain-1991/$1;
+location ~ ^/vchains/1991/logs/(?<filename>.*) {
+	alias /opt/orbs/logs/chain-1991/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -312,8 +312,8 @@ location ~ ^/vchains/1991/logs$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/vchains/1991/status/(.*) {
-	alias /opt/orbs/status/chain-1991/$1;
+location ~ ^/vchains/1991/status/(?<filename>.*) {
+	alias /opt/orbs/status/chain-1991/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -322,7 +322,7 @@ location ~ ^/vchains/1991/status$ {
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 
@@ -340,12 +340,12 @@ location ~ ^/vchains/1991/status$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/vchains/1991(/?)(.*) {
-	proxy_pass http://$vc1991:8080/$2$is_args$args;
+location ~ ^/vchains/1991(/?)(?<filename>.*) {
+	proxy_pass http://$vc1991:8080/$filename$is_args$args;
 	error_page 502 = @error502;
 }
-location ~ ^/services/boyar/logs/(.*) {
-	alias /opt/orbs/logs/boyar/$1;
+location ~ ^/services/boyar/logs/(?<filename>.*) {
+	alias /opt/orbs/logs/boyar/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -354,12 +354,12 @@ location ~ ^/services/boyar/logs$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/services/boyar/status/(.*) {
+location ~ ^/services/boyar/status/(?<filename>.*) {
 
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 
@@ -373,7 +373,7 @@ location ~ ^/services/boyar/status/(.*) {
 
     # CORS end
 
-	alias /opt/orbs/status/boyar/$1;
+	alias /opt/orbs/status/boyar/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -382,7 +382,7 @@ location ~ ^/services/boyar/status$ {
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 
@@ -400,8 +400,8 @@ location ~ ^/services/boyar/status$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/services/service-name/logs/(.*) {
-	alias /opt/orbs/logs/service-name/$1;
+location ~ ^/services/service-name/logs/(?<filename>.*) {
+	alias /opt/orbs/logs/service-name/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -410,12 +410,12 @@ location ~ ^/services/service-name/logs$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/services/service-name/status/(.*) {
+location ~ ^/services/service-name/status/(?<filename>.*) {
 
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 
@@ -429,7 +429,7 @@ location ~ ^/services/service-name/status/(.*) {
 
     # CORS end
 
-	alias /opt/orbs/status/service-name/$1;
+	alias /opt/orbs/status/service-name/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -438,7 +438,7 @@ location ~ ^/services/service-name/status$ {
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 
@@ -456,8 +456,8 @@ location ~ ^/services/service-name/status$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/services/signer/logs/(.*) {
-	alias /opt/orbs/logs/signer/$1;
+location ~ ^/services/signer/logs/(?<filename>.*) {
+	alias /opt/orbs/logs/signer/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -466,12 +466,12 @@ location ~ ^/services/signer/logs$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/services/signer/status/(.*) {
+location ~ ^/services/signer/status/(?<filename>.*) {
 
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 
@@ -485,7 +485,7 @@ location ~ ^/services/signer/status/(.*) {
 
     # CORS end
 
-	alias /opt/orbs/status/signer/$1;
+	alias /opt/orbs/status/signer/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -494,7 +494,7 @@ location ~ ^/services/signer/status$ {
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 
@@ -538,8 +538,8 @@ location @error403 { return 403 '{"Status":"Forbidden","Description":"ORBS block
 location @error404 { return 404 '{"Status":"Not found","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 location @error502 { return 502 '{"Status":"Bad gateway","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 set $vc42 chain-42;
-location ~ ^/vchains/42/logs/(.*) {
-	alias /opt/orbs/logs/chain-42/$1;
+location ~ ^/vchains/42/logs/(?<filename>.*) {
+	alias /opt/orbs/logs/chain-42/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -548,8 +548,8 @@ location ~ ^/vchains/42/logs$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/vchains/42/status/(.*) {
-	alias /opt/orbs/status/chain-42/$1;
+location ~ ^/vchains/42/status/(?<filename>.*) {
+	alias /opt/orbs/status/chain-42/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -558,7 +558,7 @@ location ~ ^/vchains/42/status$ {
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 
@@ -576,12 +576,12 @@ location ~ ^/vchains/42/status$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/vchains/42(/?)(.*) {
-	proxy_pass http://$vc42:8080/$2$is_args$args;
+location ~ ^/vchains/42(/?)(?<filename>.*) {
+	proxy_pass http://$vc42:8080/$filename$is_args$args;
 	error_page 502 = @error502;
 }
-location ~ ^/services/boyar/logs/(.*) {
-	alias /opt/orbs/logs/boyar/$1;
+location ~ ^/services/boyar/logs/(?<filename>.*) {
+	alias /opt/orbs/logs/boyar/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -590,12 +590,12 @@ location ~ ^/services/boyar/logs$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/services/boyar/status/(.*) {
+location ~ ^/services/boyar/status/(?<filename>.*) {
 
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 
@@ -609,7 +609,7 @@ location ~ ^/services/boyar/status/(.*) {
 
     # CORS end
 
-	alias /opt/orbs/status/boyar/$1;
+	alias /opt/orbs/status/boyar/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -618,7 +618,7 @@ location ~ ^/services/boyar/status$ {
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 
@@ -636,8 +636,8 @@ location ~ ^/services/boyar/status$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/services/management-service/logs/(.*) {
-	alias /opt/orbs/logs/management-service/$1;
+location ~ ^/services/management-service/logs/(?<filename>.*) {
+	alias /opt/orbs/logs/management-service/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -646,12 +646,12 @@ location ~ ^/services/management-service/logs$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/services/management-service/status/(.*) {
+location ~ ^/services/management-service/status/(?<filename>.*) {
 
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 
@@ -665,7 +665,7 @@ location ~ ^/services/management-service/status/(.*) {
 
     # CORS end
 
-	alias /opt/orbs/status/management-service/$1;
+	alias /opt/orbs/status/management-service/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -674,7 +674,7 @@ location ~ ^/services/management-service/status$ {
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 
@@ -692,8 +692,8 @@ location ~ ^/services/management-service/status$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/services/signer/logs/(.*) {
-	alias /opt/orbs/logs/signer/$1;
+location ~ ^/services/signer/logs/(?<filename>.*) {
+	alias /opt/orbs/logs/signer/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -702,12 +702,12 @@ location ~ ^/services/signer/logs$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/services/signer/status/(.*) {
+location ~ ^/services/signer/status/(?<filename>.*) {
 
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 
@@ -721,7 +721,7 @@ location ~ ^/services/signer/status/(.*) {
 
     # CORS end
 
-	alias /opt/orbs/status/signer/$1;
+	alias /opt/orbs/status/signer/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -730,7 +730,7 @@ location ~ ^/services/signer/status$ {
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 
@@ -765,8 +765,8 @@ location @error403 { return 403 '{"Status":"Forbidden","Description":"ORBS block
 location @error404 { return 404 '{"Status":"Not found","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 location @error502 { return 502 '{"Status":"Bad gateway","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":{"Semantic":"","Commit":""}}}}'; }
 set $vc42 chain-42;
-location ~ ^/vchains/42/logs/(.*) {
-	alias /opt/orbs/logs/chain-42/$1;
+location ~ ^/vchains/42/logs/(?<filename>.*) {
+	alias /opt/orbs/logs/chain-42/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -775,8 +775,8 @@ location ~ ^/vchains/42/logs$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/vchains/42/status/(.*) {
-	alias /opt/orbs/status/chain-42/$1;
+location ~ ^/vchains/42/status/(?<filename>.*) {
+	alias /opt/orbs/status/chain-42/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -785,7 +785,7 @@ location ~ ^/vchains/42/status$ {
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 
@@ -803,12 +803,12 @@ location ~ ^/vchains/42/status$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/vchains/42(/?)(.*) {
-	proxy_pass http://$vc42:8080/$2$is_args$args;
+location ~ ^/vchains/42(/?)(?<filename>.*) {
+	proxy_pass http://$vc42:8080/$filename$is_args$args;
 	error_page 502 = @error502;
 }
-location ~ ^/services/boyar/logs/(.*) {
-	alias /opt/orbs/logs/boyar/$1;
+location ~ ^/services/boyar/logs/(?<filename>.*) {
+	alias /opt/orbs/logs/boyar/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -817,12 +817,12 @@ location ~ ^/services/boyar/logs$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/services/boyar/status/(.*) {
+location ~ ^/services/boyar/status/(?<filename>.*) {
 
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 
@@ -836,7 +836,7 @@ location ~ ^/services/boyar/status/(.*) {
 
     # CORS end
 
-	alias /opt/orbs/status/boyar/$1;
+	alias /opt/orbs/status/boyar/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -845,7 +845,7 @@ location ~ ^/services/boyar/status$ {
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 
@@ -863,8 +863,8 @@ location ~ ^/services/boyar/status$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/services/management-service/logs/(.*) {
-	alias /opt/orbs/logs/management-service/$1;
+location ~ ^/services/management-service/logs/(?<filename>.*) {
+	alias /opt/orbs/logs/management-service/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -873,12 +873,12 @@ location ~ ^/services/management-service/logs$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/services/management-service/status/(.*) {
+location ~ ^/services/management-service/status/(?<filename>.*) {
 
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 
@@ -892,7 +892,7 @@ location ~ ^/services/management-service/status/(.*) {
 
     # CORS end
 
-	alias /opt/orbs/status/management-service/$1;
+	alias /opt/orbs/status/management-service/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -901,7 +901,7 @@ location ~ ^/services/management-service/status$ {
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 
@@ -919,8 +919,8 @@ location ~ ^/services/management-service/status$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/services/signer/logs/(.*) {
-	alias /opt/orbs/logs/signer/$1;
+location ~ ^/services/signer/logs/(?<filename>.*) {
+	alias /opt/orbs/logs/signer/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -929,12 +929,12 @@ location ~ ^/services/signer/logs$ {
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
-location ~ ^/services/signer/status/(.*) {
+location ~ ^/services/signer/status/(?<filename>.*) {
 
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 
@@ -948,7 +948,7 @@ location ~ ^/services/signer/status/(.*) {
 
     # CORS end
 
-	alias /opt/orbs/status/signer/$1;
+	alias /opt/orbs/status/signer/$filename;
 	error_page 404 = @error404;
 	error_page 403 = @error403;
 }
@@ -957,7 +957,7 @@ location ~ ^/services/signer/status$ {
 	# CORS start
 
     # Simple requests
-    if ($request_method ~* "(GET|POST)") {
+    if ($request_method ~* "GET|POST") {
       add_header "Access-Control-Allow-Origin"  *;
     }
 

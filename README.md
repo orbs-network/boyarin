@@ -207,6 +207,7 @@ If autoupdate is enabled, it becomes crucial if you enable `--shutdown-after-upd
     }
   }
 }
+```
 
 ### Build and Release
 

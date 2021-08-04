@@ -218,10 +218,11 @@ If autoupdate is enabled, it becomes crucial if you enable `--shutdown-after-upd
 #### Prepare
 - .version file should be updated
 - commit and push all changes to git. During build we rely on the commit hash.
+- These instructions are for target env of linux/amd64. For other os/arch, set `GOOS` and `GOARCH` accordingly 
 
 #### Build 
 ```bash
-./build-binaries.sh
+GOARCH=amd64 GOOS=linux ./build-binaries.sh
 ```
 
 #### Release 

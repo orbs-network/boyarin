@@ -37,9 +37,9 @@ func readOnlyChannel(vChains ...VChainArgument) chan []VChainArgument {
 	return vChainsChannel
 }
 
-func SetupDynamicBoyarDependencies(t *testing.T, keyPair KeyConfig, genesisValidators []string, vChains <-chan []VChainArgument) (*config.Flags, func()) {
+func SetupDynamicBoyarDependencies(t *testing.T, keyPair KeyConfig, genesisValidators []string, dockerRegistryAndUserPrefix string, vChains <-chan []VChainArgument) (*config.Flags, func()) {
 	deps := defaultBoyarDependencies(keyPair, genesisValidators)
-	return SetupDynamicBoyarDepencenciesForNetwork(t, deps, vChains)
+	return SetupDynamicBoyarDepencenciesForNetwork(t, deps, dockerRegistryAndUserPrefix, vChains)
 }
 
 func defaultBoyarDependencies(keyPair KeyConfig, genesisValidators []string) boyarDependencies {
@@ -57,14 +57,14 @@ func defaultBoyarDependencies(keyPair KeyConfig, genesisValidators []string) boy
 	}
 }
 
-func SetupDynamicBoyarDepencenciesForNetwork(t *testing.T, deps boyarDependencies, vChains <-chan []VChainArgument) (*config.Flags, func()) {
+func SetupDynamicBoyarDepencenciesForNetwork(t *testing.T, deps boyarDependencies, dockerRegistryAndUserPrefix string, vChains <-chan []VChainArgument) (*config.Flags, func()) {
 	return SetupConfigServer(t, deps.keyPair, func(managementUrl string, vchainManagementUrl string) (*string, *string) {
-		configStr := managementConfigJson(deps, []VChainArgument{}, managementUrl, vchainManagementUrl)
+		configStr := managementConfigJson(deps, []VChainArgument{}, managementUrl, vchainManagementUrl, dockerRegistryAndUserPrefix)
 		managementStr := "{}"
 
 		go func() {
 			for currentChains := range vChains {
-				configStr = managementConfigJson(deps, currentChains, managementUrl, vchainManagementUrl)
+				configStr = managementConfigJson(deps, currentChains, managementUrl, vchainManagementUrl, dockerRegistryAndUserPrefix)
 				managementStr = vchainManagementConfig(deps, currentChains)
 				fmt.Println(configStr)
 				fmt.Println(managementStr)

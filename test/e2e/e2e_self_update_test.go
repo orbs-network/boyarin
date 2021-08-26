@@ -37,7 +37,7 @@ func TestE2ESelfUpdate(t *testing.T) {
 		deps.binaryUrl = "https://github.com/orbs-network/boyarin/releases/download/v1.4.0/boyar-v1.4.0.bin"
 		deps.binarySha256 = "1998cc1f7721acfe1954ab2878cc0ad8062cd6d919cd61fa22401c6750e195fe"
 
-		flags, cleanup := SetupDynamicBoyarDepencenciesForNetwork(t, deps, vChainsChannel)
+		flags, cleanup := SetupDynamicBoyarDepencenciesForNetwork(t, deps, helpers.PRODUCTION_DOCKER_REGISTRY_AND_USER, vChainsChannel)
 		flags.BoyarBinaryPath = targetPath
 		flags.AutoUpdate = true
 		flags.ShutdownAfterUpdate = true

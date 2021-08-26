@@ -10,11 +10,18 @@ import (
 	"github.com/orbs-network/boyarin/utils"
 	"github.com/stretchr/testify/require"
 	"os"
+	"os/exec"
 	"testing"
 	"time"
 )
 
+const SIGNER_TAG = "experimental"
+const NODE_TAG = "v1.3.16"
+
 const DOCKER_API_VERSION = "1.40"
+const PRODUCTION_DOCKER_REGISTRY_AND_USER = "orbsnetwork/"
+const LOCAL_REGISTRY_PORT = "5000"
+const LOCAL_DOCKER_REGISTRY_AND_USER = "localhost:" + LOCAL_REGISTRY_PORT + "/"
 
 func restartSwarm(t *testing.T, ctx context.Context) {
 	client := DockerClient(t)
@@ -165,6 +172,49 @@ func InitSwarmEnvironment(t *testing.T, ctx context.Context) {
 	restartSwarm(t, ctx)
 
 	LogSwarmServices(t, ctx)
+}
+
+func LaunchRegistryAndCopyImages(t *testing.T) {
+	out, err := exec.Command("docker", "run", "-d", "-p", LOCAL_REGISTRY_PORT + ":5000", "registry:2").CombinedOutput() // TODO dockerClient?
+	require.NoError(t, err)
+	t.Log(string(out))
+	productionNodeImageName := PRODUCTION_DOCKER_REGISTRY_AND_USER + "node:" + NODE_TAG
+	productionSignerImageName := PRODUCTION_DOCKER_REGISTRY_AND_USER + "signer:" + SIGNER_TAG
+	localNodeImageName := LOCAL_DOCKER_REGISTRY_AND_USER + "node:" + NODE_TAG
+	localSignerImageName := LOCAL_DOCKER_REGISTRY_AND_USER + "signer:" + SIGNER_TAG
+
+	copyDockerImageBetweenRegistries(t, productionNodeImageName, localNodeImageName)
+	copyDockerImageBetweenRegistries(t, productionSignerImageName, localSignerImageName)
+}
+
+func copyDockerImageBetweenRegistries(t *testing.T, sourceImageName string, targetImageName string) {
+	t.Log("pulling " + sourceImageName + "...")
+	out, err := exec.Command("docker", "pull", sourceImageName).CombinedOutput() // TODO dockerClient?
+	require.NoError(t, err)
+	t.Log(string(out))
+	out, err = exec.Command("docker", "tag", sourceImageName, targetImageName).CombinedOutput() // TODO dockerClient?
+	require.NoError(t, err)
+	t.Log(string(out))
+	t.Log("pushing " + targetImageName + "...")
+	Eventually(5*time.Minute, func() bool {
+		out, err = exec.Command("docker", "push", targetImageName).CombinedOutput() // TODO dockerClient?
+		if err != nil {
+			t.Log(err)
+		}
+		if out != nil {
+			t.Log(string(out))
+		}
+		return err == nil
+	})
+
+	// cleanup images from host
+	t.Log("deleting " + targetImageName + "...")
+	out, err = exec.Command("docker", "rmi", targetImageName).CombinedOutput() // TODO dockerClient?
+	require.NoError(t, err)
+	t.Log("deleting " + sourceImageName + "...")
+	out, err = exec.Command("docker", "rmi", sourceImageName).CombinedOutput() // TODO dockerClient?
+	require.NoError(t, err)
+	t.Log(string(out))
 }
 
 func DockerClient(t TestingT) *dockerClient.Client {

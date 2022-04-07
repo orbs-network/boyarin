@@ -31,6 +31,9 @@ type Flags struct {
 	ShutdownAfterUpdate bool
 	BoyarBinaryPath     string
 
+	// periodic agent
+	StartAgent bool
+
 	// Testing only
 	WithNamespace bool
 }

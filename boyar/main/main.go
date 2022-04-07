@@ -5,14 +5,15 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"os"
+	"path/filepath"
+	"time"
+
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/services"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/version"
 	"github.com/orbs-network/scribe/log"
-	"os"
-	"path/filepath"
-	"time"
 )
 
 func main() {
@@ -52,6 +53,8 @@ func main() {
 
 	bootstrapResetTimeout := flag.Duration("bootstrap-reset-timeout", 0, "if the process is unable to receive valid configuration within a limited timeframe (duration: 1s, 1m, 1h, etc), it will exit with an error; recommended to be used with an external process manager, (default 0s, off)")
 
+	startAgent := flag.Bool("start-agent", true, "start periodic 24h agent")
+
 	flag.Parse()
 
 	if *showVersion {
@@ -84,6 +87,7 @@ func main() {
 		ShutdownAfterUpdate:   *shutdownAfterUpdate,
 		BoyarBinaryPath:       executableWithoutSymlink,
 		BootstrapResetTimeout: *bootstrapResetTimeout,
+		StartAgent:            *startAgent,
 	}
 
 	if *showStatus {
@@ -119,6 +123,8 @@ func main() {
 			os.Exit(1)
 		}
 	}
+
+	// start services
 	waiter, err := services.Execute(context.Background(), flags, logger)
 	if err != nil {
 		logger.Error("Startup failure", log.Error(err))

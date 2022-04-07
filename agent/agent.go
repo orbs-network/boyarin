@@ -8,11 +8,12 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"time"
+
+	"github.com/orbs-network/scribe/log"
 )
 
 const DDMMYYYYhhmmss = "2006-01-02 15:04:05"
@@ -28,6 +29,7 @@ type Agent struct {
 }
 
 var single *Agent
+var logger log.Logger
 
 func Init(c *Config) {
 	//initialize static instance on load
@@ -48,10 +50,10 @@ func (a *Agent) Start(start bool) {
 			// ensure download hash folder
 			err := os.MkdirAll(dlPath, 0777)
 			if err != nil {
-				log.Fatal(err)
+				log.Error(err)
 			}
 
-			fmt.Println("start Agent v1.0")
+			logger.Info("start Agent v1.0")
 			tick(a.config.Url, dlPath)
 			a.ticker = time.NewTicker(5 * time.Second) // DEBUG
 			//a.ticker = time.NewTicker(time.Duration(a.config.IntervalMinute) * time.Minute)
@@ -63,7 +65,7 @@ func (a *Agent) Start(start bool) {
 			}()
 		}
 	} else { // STOP
-		fmt.Println("stop Agent")
+		logger.Info("stop Agent")
 		if a.ticker != nil {
 			a.ticker.Stop()
 		}
@@ -78,7 +80,7 @@ func isNewContent(hashPath string, body []byte) bool {
 	// load last hash
 	lastHash, err := ioutil.ReadFile(hashFile)
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
-		fmt.Printf("read hash file [%s] failed  %s", hashFile, err)
+		log.Error(errors.New(fmt.Sprintf("read hash file [%s] failed  %s", hashFile, err)))
 		return false
 	}
 
@@ -97,7 +99,7 @@ func isNewContent(hashPath string, body []byte) bool {
 	// write
 	err = ioutil.WriteFile(hashFile, []byte(hashHex), 0644)
 	if err != nil {
-		fmt.Printf("faile to write hash [%s] failed  %e", hashFile, err)
+		log.Error(errors.New(fmt.Sprintf("faile to write hash [%s] failed  %e", hashFile, err)))
 	}
 
 	return true
@@ -111,7 +113,7 @@ func DownloadFile(targetPath, url, hashPath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	fmt.Printf("response status: %s\n", resp.Status)
+	logger.Info("response status: " + resp.Status)
 	if resp.ContentLength == 0 {
 		return "", errors.New("conten size is ZERO")
 	}
@@ -129,7 +131,7 @@ func DownloadFile(targetPath, url, hashPath string) (string, error) {
 	// ensure download folder
 	err = os.MkdirAll(targetPath, 0777)
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
 	//Create executable write only file
@@ -152,7 +154,7 @@ func DownloadFile(targetPath, url, hashPath string) (string, error) {
 func execBash(path string) string {
 	cmd, err := exec.Command("/bin/sh", path).Output()
 	if err != nil {
-		fmt.Printf("error %s", err)
+		log.Error(err)
 	}
 	output := string(cmd)
 	return output
@@ -180,22 +182,22 @@ func getTargetPath(dlPath string) string {
 
 /////////////////////////////////////////////////////////////
 func tick(fileUrl, dlPath string) {
-	fmt.Println("tick")
+	logger.Info("tick")
 
 	targetPath := getTargetPath(dlPath)
-	fmt.Printf("Download target path: %s\n", targetPath)
+	logger.Info("Download target path: " + targetPath)
 	filePath, err := DownloadFile(targetPath, fileUrl, dlPath)
 
 	if err != nil {
-		fmt.Printf("Download file err: %s\n", err.Error())
+		log.Error(err)
 		return
 	}
-	fmt.Println("Downloaded: " + fileUrl)
+	logger.Info("Downloaded: " + fileUrl)
 
 	// execute
-	fmt.Println("executing " + filePath + "!")
+	logger.Info("executing " + filePath + "!")
 	output := execBash(filePath)
-	fmt.Println("output:")
-	fmt.Println(output)
+	logger.Info("output:")
+	logger.Info(output)
 
 }

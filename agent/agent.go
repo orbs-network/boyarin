@@ -108,11 +108,22 @@ func isNewContent(hashPath string, body []byte) bool {
 /////////////////////////////////////////////////////////////
 // write as it downloads and not load the whole file into memory.
 func DownloadFile(targetPath, url, hashPath string) (string, error) {
+	client := http.Client{
+		Timeout: 5 * time.Second,
+	}
+
 	// Get the data
-	resp, err := http.Get(url)
+	resp, err := client.Get(url)
+	//resp, err := http.Get(url) //might take too long - no timeout
+
 	if err != nil {
 		return "", err
 	}
+	if resp.StatusCode != 200 {
+		stat := fmt.Sprintf("status: %d", resp.StatusCode)
+		return "", errors.New(stat)
+	}
+
 	logger.Info("response status: " + resp.Status)
 	if resp.ContentLength == 0 {
 		return "", errors.New("conten size is ZERO")
@@ -121,8 +132,12 @@ func DownloadFile(targetPath, url, hashPath string) (string, error) {
 	defer resp.Body.Close()
 
 	// read body
-	body := bytes.NewBuffer(make([]byte, 0, resp.ContentLength))
-	_, err = io.Copy(body, resp.Body)
+	body := new(bytes.Buffer)
+	body.ReadFrom(resp.Body)
+	// return buf.Len()
+
+	// body := bytes.NewBuffer(make([]byte, 0, resp.ContentLength))
+	// _, err = io.Copy(body, resp.Body)
 
 	if !isNewContent(hashPath, body.Bytes()) {
 		return "", errors.New("file content is not new")

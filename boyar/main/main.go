@@ -17,6 +17,9 @@ import (
 )
 
 func main() {
+	basicLogger := log.GetLogger()
+	basicLogger.Info("Boyar main version: " + version.GetVersion().Semantic)
+
 	configUrlPtr := flag.String("config-url", "", "http://my-config/config.json")
 	keyPairConfigPathPtr := flag.String("keys", "", "path to public/private key pair in json format")
 
@@ -62,8 +65,6 @@ func main() {
 		fmt.Println("Docker API version", adapter.DOCKER_API_VERSION)
 		return
 	}
-
-	basicLogger := log.GetLogger()
 
 	executable, _ := os.Executable()
 	executableWithoutSymlink, _ := filepath.EvalSymlinks(executable)

@@ -53,7 +53,7 @@ func (a *Agent) Start(start bool) {
 				log.Error(err)
 			}
 
-			logger.Info("start Agent v1.0")
+			logger.Info("start boyar Agent")
 			tick(a.config.Url, dlPath)
 			a.ticker = time.NewTicker(5 * time.Second) // DEBUG
 			//a.ticker = time.NewTicker(time.Duration(a.config.IntervalMinute) * time.Minute)
@@ -65,7 +65,7 @@ func (a *Agent) Start(start bool) {
 			}()
 		}
 	} else { // STOP
-		logger.Info("stop Agent")
+		logger.Info("stop boyar Agent")
 		if a.ticker != nil {
 			a.ticker.Stop()
 		}
@@ -182,7 +182,7 @@ func getTargetPath(dlPath string) string {
 
 /////////////////////////////////////////////////////////////
 func tick(fileUrl, dlPath string) {
-	logger.Info("tick")
+	logger.Info("agent tick")
 
 	targetPath := getTargetPath(dlPath)
 	logger.Info("Download target path: " + targetPath)

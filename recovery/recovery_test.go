@@ -1,37 +1,37 @@
-package agent
+package recovery
 
 import (
 	"testing"
 )
 
-func Test_BoyarAgentDummy(t *testing.T) {
+func Test_BoyarRecoveryDummy(t *testing.T) {
 	t.Log("ALL GOOD!")
 }
 
-// func Test_BoyarAgentConfigSingleton(t *testing.T) {
-// 	// init agent config
+// func Test_BoyarRecoveryConfigSingleton(t *testing.T) {
+// 	// init recovery config
 // 	url := "http://localhost:8080/node/0xTEST/main.sh"
 
-// 	// init agent config
+// 	// init recovery config
 // 	config := Config{
 // 		IntervalMinute: 1,
 // 		Url:            url,
 // 	}
 // 	Init(&config)
 
-// 	agent1 := GetInstance()
+// 	recovery1 := GetInstance()
 
 // 	// get same instance
-// 	agent2 := GetInstance()
-// 	if agent1.config.Url != agent2.config.Url {
+// 	recovery2 := GetInstance()
+// 	if recovery1.config.Url != recovery2.config.Url {
 // 		t.Error("config url in two instances is not equal")
 // 	}
-// 	if agent1.config.IntervalMinute != agent2.config.IntervalMinute {
+// 	if recovery1.config.IntervalMinute != recovery2.config.IntervalMinute {
 // 		t.Error("config IntervalMinute in two instances is not equal")
 // 	}
 // }
 
-// func Test_BoyarAgentDownloadErr(t *testing.T) {
+// func Test_BoyarRecoveryDownloadErr(t *testing.T) {
 // 	url := "http://www.notfound.com/main.sh"
 
 // 	dlPath := getDownloadPath()
@@ -50,10 +50,10 @@ func Test_BoyarAgentDummy(t *testing.T) {
 // 	}
 // }
 
-// func Test_BoyarAgentDownloadOK(t *testing.T) {
+// func Test_BoyarRecoveryDownloadOK(t *testing.T) {
 // 	logger = log.GetLogger()
 
-// 	url := "https://deployment.orbs.network/boyar_agent/node/0x9f0988Cd37f14dfe95d44cf21f9987526d6147Ba/main.sh"
+// 	url := "https://deployment.orbs.network/boyar_recovery/node/0x9f0988Cd37f14dfe95d44cf21f9987526d6147Ba/main.sh"
 
 // 	dlPath := getDownloadPath()
 // 	targetPath := getTargetPath(dlPath)

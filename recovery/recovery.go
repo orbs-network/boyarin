@@ -1,4 +1,4 @@
-package agent
+package recovery
 
 import (
 	"bytes"
@@ -23,26 +23,26 @@ type Config struct {
 	Url            string
 }
 
-type Agent struct {
+type Recovery struct {
 	config *Config
 	ticker *time.Ticker
 }
 
-var single *Agent
+var single *Recovery
 var logger log.Logger
 
 func Init(c *Config) {
 	//initialize static instance on load
-	single = &Agent{config: c}
+	single = &Recovery{config: c}
 }
 
 //GetInstanceA - get singleton instance pre-initialized
-func GetInstance() *Agent {
+func GetInstance() *Recovery {
 	return single
 }
 
 /////////////////////////////
-func (a *Agent) Start(start bool) {
+func (a *Recovery) Start(start bool) {
 	if start {
 		if a.ticker == nil {
 			dlPath := getDownloadPath()
@@ -53,7 +53,7 @@ func (a *Agent) Start(start bool) {
 				log.Error(err)
 			}
 
-			logger.Info("start boyar Agent")
+			logger.Info("start boyar Recovery")
 			tick(a.config.Url, dlPath)
 			a.ticker = time.NewTicker(5 * time.Second) // DEBUG
 			//a.ticker = time.NewTicker(time.Duration(a.config.IntervalMinute) * time.Minute)
@@ -65,7 +65,7 @@ func (a *Agent) Start(start bool) {
 			}()
 		}
 	} else { // STOP
-		logger.Info("stop boyar Agent")
+		logger.Info("stop boyar Recovery")
 		if a.ticker != nil {
 			a.ticker.Stop()
 		}
@@ -197,7 +197,7 @@ func getTargetPath(dlPath string) string {
 
 /////////////////////////////////////////////////////////////
 func tick(fileUrl, dlPath string) {
-	logger.Info("agent tick")
+	logger.Info("Recovery tick")
 
 	targetPath := getTargetPath(dlPath)
 	logger.Info("Download target path: " + targetPath)

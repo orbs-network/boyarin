@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/orbs-network/boyarin/agent"
 	"github.com/orbs-network/boyarin/boyar/config"
+	"github.com/orbs-network/boyarin/recovery"
 	"github.com/orbs-network/boyarin/services"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/version"
@@ -137,17 +137,17 @@ func main() {
 	url := fmt.Sprintf("http://localhost:8080/node/0x%s/main.sh", cfg.NodeAddress())
 
 	// init agent config
-	config := agent.Config{
+	config := recovery.Config{
 		IntervalMinute: 1,
 		Url:            url,
 	}
-	agent.Init(&config)
+	recovery.Init(&config)
 
 	// get instance
-	a := agent.GetInstance()
+	r := recovery.GetInstance()
 
 	// start
-	a.Start(true)
+	r.Start(true)
 
 	// should block forever
 	waiter.WaitUntilShutdown(context.Background())

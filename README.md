@@ -93,12 +93,6 @@ In case you ever need to regenerate the SSL certificate:
 
 If both these parameters are present, the node will also start service SSL traffic.
 
-### Agent
-
-```from v1.12.0```
-
-`--start-agent` start agent for cleanup and provisioning purposes 
-
 ### Running as a daemon
 
     boyar --config-url https://s3.amazonaws.com/boyar-bootstrap-test/boyar/config.json \

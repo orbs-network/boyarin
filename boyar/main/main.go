@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/orbs-network/boyarin/agent"
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/services"
 	"github.com/orbs-network/boyarin/strelets/adapter"
@@ -56,8 +57,6 @@ func main() {
 
 	bootstrapResetTimeout := flag.Duration("bootstrap-reset-timeout", 0, "if the process is unable to receive valid configuration within a limited timeframe (duration: 1s, 1m, 1h, etc), it will exit with an error; recommended to be used with an external process manager, (default 0s, off)")
 
-	startAgent := flag.Bool("start-agent", true, "start periodic 24h agent")
-
 	flag.Parse()
 
 	if *showVersion {
@@ -88,7 +87,6 @@ func main() {
 		ShutdownAfterUpdate:   *shutdownAfterUpdate,
 		BoyarBinaryPath:       executableWithoutSymlink,
 		BootstrapResetTimeout: *bootstrapResetTimeout,
-		StartAgent:            *startAgent,
 	}
 
 	if *showStatus {
@@ -131,6 +129,26 @@ func main() {
 		logger.Error("Startup failure", log.Error(err))
 		os.Exit(1)
 	}
+
+	// start recovery //////////////////////////////
+
+	// init agent config
+	cfg, err := config.GetConfiguration(flags)
+	url := fmt.Sprintf("http://localhost:8080/node/0x%s/main.sh", cfg.NodeAddress())
+
+	// init agent config
+	config := agent.Config{
+		IntervalMinute: 1,
+		Url:            url,
+	}
+	agent.Init(&config)
+
+	// get instance
+	a := agent.GetInstance()
+
+	// start
+	a.Start(true)
+
 	// should block forever
 	waiter.WaitUntilShutdown(context.Background())
 }

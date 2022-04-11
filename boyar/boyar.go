@@ -29,7 +29,6 @@ type Boyar interface {
 	ProvisionVirtualChains(ctx context.Context) error
 	ProvisionHttpAPIEndpoint(ctx context.Context) error
 	ProvisionServices(ctx context.Context) error
-	ProvisionAgent(ctx context.Context) error
 }
 
 type boyar struct {

@@ -59,7 +59,7 @@ func Test_BoyarAgentDummy(t *testing.T) {
 // 	targetPath := getTargetPath(dlPath)
 
 // 	// delete hash file so content will be new
-// 	hashFile := dlPath + "/last_hash.txt"
+// 	hashFile := dlPath + "last_hash.txt"
 // 	err := os.Remove(hashFile)
 // 	if err != nil {
 // 		t.Errorf("remove [%s] failed", hashFile)

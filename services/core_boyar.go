@@ -48,10 +48,6 @@ func (coreBoyar *BoyarService) OnConfigChange(ctx context.Context, cfg config.No
 		errors = append(errors, err)
 	}
 
-	// if err := b.ProvisionAgent(ctx); err != nil {
-	// 	errors = append(errors, err)
-	// }
-
 	if len(errors) > 0 {
 		coreBoyar.healthy = false
 		return utils.AggregateErrors(errors)

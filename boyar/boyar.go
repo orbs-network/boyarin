@@ -4,7 +4,6 @@ import (
 	"context"
 	"sync"
 
-	"github.com/orbs-network/boyarin/agent"
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/utils"
@@ -37,7 +36,6 @@ type boyar struct {
 	config       config.NodeConfiguration
 	cache        *Cache
 	logger       log.Logger
-	agent        *agent.Agent
 }
 
 func NewBoyar(orchestrator adapter.Orchestrator, cfg config.NodeConfiguration, cache *Cache, logger log.Logger) Boyar {

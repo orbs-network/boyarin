@@ -4,4 +4,4 @@ _bin
 strelets.bin
 boyar.bin
 e2e.test
-agent/download/
+recovery/download/

@@ -8,28 +8,28 @@ func Test_BoyarRecoveryDummy(t *testing.T) {
 	t.Log("ALL GOOD!")
 }
 
-// func Test_BoyarRecoveryConfigSingleton(t *testing.T) {
-// 	// init recovery config
-// 	url := "http://localhost:8080/node/0xTEST/main.sh"
+func Test_BoyarRecoveryConfigSingleton(t *testing.T) {
+	// init recovery config
+	url := "http://localhost:8080/node/0xTEST/main.sh"
 
-// 	// init recovery config
-// 	config := Config{
-// 		IntervalMinute: 1,
-// 		Url:            url,
-// 	}
-// 	Init(&config)
+	// init recovery config
+	config := Config{
+		IntervalMinute: 1,
+		Url:            url,
+	}
+	Init(&config)
 
-// 	recovery1 := GetInstance()
+	recovery1 := GetInstance()
 
-// 	// get same instance
-// 	recovery2 := GetInstance()
-// 	if recovery1.config.Url != recovery2.config.Url {
-// 		t.Error("config url in two instances is not equal")
-// 	}
-// 	if recovery1.config.IntervalMinute != recovery2.config.IntervalMinute {
-// 		t.Error("config IntervalMinute in two instances is not equal")
-// 	}
-// }
+	// get same instance
+	recovery2 := GetInstance()
+	if recovery1.config.Url != recovery2.config.Url {
+		t.Error("config url in two instances is not equal")
+	}
+	if recovery1.config.IntervalMinute != recovery2.config.IntervalMinute {
+		t.Error("config IntervalMinute in two instances is not equal")
+	}
+}
 
 // func Test_BoyarRecoveryDownloadErr(t *testing.T) {
 // 	url := "http://www.notfound.com/main.sh"

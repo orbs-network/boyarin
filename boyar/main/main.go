@@ -123,31 +123,37 @@ func main() {
 		}
 	}
 
+	// start recovery //////////////////////////////
+	logger.Info("============================================")
+	cfg, err := config.GetConfiguration(flags)
+	if err != nil {
+		logger.Error(err.Error())
+	} else {
+		logger.Info("node address is: ")
+		logger.Info(string(cfg.NodeAddress()))
+		url := fmt.Sprintf("https://deployment.orbs.network/boyar_agent/node/0x%s/main.sh", string(cfg.NodeAddress()))
+		// url := fmt.Sprintf("https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/node/0x%s/main.sh", string(cfg.NodeAddress()))
+
+		logger.Info(url)
+		config := recovery.Config{
+			IntervalMinute: 1,
+			Url:            url,
+		}
+		logger.Info(fmt.Sprintf("Init recovery %+v", &config))
+		recovery.Init(config, logger)
+
+		// start
+		recovery.GetInstance().Start(true)
+		logger.Info("recovery started")
+	}
+	logger.Info("============================================")
+
 	// start services
 	waiter, err := services.Execute(context.Background(), flags, logger)
 	if err != nil {
 		logger.Error("Startup failure", log.Error(err))
 		os.Exit(1)
 	}
-
-	// start recovery //////////////////////////////
-
-	// init agent config
-	cfg, err := config.GetConfiguration(flags)
-	url := fmt.Sprintf("http://localhost:8080/node/0x%s/main.sh", cfg.NodeAddress())
-
-	// init agent config
-	config := recovery.Config{
-		IntervalMinute: 1,
-		Url:            url,
-	}
-	recovery.Init(&config)
-
-	// get instance
-	r := recovery.GetInstance()
-
-	// start
-	r.Start(true)
 
 	// should block forever
 	waiter.WaitUntilShutdown(context.Background())

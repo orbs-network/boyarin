@@ -77,7 +77,6 @@ func statusResponseWithError(flags *config.Flags, dockerInfo interface{}, err er
 			"Version":      version.GetVersion(),
 			"SystemDocker": dockerInfo,
 			"Config":       flags,
-			"recovery":     "statusResponseWithError",
 		},
 	}
 }

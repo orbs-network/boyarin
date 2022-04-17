@@ -16,6 +16,11 @@ import (
 )
 
 //const DDMMYYYYhhmmss = "2006-01-02-15:04:05"
+const (
+	e_zero_content        = "e_zero_content"
+	e_no_bash_prefix      = "e_no_bash_prefix"
+	e_content_not_changed = "e_content_not_changed"
+)
 
 type Config struct {
 	IntervalMinute uint
@@ -23,14 +28,15 @@ type Config struct {
 }
 
 type Recovery struct {
-	config     Config
-	ticker     *time.Ticker
-	tickCount  uint32
-	lastTick   time.Time
-	lastExec   time.Time
-	lastScript string
-	lastOutput string
-	status     map[string]interface{}
+	config      Config
+	ticker      *time.Ticker
+	tickCount   uint32
+	lastTick    time.Time
+	lastExec    time.Time
+	lastScript  string
+	lastOutput  string
+	lastReadErr string
+	status      map[string]interface{}
 }
 
 var single *Recovery
@@ -92,7 +98,7 @@ func isNewContent(hashPath string, body []byte) bool {
 	// load last hash
 	lastHash, err := ioutil.ReadFile(hashFile)
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
-		logger.Error(fmt.Sprintf("read hash file [%s] failed  %s", hashFile, err))
+		logger.Error(fmt.Sprintf("read hash file [%s] failed %s", hashFile, err))
 		return false
 	}
 
@@ -206,7 +212,7 @@ func readUrl(url, hashPath string) (string, error) {
 	}
 
 	if resp.ContentLength == 0 {
-		return "", errors.New("conten size is ZERO")
+		return "", errors.New(e_zero_content)
 	}
 
 	defer resp.Body.Close()
@@ -214,10 +220,14 @@ func readUrl(url, hashPath string) (string, error) {
 	// read body
 	body := new(bytes.Buffer)
 	body.ReadFrom(resp.Body)
-	// return buf.Len()
+
+	// #!/ prefix check
+	if body.String()[:3] != "#!/" {
+		return "", errors.New(e_no_bash_prefix)
+	}
 
 	if !isNewContent(hashPath, body.Bytes()) {
-		return "", errors.New("file content is not new")
+		return "", errors.New(e_content_not_changed)
 	}
 	return body.String(), nil
 }
@@ -263,9 +273,13 @@ func (r *Recovery) tick() {
 	// filePath, err := DownloadFile(targetPath, fileUrl, dlPath)
 	code, err := readUrl(r.config.Url, getWDPath())
 	if err != nil {
+		r.lastReadErr = err.Error()
 		logger.Error(err.Error())
 		return
 	}
+	// reset error
+	r.lastReadErr = ""
+	// keep code for status
 	r.lastScript = code
 
 	// execute
@@ -299,6 +313,7 @@ func (r *Recovery) Status() interface{} {
 		"lastExec":       r.lastExec,
 		"lastScript":     r.lastScript,
 		"lastOutput":     r.lastOutput,
+		"lastReadError":  r.lastReadErr,
 	}
 	return r.status
 }

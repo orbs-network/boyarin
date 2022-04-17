@@ -1,23 +1,28 @@
 package recovery
 
 import (
+	"errors"
+	"os"
 	"testing"
+
+	"github.com/orbs-network/scribe/log"
 )
 
-func Test_BoyarRecoveryDummy(t *testing.T) {
+func Test_RecoveryDummy(t *testing.T) {
 	t.Log("ALL GOOD!")
 }
 
-func Test_BoyarRecoveryConfigSingleton(t *testing.T) {
+func Test_RecoveryConfigSingleton(t *testing.T) {
 	// init recovery config
-	url := "http://localhost:8080/node/0xTEST/main.sh"
+	url := "https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/node/0x9f0988Cd37f14dfe95d44cf21f9987526d6147Ba/main.sh"
 
 	// init recovery config
 	config := Config{
 		IntervalMinute: 1,
 		Url:            url,
 	}
-	Init(&config)
+	basicLogger := log.GetLogger()
+	Init(config, basicLogger)
 
 	recovery1 := GetInstance()
 
@@ -31,7 +36,19 @@ func Test_BoyarRecoveryConfigSingleton(t *testing.T) {
 	}
 }
 
-// func Test_BoyarRecoveryDownloadErr(t *testing.T) {
+// func Test_RecoveryExecution(t *testing.T) {
+// 	path, _ := os.Getwd()
+// 	code, _ := os.ReadFile(path + "/test.sh")
+
+// 	out := execBashReader(string(code))
+// 	expect := "recovery script"
+// 	sz := len(expect)
+// 	if out[:sz] != expect {
+// 		t.Errorf("expect:\t%s\ngot:\t%s", expect, out)
+// 	}
+// }
+
+// func Test_RecoveryDownloadErr(t *testing.T) {
 // 	url := "http://www.notfound.com/main.sh"
 
 // 	dlPath := getDownloadPath()
@@ -50,36 +67,66 @@ func Test_BoyarRecoveryConfigSingleton(t *testing.T) {
 // 	}
 // }
 
-// func Test_BoyarRecoveryDownloadOK(t *testing.T) {
-// 	logger = log.GetLogger()
+func Test_RecoveryBashPrefix(t *testing.T) {
+	logger = log.GetLogger()
+	// does not return script but txt = "this node is 0xDEV"
+	url := "https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/node/0x9f0988Cd37f14dfe95d44cf21f9987526d6147Ba/0xDEV.txt"
+	//url := "https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/node/0x9f0988Cd37f14dfe95d44cf21f9987526d6147Ba/main.sh"
+	_, err := readUrl(url, "./boyar_recovery/")
+	if err == nil {
+		t.Error("read text did not cause error")
+		return
+	}
+	if err.Error() != e_no_bash_prefix {
+		t.Errorf("exepect e_no_bash_prefix, got %s", err.Error())
 
-// 	url := "https://deployment.orbs.network/boyar_recovery/node/0x9f0988Cd37f14dfe95d44cf21f9987526d6147Ba/main.sh"
+	}
+}
+func Test_Recovery404(t *testing.T) {
+	logger = log.GetLogger()
+	url := "http://http://www.xosdhjfglk.com/xxx/main.sh"
 
-// 	dlPath := getDownloadPath()
-// 	targetPath := getTargetPath(dlPath)
+	res, err := readUrl(url, "./boyar_recovery/")
+	if err == nil {
+		t.Error("404 url did not result an error")
+	}
+	if res != "" {
+		t.Error("404 url returned a result")
+	}
 
-// 	// delete hash file so content will be new
-// 	hashFile := dlPath + "last_hash.txt"
-// 	err := os.Remove(hashFile)
-// 	if err != nil {
-// 		t.Errorf("remove [%s] failed", hashFile)
-// 	}
+	// get same instance
 
-// 	// download
-// 	res, err := DownloadFile(targetPath, url, dlPath)
+}
+func Test_RecoveryOK(t *testing.T) {
+	logger = log.GetLogger()
+	url := "https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/node/0x9f0988Cd37f14dfe95d44cf21f9987526d6147Ba/main.sh"
 
-// 	if res == "" {
-// 		t.Errorf("res for url[%s] is empty", url)
-// 	}
-// 	if err != nil {
-// 		t.Errorf("err for url[%s] should not be nil %s", url, err.Error())
-// 	}
+	hashPath := getWDPath()
+	hashFile := hashPath + "last_hash.txt"
 
-// 	// download again - expect content not new
-// 	res, err = DownloadFile(targetPath, url, dlPath)
+	// delete hash file so content will be new
+	if _, err := os.Stat(hashFile); !errors.Is(err, os.ErrNotExist) {
+		err = os.Remove(hashFile)
+		if err != nil {
+			t.Errorf("remove [%s] failed", hashFile)
+		}
+	}
 
-// 	if err.Error() != "file content is not new" {
-// 		t.Errorf("file content should have been the same")
-// 	}
+	// download
+	res, err := readUrl(url, hashPath) //DownloadFile(targetPath, url, dlPath)
 
-// }
+	if res == "" {
+		t.Errorf("res for url[%s] is empty", url)
+	}
+	if err != nil {
+		t.Errorf("err for url[%s] should not be nil %s", url, err.Error())
+	}
+
+	// download again - expect content not new
+	res, err = readUrl(url, hashPath)
+
+	if err.Error() != e_content_not_changed {
+		t.Errorf("file content should have been the same")
+	}
+
+}

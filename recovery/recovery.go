@@ -33,10 +33,9 @@ type Recovery struct {
 	tickCount   uint32
 	lastTick    time.Time
 	lastExec    time.Time
-	lastScript  string
+	lastHash    string
 	lastOutput  string
 	lastReadErr string
-	status      map[string]interface{}
 }
 
 var single *Recovery
@@ -69,8 +68,8 @@ func (r *Recovery) Start(start bool) {
 			// }
 
 			logger.Info("start boyar Recovery")
-			r.ticker = time.NewTicker(5 * time.Second) // DEBUG every 5 sec
-			//r.ticker = time.NewTicker(time.Duration(r.config.IntervalMinute) * time.Minute)
+			//r.ticker = time.NewTicker(5 * time.Second) // DEBUG every 5 sec
+			r.ticker = time.NewTicker(time.Duration(r.config.IntervalMinute) * time.Minute)
 
 			go func() {
 				// immediate
@@ -93,7 +92,7 @@ func (r *Recovery) Start(start bool) {
 
 /////////////////////////////////////////////////////////////
 // write as it downloads and not load the whole file into memory.
-func isNewContent(hashPath string, body []byte) bool {
+func (r *Recovery) isNewContent(hashPath string, body []byte) bool {
 	hashFile := hashPath + "last_hash.txt"
 	// load last hash
 	lastHash, err := ioutil.ReadFile(hashFile)
@@ -121,6 +120,8 @@ func isNewContent(hashPath string, body []byte) bool {
 		return false
 	}
 
+	// keep for status
+	r.lastHash = string(hashHex)
 	// write
 	err = ioutil.WriteFile(hashFile, []byte(hashHex), 0644)
 	if err != nil {
@@ -193,7 +194,7 @@ func isNewContent(hashPath string, body []byte) bool {
 // 	return filePath, nil
 // }
 /////////////////////////////////////////////////////////////
-func readUrl(url, hashPath string) (string, error) {
+func (r *Recovery) readUrl(url, hashPath string) (string, error) {
 	logger.Info("recovery downloadURL: " + url)
 	client := http.Client{
 		Timeout: 5 * time.Second,
@@ -226,7 +227,7 @@ func readUrl(url, hashPath string) (string, error) {
 		return "", errors.New(e_no_bash_prefix)
 	}
 
-	if !isNewContent(hashPath, body.Bytes()) {
+	if !r.isNewContent(hashPath, body.Bytes()) {
 		return "", errors.New(e_content_not_changed)
 	}
 	return body.String(), nil
@@ -271,7 +272,7 @@ func (r *Recovery) tick() {
 	// targetPath := getTargetPath(dlPath)
 	// logger.Info("Download target path: " + targetPath)
 	// filePath, err := DownloadFile(targetPath, fileUrl, dlPath)
-	code, err := readUrl(r.config.Url, getWDPath())
+	code, err := r.readUrl(r.config.Url, getWDPath())
 	if err != nil {
 		r.lastReadErr = err.Error()
 		logger.Error(err.Error())
@@ -280,7 +281,7 @@ func (r *Recovery) tick() {
 	// reset error
 	r.lastReadErr = ""
 	// keep code for status
-	r.lastScript = code
+	//r.lastScript = code
 
 	// execute
 	logger.Info("Recovery about to execute code")
@@ -305,17 +306,16 @@ func (r *Recovery) tick() {
 }
 
 func (r *Recovery) Status() interface{} {
-	r.status = map[string]interface{}{
+	return map[string]interface{}{
 		"IntervalMinute": r.config.IntervalMinute,
 		"Url":            r.config.Url,
 		"tickCount":      r.tickCount,
 		"lastTick":       r.lastTick,
 		"lastExec":       r.lastExec,
-		"lastScript":     r.lastScript,
+		"lastHash":       r.lastHash,
 		"lastOutput":     r.lastOutput,
 		"lastReadError":  r.lastReadErr,
 	}
-	return r.status
 }
 
 func execBashScript(script string) string {

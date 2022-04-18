@@ -8,10 +8,6 @@ import (
 	"github.com/orbs-network/scribe/log"
 )
 
-func Test_RecoveryDummy(t *testing.T) {
-	t.Log("ALL GOOD!")
-}
-
 func Test_RecoveryConfigSingleton(t *testing.T) {
 	// init recovery config
 	url := "https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/node/0x9f0988Cd37f14dfe95d44cf21f9987526d6147Ba/main.sh"
@@ -68,11 +64,19 @@ func Test_RecoveryConfigSingleton(t *testing.T) {
 // }
 
 func Test_RecoveryBashPrefix(t *testing.T) {
-	logger = log.GetLogger()
-	// does not return script but txt = "this node is 0xDEV"
 	url := "https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/node/0x9f0988Cd37f14dfe95d44cf21f9987526d6147Ba/0xDEV.txt"
 	//url := "https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/node/0x9f0988Cd37f14dfe95d44cf21f9987526d6147Ba/main.sh"
-	_, err := readUrl(url, "./boyar_recovery/")
+
+	// init recovery config
+	config := Config{
+		IntervalMinute: 1,
+		Url:            url,
+	}
+
+	logger = log.GetLogger()
+	Init(config, logger)
+	// does not return script but txt = "this node is 0xDEV"
+	_, err := GetInstance().readUrl(url, "./boyar_recovery/")
 	if err == nil {
 		t.Error("read text did not cause error")
 		return
@@ -85,8 +89,15 @@ func Test_RecoveryBashPrefix(t *testing.T) {
 func Test_Recovery404(t *testing.T) {
 	logger = log.GetLogger()
 	url := "http://http://www.xosdhjfglk.com/xxx/main.sh"
+	config := Config{
+		IntervalMinute: 1,
+		Url:            url,
+	}
 
-	res, err := readUrl(url, "./boyar_recovery/")
+	logger = log.GetLogger()
+	Init(config, logger)
+
+	res, err := GetInstance().readUrl(url, "./boyar_recovery/")
 	if err == nil {
 		t.Error("404 url did not result an error")
 	}
@@ -112,8 +123,16 @@ func Test_RecoveryOK(t *testing.T) {
 		}
 	}
 
+	config := Config{
+		IntervalMinute: 1,
+		Url:            url,
+	}
+
+	logger = log.GetLogger()
+	Init(config, logger)
+
 	// download
-	res, err := readUrl(url, hashPath) //DownloadFile(targetPath, url, dlPath)
+	res, err := GetInstance().readUrl(url, hashPath) //DownloadFile(targetPath, url, dlPath)
 
 	if res == "" {
 		t.Errorf("res for url[%s] is empty", url)
@@ -123,7 +142,7 @@ func Test_RecoveryOK(t *testing.T) {
 	}
 
 	// download again - expect content not new
-	res, err = readUrl(url, hashPath)
+	res, err = GetInstance().readUrl(url, hashPath)
 
 	if err.Error() != e_content_not_changed {
 		t.Errorf("file content should have been the same")

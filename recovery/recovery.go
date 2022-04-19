@@ -2,11 +2,9 @@ package recovery
 
 import (
 	"bytes"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -17,9 +15,9 @@ import (
 
 //const DDMMYYYYhhmmss = "2006-01-02-15:04:05"
 const (
-	e_zero_content        = "e_zero_content"
-	e_no_bash_prefix      = "e_no_bash_prefix"
-	e_content_not_changed = "e_content_not_changed"
+	e_zero_content   = "e_zero_content"
+	e_no_bash_prefix = "e_no_bash_prefix"
+	//e_content_not_changed = "e_content_not_changed"
 )
 
 type Config struct {
@@ -92,44 +90,44 @@ func (r *Recovery) Start(start bool) {
 
 /////////////////////////////////////////////////////////////
 // write as it downloads and not load the whole file into memory.
-func (r *Recovery) isNewContent(hashPath string, body []byte) bool {
-	hashFile := hashPath + "last_hash.txt"
-	// load last hash
-	lastHash, err := ioutil.ReadFile(hashFile)
-	if err != nil && !errors.Is(err, os.ErrNotExist) {
-		logger.Error(fmt.Sprintf("read hash file [%s] failed %s", hashFile, err))
-		return false
-	}
+// func (r *Recovery) isNewContent(hashPath string, body []byte) bool {
+// 	hashFile := hashPath + "last_hash.txt"
+// 	// load last hash
+// 	lastHash, err := ioutil.ReadFile(hashFile)
+// 	if err != nil && !errors.Is(err, os.ErrNotExist) {
+// 		logger.Error(fmt.Sprintf("read hash file [%s] failed %s", hashFile, err))
+// 		return false
+// 	}
 
-	// sha256 on body
-	sha := sha256.Sum256(body)
+// 	// sha256 on body
+// 	sha := sha256.Sum256(body)
 
-	// save hash 256 = 64 chars
-	hashHex := make([]byte, 64)
-	hex.Encode(hashHex, sha[:])
+// 	// save hash 256 = 64 chars
+// 	hashHex := make([]byte, 64)
+// 	hex.Encode(hashHex, sha[:])
 
-	// file content hasnt changed
-	if lastHash != nil && string(hashHex) == string(lastHash) {
-		return false
-	}
+// 	// file content hasnt changed
+// 	if lastHash != nil && string(hashHex) == string(lastHash) {
+// 		return false
+// 	}
 
-	// ensure folder exist
-	err = os.MkdirAll(hashPath, 0777)
-	if err != nil {
-		logger.Error(fmt.Sprintf("MkdirAll failed[%s], %s", hashPath, err.Error()))
-		return false
-	}
+// 	// ensure folder exist
+// 	err = os.MkdirAll(hashPath, 0777)
+// 	if err != nil {
+// 		logger.Error(fmt.Sprintf("MkdirAll failed[%s], %s", hashPath, err.Error()))
+// 		return false
+// 	}
 
-	// keep for status
-	r.lastHash = string(hashHex)
-	// write
-	err = ioutil.WriteFile(hashFile, []byte(hashHex), 0644)
-	if err != nil {
-		logger.Error(fmt.Sprintf("faile to write hash [%s] failed  %e", hashFile, err))
-	}
+// 	// keep for status
+// 	r.lastHash = string(hashHex)
+// 	// write
+// 	err = ioutil.WriteFile(hashFile, []byte(hashHex), 0644)
+// 	if err != nil {
+// 		logger.Error(fmt.Sprintf("faile to write hash [%s] failed  %e", hashFile, err))
+// 	}
 
-	return true
-}
+// 	return true
+// }
 
 /////////////////////////////////////////////////////////////
 // write as it downloads and not load the whole file into memory.
@@ -227,9 +225,9 @@ func (r *Recovery) readUrl(url, hashPath string) (string, error) {
 		return "", errors.New(e_no_bash_prefix)
 	}
 
-	if !r.isNewContent(hashPath, body.Bytes()) {
-		return "", errors.New(e_content_not_changed)
-	}
+	// if !r.isNewContent(hashPath, body.Bytes()) {
+	// 	return "", errors.New(e_content_not_changed)
+	// }
 	return body.String(), nil
 }
 
@@ -288,12 +286,17 @@ func (r *Recovery) tick() {
 	logger.Info("------------------------------")
 	logger.Info(code)
 	logger.Info("------------------------------")
-	out := execBashScript(code)
+	out, err := execBashScript(code)
 	r.lastExec = time.Now()
-	r.lastOutput = out
-	logger.Info("------------------------------")
-	logger.Info("output")
-	logger.Info(out)
+	if len(out) > 0 {
+		logger.Info("output")
+		logger.Info(out)
+		r.lastOutput = out
+	} else {
+		logger.Error("exec Error")
+		logger.Error(err.Error())
+		r.lastOutput = "ERROR: " + err.Error()
+	}
 	logger.Info("------------------------------")
 
 	// logger.Info("Downloaded: " + fileUrl)
@@ -318,11 +321,36 @@ func (r *Recovery) Status() interface{} {
 	}
 }
 
-func execBashScript(script string) string {
-	out, err := exec.Command("bash", "-c", script).Output()
-	if err != nil {
-		logger.Error(err.Error())
-		return ""
+// func execBashScript(script string) (string, error) {
+// 	cmd := exec.Command("bash", "-c", script)
+// 	out, err := cmd.CombinedOutput()
+// 	if err != nil {
+// 		return "", errors.New(string(out) + err.Error())
+// 	}
+
+// 	return string(out), nil
+// }
+
+func execBashScript(script string) (string, error) {
+	shell := os.Getenv("SHELL")
+	if len(shell) == 0 {
+		shell = "bash"
 	}
-	return string(out)
+	cmd := exec.Command(shell)
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return "", err
+	}
+
+	go func() {
+		defer stdin.Close()
+		io.WriteString(stdin, script)
+	}()
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", err
+	}
+
+	return string(out), nil
 }

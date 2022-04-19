@@ -1,7 +1,7 @@
 package recovery
 
 import (
-	"errors"
+	"io/ioutil"
 	"os"
 	"testing"
 
@@ -108,44 +108,70 @@ func Test_Recovery404(t *testing.T) {
 	// get same instance
 
 }
-func Test_RecoveryOK(t *testing.T) {
+
+// func Test_RecoveryOK(t *testing.T) {
+// 	logger = log.GetLogger()
+// 	url := "https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/node/0x9f0988Cd37f14dfe95d44cf21f9987526d6147Ba/main.sh"
+
+// 	hashPath := getWDPath()
+// 	hashFile := hashPath + "last_hash.txt"
+
+// 	// delete hash file so content will be new
+// 	if _, err := os.Stat(hashFile); !errors.Is(err, os.ErrNotExist) {
+// 		err = os.Remove(hashFile)
+// 		if err != nil {
+// 			t.Errorf("remove [%s] failed", hashFile)
+// 		}
+// 	}
+
+// 	config := Config{
+// 		IntervalMinute: 1,
+// 		Url:            url,
+// 	}
+
+// 	logger = log.GetLogger()
+// 	Init(config, logger)
+
+// 	// download
+// 	res, err := GetInstance().readUrl(url, hashPath) //DownloadFile(targetPath, url, dlPath)
+
+// 	if res == "" {
+// 		t.Errorf("res for url[%s] is empty", url)
+// 	}
+// 	if err != nil {
+// 		t.Errorf("err for url[%s] should not be nil %s", url, err.Error())
+// 	}
+
+// 	// download again - expect content not new
+// 	res, err = GetInstance().readUrl(url, hashPath)
+
+// 	if err.Error() != e_content_not_changed {
+// 		t.Errorf("file content should have been the same")
+// 	}
+// }
+
+func Test_RecoveryExec(t *testing.T) {
 	logger = log.GetLogger()
-	url := "https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/node/0x9f0988Cd37f14dfe95d44cf21f9987526d6147Ba/main.sh"
+	// script := "#!/bin/bash\n"
+	// script += "echo \"one\"\n"
+	// script += "echo \"two\"\n"
+	// script += "cat yyy.txt\n"
+	// script += "touch xxx.txt\n"
+	// script += "echo \"three\""
+	// url := "https://deployment.orbs.network/boyar_recovery/node/0x9f0988Cd37f14dfe95d44cf21f9987526d6147Ba/main.sh"
+	// res, _ := http.Get(url)
+	wd, _ := os.Getwd()
+	script, _ := ioutil.ReadFile(wd + "/test2.sh")
 
-	hashPath := getWDPath()
-	hashFile := hashPath + "last_hash.txt"
-
-	// delete hash file so content will be new
-	if _, err := os.Stat(hashFile); !errors.Is(err, os.ErrNotExist) {
-		err = os.Remove(hashFile)
-		if err != nil {
-			t.Errorf("remove [%s] failed", hashFile)
-		}
-	}
-
-	config := Config{
-		IntervalMinute: 1,
-		Url:            url,
-	}
-
-	logger = log.GetLogger()
-	Init(config, logger)
-
-	// download
-	res, err := GetInstance().readUrl(url, hashPath) //DownloadFile(targetPath, url, dlPath)
-
-	if res == "" {
-		t.Errorf("res for url[%s] is empty", url)
-	}
+	//out, err := execBashScript(string(script))
+	out, err := execBashScript(string(script))
 	if err != nil {
-		t.Errorf("err for url[%s] should not be nil %s", url, err.Error())
+		t.Error(err)
+		return
 	}
-
-	// download again - expect content not new
-	res, err = GetInstance().readUrl(url, hashPath)
-
-	if err.Error() != e_content_not_changed {
-		t.Errorf("file content should have been the same")
+	expect := "one\ntwo\nthree\n"
+	if out != expect {
+		t.Errorf("expect:\n%s got:\n%s", expect, out)
 	}
 
 }

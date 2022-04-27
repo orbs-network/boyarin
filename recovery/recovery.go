@@ -2,6 +2,7 @@ package recovery
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -19,6 +20,26 @@ const (
 	e_no_bash_prefix = "e_no_bash_prefix"
 	//e_content_not_changed = "e_content_not_changed"
 )
+
+/////////////////////////////////////////////////
+// JSON
+// {
+// 	"shell": {
+// 	"bin": "bash",
+// 	"run": [
+// 		"https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/shared/disk_cleanup_1",
+// 		"https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/shared/docker_cleanup_1"
+// 	]
+//   }
+// }
+type Shell struct {
+	Bin string   `json:"bin"`
+	Run []string `json:"run"`
+}
+
+type Instructions struct {
+	Shell Shell `json:"shell"`
+}
 
 type Config struct {
 	IntervalMinute uint
@@ -89,111 +110,8 @@ func (r *Recovery) Start(start bool) {
 }
 
 /////////////////////////////////////////////////////////////
-// write as it downloads and not load the whole file into memory.
-// func (r *Recovery) isNewContent(hashPath string, body []byte) bool {
-// 	hashFile := hashPath + "last_hash.txt"
-// 	// load last hash
-// 	lastHash, err := ioutil.ReadFile(hashFile)
-// 	if err != nil && !errors.Is(err, os.ErrNotExist) {
-// 		logger.Error(fmt.Sprintf("read hash file [%s] failed %s", hashFile, err))
-// 		return false
-// 	}
-
-// 	// sha256 on body
-// 	sha := sha256.Sum256(body)
-
-// 	// save hash 256 = 64 chars
-// 	hashHex := make([]byte, 64)
-// 	hex.Encode(hashHex, sha[:])
-
-// 	// file content hasnt changed
-// 	if lastHash != nil && string(hashHex) == string(lastHash) {
-// 		return false
-// 	}
-
-// 	// ensure folder exist
-// 	err = os.MkdirAll(hashPath, 0777)
-// 	if err != nil {
-// 		logger.Error(fmt.Sprintf("MkdirAll failed[%s], %s", hashPath, err.Error()))
-// 		return false
-// 	}
-
-// 	// keep for status
-// 	r.lastHash = string(hashHex)
-// 	// write
-// 	err = ioutil.WriteFile(hashFile, []byte(hashHex), 0644)
-// 	if err != nil {
-// 		logger.Error(fmt.Sprintf("faile to write hash [%s] failed  %e", hashFile, err))
-// 	}
-
-// 	return true
-// }
-
-/////////////////////////////////////////////////////////////
-// write as it downloads and not load the whole file into memory.
-// func DownloadFile(targetPath, url, hashPath string) (string, error) {
-// 	logger.Info("recovery downloadURL: " + url)
-// 	client := http.Client{
-// 		Timeout: 5 * time.Second,
-// 	}
-
-// 	// Get the data
-// 	resp, err := client.Get(url)
-// 	//resp, err := http.Get(url) //might take too long - no timeout
-
-// 	if err != nil {
-// 		logger.Info("download ERROR " + err.Error())
-// 		return "", err
-// 	}
-// 	logger.Info("response status: " + resp.Status)
-// 	if resp.StatusCode != 200 {
-// 		stat := fmt.Sprintf("status: %d", resp.StatusCode)
-// 		return "", errors.New(stat)
-// 	}
-
-// 	if resp.ContentLength == 0 {
-// 		return "", errors.New("conten size is ZERO")
-// 	}
-
-// 	defer resp.Body.Close()
-
-// 	// read body
-// 	body := new(bytes.Buffer)
-// 	body.ReadFrom(resp.Body)
-// 	// return buf.Len()
-
-// 	// body := bytes.NewBuffer(make([]byte, 0, resp.ContentLength))
-// 	// _, err = io.Copy(body, resp.Body)
-
-// 	if !isNewContent(hashPath, body.Bytes()) {
-// 		return "", errors.New("file content is not new")
-// 	}
-
-// 	// ensure download folder
-// 	err = os.MkdirAll(targetPath, 0777)
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	//Create executable write only file
-// 	filePath := targetPath + "/main.sh"
-// 	out, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY, 0555)
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	// Write the body to file
-// 	_, err = io.Copy(out, body)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	defer out.Close()
-
-// 	return filePath, nil
-// }
-/////////////////////////////////////////////////////////////
-func (r *Recovery) readUrl(url, hashPath string) (string, error) {
-	logger.Info("recovery downloadURL: " + url)
+func (r *Recovery) readUrl(url string) (string, error) {
+	logger.Info("recovery readUrl: " + url)
 	client := http.Client{
 		Timeout: 5 * time.Second,
 	}
@@ -220,26 +138,11 @@ func (r *Recovery) readUrl(url, hashPath string) (string, error) {
 	body := new(bytes.Buffer)
 	body.ReadFrom(resp.Body)
 
-	// #!/ prefix check
-	if body.String()[:3] != "#!/" {
-		return "", errors.New(e_no_bash_prefix)
-	}
-
 	// if !r.isNewContent(hashPath, body.Bytes()) {
 	// 	return "", errors.New(e_content_not_changed)
 	// }
 	return body.String(), nil
 }
-
-/////////////////////////////////////////////////////////////
-// func execBashFile(path string) string {
-// 	cmd, err := exec.Command("/bin/sh", path).Output()
-// 	if err != nil {
-// 		logger.Error(err.Error())
-// 	}
-// 	output := string(cmd)
-// 	return output
-// }
 
 /////////////////////////////////////////////////////////////
 func getWDPath() string {
@@ -251,61 +154,90 @@ func getWDPath() string {
 }
 
 /////////////////////////////////////////////////////////////
-// func getTargetPath(dlPath string) string {
-
-// 	// format date
-// 	now := time.Now().UTC()
-// 	timeStr := now.Format(DDMMYYYYhhmmss)
-// 	targetPath := dlPath + timeStr
-
-// 	return targetPath
-// }
-
-/////////////////////////////////////////////////////////////
 func (r *Recovery) tick() {
 	logger.Info("Recovery tick")
 	r.tickCount += 1
 	r.lastTick = time.Now()
 
-	// targetPath := getTargetPath(dlPath)
-	// logger.Info("Download target path: " + targetPath)
-	// filePath, err := DownloadFile(targetPath, fileUrl, dlPath)
-	code, err := r.readUrl(r.config.Url, getWDPath())
+	// read json
+	jsnTxt, err := r.readUrl(r.config.Url) //, getWDPath())
 	if err != nil {
 		r.lastReadErr = err.Error()
 		logger.Error(err.Error())
 		return
 	}
+	var result Instructions
+	//var result map[string]interface{}
+	err = json.Unmarshal([]byte(jsnTxt), &result)
+	if err != nil {
+		r.lastReadErr = err.Error()
+		logger.Error(err.Error())
+	}
+	//no scripts to run
+	scriptArr := result.Shell.Run
+	if len(scriptArr) == 0 {
+		r.lastReadErr = "json run array came empty"
+		logger.Error(r.lastReadErr)
+		return
+	}
+	// no executable for bash
+	if result.Shell.Bin == "" {
+		r.lastReadErr = "bin for exec was not specified in json"
+		logger.Error(r.lastReadErr)
+		return
+	}
+	// clean last output for status
+	r.lastOutput = ""
+
+	// execute all scripts serial
+	for _, url := range scriptArr {
+		// read script
+		script, err := r.readUrl(url) //, getWDPath())
+		if err != nil {
+			r.lastReadErr = err.Error()
+			logger.Error(err.Error())
+		} else {
+			r.runScript(result.Shell.Bin, script)
+		}
+	}
+
+}
+func (r *Recovery) runScript(bin, script string) {
 	// reset error
 	r.lastReadErr = ""
-	// keep code for status
-	//r.lastScript = code
+
+	// no prefix
+	if len(script) < 4 {
+		r.lastReadErr = "script length < 4"
+		logger.Error(r.lastReadErr)
+		return
+	}
+
+	// #!/ prefix check
+	if script[:3] != "#!/" {
+		r.lastReadErr = e_no_bash_prefix
+		logger.Error(r.lastReadErr)
+		return
+	}
 
 	// execute
-	logger.Info("Recovery about to execute code")
+	logger.Info("Recovery about to execute script")
 	logger.Info("------------------------------")
-	logger.Info(code)
+	logger.Info(script)
 	logger.Info("------------------------------")
-	out, err := execBashScript(code)
+
+	out, err := execBashScript(bin, script)
 	r.lastExec = time.Now()
 	if len(out) > 0 {
 		logger.Info("output")
 		logger.Info(out)
-		r.lastOutput = out
+		r.lastOutput += out
 	} else {
 		logger.Error("exec Error")
 		logger.Error(err.Error())
 		r.lastOutput = "ERROR: " + err.Error()
 	}
 	logger.Info("------------------------------")
-
-	// logger.Info("Downloaded: " + fileUrl)
-
-	// // execute
-	// logger.Info("recovery execute " + filePath)
-	// output := execBash(filePath)
-	// logger.Info("recovery execute output:")
-	// logger.Info(output)
 }
 
 func (r *Recovery) Status() interface{} {
@@ -321,22 +253,16 @@ func (r *Recovery) Status() interface{} {
 	}
 }
 
-// func execBashScript(script string) (string, error) {
-// 	cmd := exec.Command("bash", "-c", script)
-// 	out, err := cmd.CombinedOutput()
-// 	if err != nil {
-// 		return "", errors.New(string(out) + err.Error())
-// 	}
-
-// 	return string(out), nil
-// }
-
-func execBashScript(script string) (string, error) {
+func execBashScript(bin, script string) (string, error) {
 	shell := os.Getenv("SHELL")
 	if len(shell) == 0 {
 		shell = "bash"
 	}
-	cmd := exec.Command(shell)
+
+	if bin != shell {
+		logger.Info(fmt.Sprintf("OS ENV [SHELL] = [%s] but main.json wants to work with bin=[%s]", shell, bin))
+	}
+	cmd := exec.Command(bin)
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		return "", err

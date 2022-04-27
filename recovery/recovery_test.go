@@ -7,8 +7,9 @@ import (
 )
 
 func Test_RecoveryConfigSingleton(t *testing.T) {
+
 	// init recovery config
-	url := "https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/node/0x9f0988Cd37f14dfe95d44cf21f9987526d6147Ba/main.sh"
+	url := "https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/node/0x9f0988Cd37f14dfe95d44cf21f9987526d6147Ba/main.json"
 
 	// init recovery config
 	config := Config{

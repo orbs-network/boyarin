@@ -2,6 +2,7 @@ package recovery
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,31 +15,32 @@ import (
 	"github.com/orbs-network/scribe/log"
 )
 
-//const DDMMYYYYhhmmss = "2006-01-02-15:04:05"
 const (
 	e_zero_content   = "e_zero_content"
 	e_no_bash_prefix = "e_no_bash_prefix"
+	e_code_too_short = "e_code_too_short"
 	//e_content_not_changed = "e_content_not_changed"
+	DDMMYYYYhhmmss = "2006-01-02 15:04:05"
 )
 
 /////////////////////////////////////////////////
-// JSON
+// INSTRUCTIONS JSON
 // {
-// 	"shell": {
-// 	"bin": "bash",
-// 	"run": [
-// 		"https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/shared/disk_cleanup_1",
-// 		"https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/shared/docker_cleanup_1"
-// 	]
-//   }
+//     "bin": "/bin/bash",
+//     "args": [],
+//     "dir": null,
+//     "stdins": [
+//         "https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/shared/disk_cleanup_1.sh",
+//         "https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/shared/docker_cleanup_1.sh"
+//     ]
 // }
-type Shell struct {
-	Bin string   `json:"bin"`
-	Run []string `json:"run"`
-}
 
+///////////////////////////////////////////////
 type Instructions struct {
-	Shell Shell `json:"shell"`
+	Bin    string   `json:"bin"`
+	Args   []string `json:"args"`
+	Dir    string   `json:dir`
+	Stdins []string `json:"stdins"`
 }
 
 type Config struct {
@@ -47,19 +49,20 @@ type Config struct {
 }
 
 type Recovery struct {
-	config      Config
-	ticker      *time.Ticker
-	tickCount   uint32
-	lastTick    time.Time
-	lastExec    time.Time
-	lastHash    string
-	lastOutput  string
-	lastReadErr string
+	config     Config
+	ticker     *time.Ticker
+	tickCount  uint32
+	lastTick   time.Time
+	lastExec   time.Time
+	lastOutput string
+	lastError  string
 }
 
+/////////////////////////////////////////////////
 var single *Recovery
 var logger log.Logger
 
+/////////////////////////////////////////////////
 func Init(c Config, _logger log.Logger) {
 	//initialize static instance on load
 	logger = _logger
@@ -72,20 +75,11 @@ func GetInstance() *Recovery {
 	return single
 }
 
-/////////////////////////////
+/////////////////////////////////////////////////
 func (r *Recovery) Start(start bool) {
 	if start {
 		logger.Info("recovery::start()")
 		if r.ticker == nil {
-			//dlPath := getDownloadPath()
-
-			// ensure download hash folder
-			//err := os.MkdirAll(dlPath, 0777)
-
-			// if err != nil {
-			// 	logger.Error(err.Error())
-			// }
-
 			logger.Info("start boyar Recovery")
 			//r.ticker = time.NewTicker(5 * time.Second) // DEBUG every 5 sec
 			r.ticker = time.NewTicker(time.Duration(r.config.IntervalMinute) * time.Minute)
@@ -138,9 +132,6 @@ func (r *Recovery) readUrl(url string) (string, error) {
 	body := new(bytes.Buffer)
 	body.ReadFrom(resp.Body)
 
-	// if !r.isNewContent(hashPath, body.Bytes()) {
-	// 	return "", errors.New(e_content_not_changed)
-	// }
 	return body.String(), nil
 }
 
@@ -162,121 +153,124 @@ func (r *Recovery) tick() {
 	// read json
 	jsnTxt, err := r.readUrl(r.config.Url) //, getWDPath())
 	if err != nil {
-		r.lastReadErr = err.Error()
+		r.lastError = err.Error()
 		logger.Error(err.Error())
 		return
 	}
-	var result Instructions
-	//var result map[string]interface{}
-	err = json.Unmarshal([]byte(jsnTxt), &result)
+
+	// read JSON
+	var inst Instructions
+	err = json.Unmarshal([]byte(jsnTxt), &inst)
 	if err != nil {
-		r.lastReadErr = err.Error()
+		r.lastError = err.Error()
 		logger.Error(err.Error())
-	}
-	//no scripts to run
-	scriptArr := result.Shell.Run
-	if len(scriptArr) == 0 {
-		r.lastReadErr = "json run array came empty"
-		logger.Error(r.lastReadErr)
 		return
 	}
-	// no executable for bash
-	if result.Shell.Bin == "" {
-		r.lastReadErr = "bin for exec was not specified in json"
-		logger.Error(r.lastReadErr)
+
+	// mandatory
+	if len(inst.Bin) == 0 {
+		r.lastError = "bin for exec was not specified in json"
+		logger.Error(r.lastError)
 		return
 	}
+	if len(inst.Stdins) == 0 {
+		r.lastError = "json stdins wasnt parsed propperly"
+		logger.Error(r.lastError)
+		return
+	}
+
 	// clean last output for status
 	r.lastOutput = ""
 
-	// execute all scripts serial
-	for _, url := range scriptArr {
+	// read all scripts
+	fullCode := ""
+
+	for _, url := range inst.Stdins {
 		// read script
-		script, err := r.readUrl(url) //, getWDPath())
+		code, err := r.readUrl(url) //, getWDPath())
 		if err != nil {
-			r.lastReadErr = err.Error()
+			r.lastError = err.Error()
 			logger.Error(err.Error())
+			return
 		} else {
-			r.runScript(result.Shell.Bin, script)
+			fullCode += code + "\n"
 		}
 	}
 
+	// execute all with timeout
+	err = r.runCommand(inst.Bin, inst.Dir, fullCode, inst.Args)
+	if err != nil {
+		r.lastError = err.Error()
+		logger.Error(r.lastError)
+	}
 }
-func (r *Recovery) runScript(bin, script string) {
-	// reset error
-	r.lastReadErr = ""
+
+/////////////////////////////////////////////////
+func (r *Recovery) runCommand(bin, dir, code string, args []string) error {
+	// reset error for status
+	r.lastError = ""
+	r.lastOutput = ""
+	r.lastExec = time.Now()
 
 	// no prefix
-	if len(script) < 4 {
-		r.lastReadErr = "script length < 4"
-		logger.Error(r.lastReadErr)
-		return
-	}
-
-	// #!/ prefix check
-	if script[:3] != "#!/" {
-		r.lastReadErr = e_no_bash_prefix
-		logger.Error(r.lastReadErr)
-		return
+	if len(code) < 4 {
+		return errors.New(e_code_too_short)
 	}
 
 	// execute
-	logger.Info("Recovery about to execute script")
-	logger.Info("------------------------------")
-	logger.Info(script)
-	logger.Info("------------------------------")
+	logger.Info("about to execite recovery code:" + code)
 
-	out, err := execBashScript(bin, script)
-	r.lastExec = time.Now()
-	if len(out) > 0 {
-		logger.Info("output")
-		logger.Info(out)
-		r.lastOutput += out
-	} else {
-		logger.Error("exec Error")
-		logger.Error(err.Error())
-		r.lastOutput = "ERROR: " + err.Error()
-	}
-	logger.Info("------------------------------")
-}
+	// timeout 5 minutes
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Minute*5))
+	defer cancel()
 
-func (r *Recovery) Status() interface{} {
-	return map[string]interface{}{
-		"IntervalMinute": r.config.IntervalMinute,
-		"Url":            r.config.Url,
-		"tickCount":      r.tickCount,
-		"lastTick":       r.lastTick,
-		"lastExec":       r.lastExec,
-		"lastHash":       r.lastHash,
-		"lastOutput":     r.lastOutput,
-		"lastReadError":  r.lastReadErr,
-	}
-}
+	cmd := exec.CommandContext(ctx, bin, args...)
 
-func execBashScript(bin, script string) (string, error) {
-	shell := os.Getenv("SHELL")
-	if len(shell) == 0 {
-		shell = "bash"
+	// working dir
+	if len(dir) > 0 {
+		cmd.Dir = dir
 	}
 
-	if bin != shell {
-		logger.Info(fmt.Sprintf("OS ENV [SHELL] = [%s] but main.json wants to work with bin=[%s]", shell, bin))
-	}
-	cmd := exec.Command(bin)
+	// stdin
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
-		return "", err
+		return err
 	}
 
+	// stream code stdin
 	go func() {
 		defer stdin.Close()
-		io.WriteString(stdin, script)
+		io.WriteString(stdin, code)
 	}()
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	return string(out), nil
+	r.lastOutput = string(out)
+	return nil
+}
+
+/////////////////////////////////////////////////
+func (r *Recovery) Status() interface{} {
+	nextTickTime := time.Time(r.lastTick)
+	nextTickTime.Add(time.Minute * time.Duration(r.config.IntervalMinute))
+	if r.tickCount == 0 {
+		return map[string]interface{}{
+			"intervalMinute": r.config.IntervalMinute,
+			"url":            r.config.Url,
+			"tickCount":      "before first tick",
+		}
+	}
+	return map[string]interface{}{
+		"intervalMinute": r.config.IntervalMinute,
+		"url":            r.config.Url,
+		"tickCount":      r.tickCount,
+		"lastTick":       r.lastTick,
+		"nextTickTime":   nextTickTime.Format(DDMMYYYYhhmmss),
+		"lastExec":       r.lastExec,
+		"lastOutput":     r.lastOutput,
+		"lastError":      r.lastError,
+	}
 }

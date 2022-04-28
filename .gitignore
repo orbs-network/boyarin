@@ -4,6 +4,3 @@ _bin
 strelets.bin
 boyar.bin
 e2e.test
-recovery/download/
-boyar_recovery/
-recovery/target_files/

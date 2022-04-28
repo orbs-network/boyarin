@@ -121,7 +121,7 @@ func GetStatusAndMetrics(ctx context.Context, logger log.Logger, flags *config.F
 					"SystemDocker": dockerInfo,
 					"Services":     services,
 					"Config":       flags,
-					"recovery":     recoveryStatus,
+					"Recovery":     recoveryStatus,
 				},
 			}
 		}

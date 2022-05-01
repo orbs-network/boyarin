@@ -69,6 +69,13 @@ func Init(c Config, _logger log.Logger) {
 	//initialize static instance on load
 	logger = _logger
 	logger.Info("recovery - Init logger success")
+	// default
+	if c.TimeoutSec == 0 {
+		c.TimeoutSec = 120
+	}
+	if c.IntervalMinute == 0 {
+		c.IntervalMinute = 60 * 6
+	}
 	single = &Recovery{config: c, tickCount: 0}
 }
 

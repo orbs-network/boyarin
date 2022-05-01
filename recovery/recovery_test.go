@@ -1,6 +1,8 @@
 package recovery
 
 import (
+	"context"
+	"errors"
 	"testing"
 
 	"github.com/orbs-network/scribe/log"
@@ -74,4 +76,25 @@ func Test_RecoveryJson(t *testing.T) {
 		t.Errorf("expect:\n%s got:\n%s", expect, r.lastOutput)
 	}
 
+}
+
+func Test_ExecutionTimeout(t *testing.T) {
+	// init recovery config
+	config := Config{
+		IntervalMinute: 1,
+		TimeoutSec:     5,
+		Url:            "",
+	}
+	logger = log.GetLogger()
+	Init(config, logger)
+
+	r := GetInstance()
+	args := []string{"6"}
+	err := r.runCommand("sleep", "", "", args)
+	if err == nil {
+		t.Error("timeout usecase did not return error")
+	}
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Errorf("error is not timeout: %s", err.Error())
+	}
 }

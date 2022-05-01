@@ -10,15 +10,16 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/orbs-network/scribe/log"
 )
 
 const (
-	e_zero_content   = "e_zero_content"
-	e_no_bash_prefix = "e_no_bash_prefix"
-	e_code_too_short = "e_code_too_short"
+	e_zero_content    = "e_zero_content"
+	e_no_bash_prefix  = "e_no_bash_prefix"
+	e_no_code_or_args = "e_no_code_or_args"
 	//e_content_not_changed = "e_content_not_changed"
 	DDMMYYYYhhmmss = "2006-01-02 15:04:05"
 )
@@ -45,6 +46,7 @@ type Instructions struct {
 
 type Config struct {
 	IntervalMinute uint
+	TimeoutSec     uint
 	Url            string
 }
 
@@ -173,21 +175,15 @@ func (r *Recovery) tick() {
 		logger.Error(r.lastError)
 		return
 	}
+	// optional - if no std in, args may be executed
 	if len(inst.Stdins) == 0 {
-		r.lastError = "json stdins wasnt parsed propperly"
-		logger.Error(r.lastError)
-		return
+		logger.Info("no stdins provided")
 	}
-
-	// clean last output for status
-	r.lastOutput = ""
-
-	// read all scripts
+	// read all code
 	fullCode := ""
-
 	for _, url := range inst.Stdins {
-		// read script
-		code, err := r.readUrl(url) //, getWDPath())
+		// append code
+		code, err := r.readUrl(url)
 		if err != nil {
 			r.lastError = err.Error()
 			logger.Error(err.Error())
@@ -213,15 +209,19 @@ func (r *Recovery) runCommand(bin, dir, code string, args []string) error {
 	r.lastExec = time.Now()
 
 	// no prefix
-	if len(code) < 4 {
-		return errors.New(e_code_too_short)
+	if len(code) < 4 && len(args) == 0 {
+		return errors.New(e_no_code_or_args)
 	}
 
 	// execute
-	logger.Info("about to execite recovery code:" + code)
+	if code != "" {
+		logger.Info("about to execute recovery code:" + code)
+	} else {
+		logger.Info("about to execute recovery args:" + strings.Join(args, ", "))
+	}
 
 	// timeout 5 minutes
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Minute*5))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(r.config.TimeoutSec))
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, bin, args...)
@@ -231,19 +231,26 @@ func (r *Recovery) runCommand(bin, dir, code string, args []string) error {
 		cmd.Dir = dir
 	}
 
-	// stdin
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		return err
+	// stdin code execution
+	if code != "" {
+		stdin, err := cmd.StdinPipe()
+		if err != nil {
+			return err
+		}
+
+		// stream code stdin
+		go func() {
+			defer stdin.Close()
+			io.WriteString(stdin, code)
+		}()
 	}
 
-	// stream code stdin
-	go func() {
-		defer stdin.Close()
-		io.WriteString(stdin, code)
-	}()
-
 	out, err := cmd.CombinedOutput()
+	// context error such timeout
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	// cmd error
 	if err != nil {
 		return err
 	}

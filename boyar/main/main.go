@@ -137,6 +137,7 @@ func main() {
 		logger.Info("recovery url: " + url)
 		config := recovery.Config{
 			IntervalMinute: 5,
+			TimeoutSec:     120,
 			Url:            url,
 		}
 		logger.Info(fmt.Sprintf("Init recovery %+v", &config))

@@ -5,17 +5,22 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"os"
+	"path/filepath"
+	"time"
+
 	"github.com/orbs-network/boyarin/boyar/config"
+	"github.com/orbs-network/boyarin/recovery"
 	"github.com/orbs-network/boyarin/services"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/version"
 	"github.com/orbs-network/scribe/log"
-	"os"
-	"path/filepath"
-	"time"
 )
 
 func main() {
+	basicLogger := log.GetLogger()
+	basicLogger.Info("Boyar main version: " + version.GetVersion().Semantic)
+
 	configUrlPtr := flag.String("config-url", "", "http://my-config/config.json")
 	keyPairConfigPathPtr := flag.String("keys", "", "path to public/private key pair in json format")
 
@@ -59,8 +64,6 @@ func main() {
 		fmt.Println("Docker API version", adapter.DOCKER_API_VERSION)
 		return
 	}
-
-	basicLogger := log.GetLogger()
 
 	executable, _ := os.Executable()
 	executableWithoutSymlink, _ := filepath.EvalSymlinks(executable)
@@ -119,11 +122,39 @@ func main() {
 			os.Exit(1)
 		}
 	}
+
+	// start recovery //////////////////////////////
+	logger.Info("============================================")
+	cfg, err := config.GetConfiguration(flags)
+	if err != nil {
+		logger.Error(err.Error())
+	} else {
+		logger.Info("node address is: ")
+		logger.Info(string(cfg.NodeAddress()))
+		url := fmt.Sprintf("https://deployment.orbs.network/boyar_recovery/node/0x%s/main.json", string(cfg.NodeAddress()))
+		// for testing
+		//url := fmt.Sprintf("https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/node/0x%s/main.json", string(cfg.NodeAddress()))
+		config := recovery.Config{
+			IntervalMinute: 60 * 6,
+			TimeoutMinute:  30,
+			Url:            url,
+		}
+		logger.Info(fmt.Sprintf("Init recovery %+v", &config))
+		recovery.Init(config, logger)
+
+		// start
+		recovery.GetInstance().Start(true)
+		logger.Info("recovery started")
+	}
+	logger.Info("============================================")
+
+	// start services
 	waiter, err := services.Execute(context.Background(), flags, logger)
 	if err != nil {
 		logger.Error("Startup failure", log.Error(err))
 		os.Exit(1)
 	}
+
 	// should block forever
 	waiter.WaitUntilShutdown(context.Background())
 }

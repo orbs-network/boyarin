@@ -2,11 +2,12 @@ package boyar
 
 import (
 	"context"
+	"sync"
+
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/utils"
 	"github.com/orbs-network/scribe/log"
-	"sync"
 )
 
 type Cache struct {

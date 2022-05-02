@@ -2,12 +2,13 @@ package services
 
 import (
 	"context"
+	"time"
+
 	"github.com/orbs-network/boyarin/boyar"
 	"github.com/orbs-network/boyarin/boyar/config"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/utils"
 	"github.com/orbs-network/scribe/log"
-	"time"
 )
 
 type BoyarService struct {

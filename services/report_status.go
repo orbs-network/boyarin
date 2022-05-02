@@ -4,15 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"time"
+
 	"github.com/orbs-network/boyarin/boyar/config"
+	"github.com/orbs-network/boyarin/recovery"
 	"github.com/orbs-network/boyarin/strelets/adapter"
 	"github.com/orbs-network/boyarin/utils"
 	"github.com/orbs-network/boyarin/version"
 	"github.com/orbs-network/govnr"
 	"github.com/orbs-network/scribe/log"
 	"github.com/prometheus/client_golang/prometheus"
-	"io/ioutil"
-	"time"
 )
 
 const SERVICE_STATUS_REPORT_PERIOD = 30 * time.Second
@@ -103,6 +105,14 @@ func GetStatusAndMetrics(ctx context.Context, logger log.Logger, flags *config.F
 				services[s.Name] = append(services[s.Name], s)
 			}
 
+			var recoveryStatus interface{}
+			rcvr := recovery.GetInstance()
+			if rcvr != nil {
+				recoveryStatus = rcvr.Status()
+			} else {
+				recoveryStatus = "recovery instance was nil"
+			}
+
 			status = StatusResponse{
 				Status:    "OK",
 				Timestamp: time.Now(),
@@ -111,6 +121,7 @@ func GetStatusAndMetrics(ctx context.Context, logger log.Logger, flags *config.F
 					"SystemDocker": dockerInfo,
 					"Services":     services,
 					"Config":       flags,
+					"Recovery":     recoveryStatus,
 				},
 			}
 		}

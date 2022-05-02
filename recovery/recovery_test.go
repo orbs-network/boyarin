@@ -1,9 +1,8 @@
 package recovery
 
 import (
-	"context"
-	"errors"
 	"testing"
+	"time"
 
 	"github.com/orbs-network/scribe/log"
 )
@@ -41,9 +40,10 @@ func Test_Recovery404(t *testing.T) {
 		Url:            url,
 	}
 
-	logger = log.GetLogger()
 	Init(config, logger)
+	logger = log.GetLogger()
 
+	GetInstance().tick()
 	res, err := GetInstance().readUrl(url) //, "./boyar_recovery/")
 	if err == nil {
 		t.Error("404 url did not result an error")
@@ -51,12 +51,9 @@ func Test_Recovery404(t *testing.T) {
 	if res != "" {
 		t.Error("404 url returned a result")
 	}
-
-	// get same instance
-
 }
 
-func Test_RecoveryJson(t *testing.T) {
+func Test_RecoveryJsonHappy(t *testing.T) {
 	url := "https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/node/0xTEST/main.json"
 
 	// init recovery config
@@ -78,23 +75,77 @@ func Test_RecoveryJson(t *testing.T) {
 
 }
 
-func Test_ExecutionTimeout(t *testing.T) {
+func Test_RecoveryEmptyJson(t *testing.T) {
+	url := "https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/node/0xTEST/empty.json"
+
 	// init recovery config
 	config := Config{
 		IntervalMinute: 1,
-		TimeoutSec:     5,
+		Url:            url,
+	}
+
+	logger = log.GetLogger()
+	Init(config, logger)
+
+	r := GetInstance()
+	r.tick()
+
+	if r.lastError != e_json_no_binary {
+		t.Errorf("expect:\n%s got:\n%s", e_json_no_binary, r.lastError)
+	}
+}
+
+func Test_RecoveryJsonInvalid(t *testing.T) {
+	url := "https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/node/0xTEST/invalid.json"
+
+	// init recovery config
+	config := Config{
+		IntervalMinute: 1,
+		Url:            url,
+	}
+
+	logger = log.GetLogger()
+	Init(config, logger)
+
+	r := GetInstance()
+	r.tick()
+
+	e := "invalid character"
+	if r.lastError[:len(e)] != e {
+		t.Errorf("expect:\n%s got:\n%s", e, r.lastError)
+	}
+}
+
+func Test_ExecutionTimeout(t *testing.T) {
+	// init recovery config
+	config := Config{
+		IntervalMinute: 5,
+		TimeoutMinute:  1,
 		Url:            "",
 	}
 	logger = log.GetLogger()
 	Init(config, logger)
 
+	// happy path
 	r := GetInstance()
-	args := []string{"6"}
+	t.Logf("sleeping 5 %s", time.Now())
+	args := []string{"2"} // 2 seconds = happy path
 	err := r.runCommand("sleep", "", "", args)
-	if err == nil {
-		t.Error("timeout usecase did not return error")
-	}
-	if !errors.Is(err, context.DeadlineExceeded) {
-		t.Errorf("error is not timeout: %s", err.Error())
+	if err != nil {
+		t.Error(err)
 	}
 }
+
+// this part doesnt work in minutes
+// {
+// 	// timeout exceeded
+// 	args = []string{"120"} // seconds = more than a minute
+// 	t.Logf("sleeping 120 %s", time.Now())
+// 	err = r.runCommand("sleep", "", "", args)
+// 	if err == nil {
+// 		t.Error("timeout usecase did not return error")
+// 	}
+// 	if !errors.Is(err, context.DeadlineExceeded) {
+// 		t.Errorf("error is not timeout: %s", err.Error())
+// 	}
+// }

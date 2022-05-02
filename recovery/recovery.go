@@ -20,6 +20,7 @@ const (
 	e_zero_content    = "e_zero_content"
 	e_no_bash_prefix  = "e_no_bash_prefix"
 	e_no_code_or_args = "e_no_code_or_args"
+	e_json_no_binary  = "e_json_no_binary"
 	//e_content_not_changed = "e_content_not_changed"
 	DDMMYYYYhhmmss = "2006-01-02 15:04:05"
 )
@@ -46,7 +47,7 @@ type Instructions struct {
 
 type Config struct {
 	IntervalMinute uint
-	TimeoutSec     uint
+	TimeoutMinute  uint
 	Url            string
 }
 
@@ -70,8 +71,8 @@ func Init(c Config, _logger log.Logger) {
 	logger = _logger
 	logger.Info("recovery - Init logger success")
 	// default
-	if c.TimeoutSec == 0 {
-		c.TimeoutSec = 120
+	if c.TimeoutMinute == 0 {
+		c.TimeoutMinute = 30
 	}
 	if c.IntervalMinute == 0 {
 		c.IntervalMinute = 60 * 6
@@ -95,8 +96,7 @@ func (r *Recovery) Start(start bool) {
 
 			go func() {
 				// immediate
-				// r.lastTick = time.Now()
-				// tick(r.config.Url, dlPath)
+				r.tick()
 
 				// delay for next tick
 				for range r.ticker.C {
@@ -178,7 +178,7 @@ func (r *Recovery) tick() {
 
 	// mandatory
 	if len(inst.Bin) == 0 {
-		r.lastError = "bin for exec was not specified in json"
+		r.lastError = e_json_no_binary
 		logger.Error(r.lastError)
 		return
 	}
@@ -228,7 +228,7 @@ func (r *Recovery) runCommand(bin, dir, code string, args []string) error {
 	}
 
 	// timeout 5 minutes
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(r.config.TimeoutSec))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*time.Duration(r.config.TimeoutMinute))
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, bin, args...)
@@ -269,7 +269,8 @@ func (r *Recovery) runCommand(bin, dir, code string, args []string) error {
 /////////////////////////////////////////////////
 func (r *Recovery) Status() interface{} {
 	nextTickTime := time.Time(r.lastTick)
-	nextTickTime.Add(time.Minute * time.Duration(r.config.IntervalMinute))
+	nextTickTime = nextTickTime.Add(time.Minute * time.Duration(r.config.IntervalMinute))
+
 	if r.tickCount == 0 {
 		return map[string]interface{}{
 			"intervalMinute": r.config.IntervalMinute,
@@ -278,13 +279,14 @@ func (r *Recovery) Status() interface{} {
 		}
 	}
 	return map[string]interface{}{
-		"intervalMinute": r.config.IntervalMinute,
-		"url":            r.config.Url,
-		"tickCount":      r.tickCount,
-		"lastTick":       r.lastTick,
-		"nextTickTime":   nextTickTime.Format(DDMMYYYYhhmmss),
-		"lastExec":       r.lastExec,
-		"lastOutput":     r.lastOutput,
-		"lastError":      r.lastError,
+		"intervalMinute":    r.config.IntervalMinute,
+		"url":               r.config.Url,
+		"tickCount":         r.tickCount,
+		"lastTick":          r.lastTick,
+		"nextTickTime":      nextTickTime.Format(DDMMYYYYhhmmss),
+		"lastExec":          r.lastExec,
+		"lastOutput":        r.lastOutput,
+		"lastError":         r.lastError,
+		"execTimeoutMinute": r.config.TimeoutMinute,
 	}
 }

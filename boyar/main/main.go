@@ -133,11 +133,10 @@ func main() {
 		logger.Info(string(cfg.NodeAddress()))
 		url := fmt.Sprintf("https://deployment.orbs.network/boyar_recovery/node/0x%s/main.json", string(cfg.NodeAddress()))
 		// for testing
-		// url := fmt.Sprintf("https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/node/0x%s/main.json", string(cfg.NodeAddress()))
-		logger.Info("recovery url: " + url)
+		//url := fmt.Sprintf("https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/node/0x%s/main.json", string(cfg.NodeAddress()))
 		config := recovery.Config{
-			IntervalMinute: 5,
-			TimeoutSec:     120,
+			IntervalMinute: 60 * 6,
+			TimeoutMinute:  30,
 			Url:            url,
 		}
 		logger.Info(fmt.Sprintf("Init recovery %+v", &config))

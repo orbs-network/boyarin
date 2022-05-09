@@ -125,15 +125,14 @@ func main() {
 
 	// start recovery //////////////////////////////
 	logger.Info("============================================")
-	cfg, err := config.GetConfiguration(flags)
+	keys, err := config.NewKeysConfig(flags.KeyPairConfigPath)
 	if err != nil {
-		logger.Error(err.Error())
+		logger.Error("failed to get recovery node address, " + err.Error())
 	} else {
-		logger.Info("node address is: ")
-		logger.Info(string(cfg.NodeAddress()))
-		url := fmt.Sprintf("https://deployment.orbs.network/boyar_recovery/node/0x%s/main.json", string(cfg.NodeAddress()))
+		logger.Info("node address is: " + keys.Address())
+		url := fmt.Sprintf("https://deployment.orbs.network/boyar_recovery/node/0x%s/main.json", keys.Address())
 		// for testing
-		//url := fmt.Sprintf("https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/node/0x%s/main.json", string(cfg.NodeAddress()))
+		//url := fmt.Sprintf("https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/node/0x%s/main.json", keys.Address())
 		config := recovery.Config{
 			IntervalMinute: 60 * 6,
 			TimeoutMinute:  30,

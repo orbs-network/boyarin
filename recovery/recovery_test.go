@@ -151,9 +151,9 @@ func Test_RecoveryStderr(t *testing.T) {
 	r := GetInstance()
 	r.tick()
 
-	e := "invalid character"
-	if r.lastError[:len(e)] != e {
-		t.Errorf("expect:\n%s got:\n%s", e, r.lastError)
+	e := "write_stderr"
+	if r.lastOutput[:len(e)] != e {
+		t.Errorf("expect:\n%s got:\n%s", e, r.lastOutput)
 	}
 }
 

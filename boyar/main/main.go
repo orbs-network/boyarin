@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"time"
@@ -126,25 +127,30 @@ func main() {
 	// start recovery //////////////////////////////
 	logger.Info("============================================")
 	keys, err := config.NewKeysConfig(flags.KeyPairConfigPath)
-	if err != nil {
-		logger.Error("failed to get recovery node address, " + err.Error())
+	nodeAddress := ""
+	if err == nil {
+		nodeAddress = keys.Address()
 	} else {
-		logger.Info("node address is: " + keys.Address())
-		url := fmt.Sprintf("https://deployment.orbs.network/boyar_recovery/node/0x%s/main.json", keys.Address())
-		// for testing
-		//url := fmt.Sprintf("https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/node/0x%s/main.json", keys.Address())
-		config := recovery.Config{
-			IntervalMinute: 60 * 6,
-			TimeoutMinute:  30,
-			Url:            url,
-		}
-		logger.Info(fmt.Sprintf("Init recovery %+v", &config))
-		recovery.Init(config, logger)
-
-		// start
-		recovery.GetInstance().Start(true)
-		logger.Info("recovery started")
+		logger.Error("failed to get recovery node address, " + err.Error())
 	}
+	// generate random address if failed
+	if nodeAddress == "" {
+		nodeAddress = fmt.Sprintf("RAND_%d", rand.Intn(0xFFFFFFFF))
+	}
+	// go on to init recovery anyways
+	logger.Info("recovery node address is: " + nodeAddress)
+	url := fmt.Sprintf("https://deployment.orbs.network/boyar_recovery/node/0x%s/main.json", nodeAddress)
+	// for testing
+	//url := fmt.Sprintf("https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/node/0x%s/main.json", keys.Address())
+	recovConfig := recovery.Config{
+		IntervalMinute: 60 * 6,
+		TimeoutMinute:  30,
+		Url:            url,
+	}
+	recovery.Init(recovConfig, logger)
+
+	// start
+	recovery.GetInstance().Start(true)
 	logger.Info("============================================")
 
 	// start services

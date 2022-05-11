@@ -116,7 +116,7 @@ func Test_RecoveryJsonInvalid(t *testing.T) {
 	}
 }
 
-func Test_ExecutionTimeout(t *testing.T) {
+func Test_RecoveryTimeout(t *testing.T) {
 	// init recovery config
 	config := Config{
 		IntervalMinute: 5,
@@ -133,6 +133,27 @@ func Test_ExecutionTimeout(t *testing.T) {
 	err := r.runCommand("sleep", "", "", args)
 	if err != nil {
 		t.Error(err)
+	}
+}
+
+func Test_RecoveryStderr(t *testing.T) {
+	url := "https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/node/0xTEST/stderr.json"
+
+	// init recovery config
+	config := Config{
+		IntervalMinute: 1,
+		Url:            url,
+	}
+
+	logger = log.GetLogger()
+	Init(config, logger)
+
+	r := GetInstance()
+	r.tick()
+
+	e := "write_stderr"
+	if r.lastOutput[:len(e)] != e {
+		t.Errorf("expect:\n%s got:\n%s", e, r.lastOutput)
 	}
 }
 

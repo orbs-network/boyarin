@@ -137,6 +137,31 @@ func Test_RecoveryJsonInvalid(t *testing.T) {
 	}
 }
 
+func Test_ExecutionErrorBash(t *testing.T) {
+	// init recovery config
+	config := Config{
+		IntervalMinute: 5,
+		TimeoutMinute:  1,
+		Url:            "",
+	}
+
+	logger = log.GetLogger()
+	Init(config, logger)
+
+	// happy path
+	r := GetInstance()
+	t.Logf("error bash 5 %s", time.Now())
+	args := []string{"$(lokayam 2)", "beseder"}
+	err := r.runCommand("bash", "", "", args)
+
+	if r.lastOutput == "" {
+		t.Errorf("output came out empty")
+	}
+	if err == nil {
+		t.Errorf("error came empty")
+	}
+
+}
 func Test_ExecutionTimeout(t *testing.T) {
 	// init recovery config
 	config := Config{

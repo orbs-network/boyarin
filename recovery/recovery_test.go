@@ -32,6 +32,27 @@ func Test_RecoveryConfigSingleton(t *testing.T) {
 	}
 }
 
+//
+func Test_RecoveryBashArgs(t *testing.T) {
+	url := "https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/node/0xTEST/args.json"
+
+	// init recovery config
+	config := Config{
+		IntervalMinute: 1,
+		Url:            url,
+		TimeoutMinute:  10,
+	}
+
+	logger = log.GetLogger()
+	Init(config, logger)
+	r := GetInstance()
+	r.tick()
+
+	expect := "first\nsecond\nthird\n"
+	if r.lastOutput != expect {
+		t.Errorf("expect:\n%s got:\n%s", expect, r.lastOutput)
+	}
+}
 func Test_Recovery404(t *testing.T) {
 	logger = log.GetLogger()
 	url := "http://http://www.xosdhjfglk.com/xxx/main.sh"
@@ -116,7 +137,7 @@ func Test_RecoveryJsonInvalid(t *testing.T) {
 	}
 }
 
-func Test_RecoveryTimeout(t *testing.T) {
+func Test_ExecutionTimeout(t *testing.T) {
 	// init recovery config
 	config := Config{
 		IntervalMinute: 5,
@@ -134,27 +155,13 @@ func Test_RecoveryTimeout(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-}
 
-func Test_RecoveryStderr(t *testing.T) {
-	url := "https://raw.githubusercontent.com/amihaz/staging-deployment/main/boyar_recovery/node/0xTEST/stderr.json"
-
-	// init recovery config
-	config := Config{
-		IntervalMinute: 1,
-		Url:            url,
-	}
-
-	logger = log.GetLogger()
-	Init(config, logger)
-
-	r := GetInstance()
-	r.tick()
-
-	e := "write_stderr"
-	if r.lastOutput[:len(e)] != e {
-		t.Errorf("expect:\n%s got:\n%s", e, r.lastOutput)
-	}
+	// works only in debug
+	// args = []string{"65"} // more than 1 min
+	// err = r.runCommand("sleep", "", "", args)
+	// if !errors.Is(err, context.DeadlineExceeded) {
+	// 	t.Error("test should have [deadline exceeded]")
+	// }
 }
 
 // this part doesnt work in minutes

@@ -252,8 +252,14 @@ func (r *Recovery) runCommand(bin, dir, code string, args []string) error {
 		}()
 	}
 
+	// execute
 	out, err := cmd.CombinedOutput()
-	r.lastOutput = string(out)
+
+	// keep stdout+err despite context or cmd errors
+	if len(out) > 0 {
+		r.lastOutput = string(out)
+		logger.Info("output: " + string(out))
+	}
 
 	// context error such timeout
 	if ctx.Err() != nil {

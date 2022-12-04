@@ -105,7 +105,7 @@ func (vc VChainArgument) ExternalPort() int {
 	return port + vc.Id
 }
 
-func managementConfigJson(deps boyarDependencies, vChains []VChainArgument, nodeManagementUrl string, vchainManagementFileUrl string) string {
+func managementConfigJson(deps boyarDependencies, vChains []VChainArgument, nodeManagementUrl string, vchainManagementFileUrl string, dockerRegistryAndUserPrefix string) string {
 	var chains []map[string]interface{}
 	for _, vc := range vChains {
 		chains = append(chains, map[string]interface{}{
@@ -116,8 +116,8 @@ func managementConfigJson(deps boyarDependencies, vChains []VChainArgument, node
 			"Disabled":         vc.Disabled,
 			"PurgeData":        vc.PurgeData,
 			"DockerConfig": map[string]interface{}{
-				"Image": "orbsnetwork/node",
-				"Tag":   "v1.3.16",
+				"Image": dockerRegistryAndUserPrefix + "node",
+				"Tag":   helpers.NODE_TAG,
 				"Pull":  false,
 				"Resources": map[string]interface{}{
 					"Reservations": map[string]interface{}{
@@ -161,8 +161,8 @@ func managementConfigJson(deps boyarDependencies, vChains []VChainArgument, node
 			"signer": map[string]interface{}{
 				"InternalPort": 7777,
 				"DockerConfig": map[string]interface{}{
-					"Image": "orbsnetwork/signer",
-					"Tag":   "experimental",
+					"Image": dockerRegistryAndUserPrefix + "signer",
+					"Tag":   helpers.SIGNER_TAG,
 					"Pull":  false,
 				},
 			},

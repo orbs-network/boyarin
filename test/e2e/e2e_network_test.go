@@ -42,7 +42,7 @@ func TestE2ERunFullNetwork(t *testing.T) {
 				}
 
 				vChainsChannel := readOnlyChannel(vc)
-				flags, cleanup := SetupDynamicBoyarDepencenciesForNetwork(t, deps, vChainsChannel)
+				flags, cleanup := SetupDynamicBoyarDepencenciesForNetwork(t, deps, helpers.PRODUCTION_DOCKER_REGISTRY_AND_USER, vChainsChannel)
 				defer cleanup()
 
 				waiter = InProcessBoyar(t, ctx, logger, flags)

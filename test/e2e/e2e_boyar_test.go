@@ -29,7 +29,55 @@ func TestE2ERunSingleVirtualChain(t *testing.T) {
 		}
 
 		vcChannel := readOnlyChannel(vc1)
-		flags, cleanup := SetupDynamicBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), vcChannel)
+		flags, cleanup := SetupDynamicBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), helpers.PRODUCTION_DOCKER_REGISTRY_AND_USER, vcChannel)
+		defer cleanup()
+		waiter = InProcessBoyar(t, ctx, logger, flags)
+
+		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
+			AssertVolumeExists(t, ctx, "cfc9e5189223aedce9543be0ef419f89aaa69e8b-42-blocks")
+			AssertVolumeExists(t, ctx, "cfc9e5-chain-42-logs")
+			AssertVolumeExists(t, ctx, "cfc9e5-chain-42-status")
+			AssertVolumeExists(t, ctx, "cfc9e5-signer-cache")
+			AssertVolumeExists(t, ctx, "cfc9e5-signer-logs")
+			AssertVolumeExists(t, ctx, "cfc9e5-signer-status")
+
+			AssertVolumeExists(t, ctx, "boyar-logs")
+			AssertVolumeExists(t, ctx, "boyar-status")
+		})
+
+		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
+			AssertVchainUp(t, 80, PublicKey, vc1)
+			AssertServiceUp(t, ctx, "cfc9e5-signer")
+
+			AssertVchainStatusExists(t, 80, vc1)
+			AssertVchainLogsExist(t, 80, vc1)
+			AssertVchainProfilingInfoExist(t, 80, vc1)
+
+			AssertServiceStatusExists(t, 80, "signer")
+			AssertServiceLogsExist(t, 80, "signer")
+		})
+
+		return
+	})
+}
+
+func TestE2ERunSingleVirtualChainWithLocalDockerRegistry(t *testing.T) {
+	helpers.SkipUnlessSwarmIsEnabled(t)
+
+	vc1 := VChainArgument{Id: 42}
+	helpers.WithContextAndShutdown(func(ctx context.Context) (waiter govnr.ShutdownWaiter) {
+		logger := log.GetLogger()
+		helpers.InitSwarmEnvironment(t, ctx)
+
+		helpers.LaunchRegistryAndCopyImages(t)
+
+		keys := KeyConfig{
+			NodeAddress:    PublicKey,
+			NodePrivateKey: PrivateKey,
+		}
+
+		vcChannel := readOnlyChannel(vc1)
+		flags, cleanup := SetupDynamicBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), helpers.LOCAL_DOCKER_REGISTRY_AND_USER, vcChannel)
 		defer cleanup()
 		waiter = InProcessBoyar(t, ctx, logger, flags)
 
@@ -77,7 +125,7 @@ func TestE2EAddVirtualChain(t *testing.T) {
 		vChainsChannel := make(chan []VChainArgument)
 		defer close(vChainsChannel)
 
-		flags, cleanup := SetupDynamicBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), vChainsChannel)
+		flags, cleanup := SetupDynamicBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), helpers.PRODUCTION_DOCKER_REGISTRY_AND_USER, vChainsChannel)
 		defer cleanup()
 		waiter = InProcessBoyar(t, ctx, logger, flags)
 
@@ -113,7 +161,7 @@ func TestE2ERemoveVirtualChain(t *testing.T) {
 		vChainsChannel := make(chan []VChainArgument)
 		defer close(vChainsChannel)
 
-		flags, cleanup := SetupDynamicBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), vChainsChannel)
+		flags, cleanup := SetupDynamicBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), helpers.PRODUCTION_DOCKER_REGISTRY_AND_USER, vChainsChannel)
 		defer cleanup()
 		waiter = InProcessBoyar(t, ctx, logger, flags)
 
@@ -169,7 +217,7 @@ func TestE2EPurgeVirtualChain(t *testing.T) {
 			os.RemoveAll(dir)
 		}
 
-		flags, cleanup := SetupDynamicBoyarDepencenciesForNetwork(t, deps, vChainsChannel)
+		flags, cleanup := SetupDynamicBoyarDepencenciesForNetwork(t, deps, helpers.PRODUCTION_DOCKER_REGISTRY_AND_USER, vChainsChannel)
 		defer cleanup()
 		waiter = InProcessBoyar(t, ctx, logger, flags)
 

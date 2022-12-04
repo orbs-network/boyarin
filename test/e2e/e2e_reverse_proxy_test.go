@@ -25,7 +25,7 @@ func TestE2ERunSingleVirtualChainWithSSL(t *testing.T) {
 		}
 
 		vcChannel := readOnlyChannel(vc1)
-		flags, cleanup := SetupDynamicBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), vcChannel)
+		flags, cleanup := SetupDynamicBoyarDependencies(t, keys, genesisValidators(NETWORK_KEY_CONFIG), helpers.PRODUCTION_DOCKER_REGISTRY_AND_USER, vcChannel)
 		defer cleanup()
 
 		flags.SSLCertificatePath = "./fixtures/cert.pem"

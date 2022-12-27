@@ -11,6 +11,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+var removed = &utils.HashedValue{Value: "foo"}
+
 func (b *boyar) ProvisionServices(ctx context.Context) error {
 	if _, err := b.orchestrator.GetOverlayNetwork(ctx, adapter.SHARED_SIGNER_NETWORK); err != nil {
 		return errors.Wrap(err, "failed creating network")
@@ -119,10 +121,6 @@ func getLogsMountPointNames(cfg config.NodeConfiguration) map[string]string {
 
 	for name, _ := range cfg.Services() {
 		mountPointNames[name] = cfg.NamespacedContainerName(name)
-	}
-
-	for _, chain := range cfg.Chains() {
-		mountPointNames[chain.GetContainerName()] = cfg.NamespacedContainerName(chain.GetContainerName())
 	}
 
 	return mountPointNames

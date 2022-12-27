@@ -132,38 +132,6 @@ If autoupdate is enabled, it becomes crucial if you enable `--shutdown-after-upd
       "Sha256": "0d7df92307b95ff7e2923dd7509e3b5bac23deb491b5c08d522b11ac08d78e02"
     }
   },
-  "chains": [
-    {
-      "Id":         42, // vchain id passed to the binary inside the container (mandatory, unique)
-      "InternalPort":   4400, // gossip port passed to the binary inside the container (mandatory, unique)
-      "ExternalPort": 4400, // gossip port passed to the binary inside the container (mandatory, unique)
-      "Disabled": false, // (optional)
-      "PurgeData": false, // destroys all data related to the chain (logs, cache, status, blocks), only works with EFS (optional)
-      "DockerConfig": {
-        "ContainerNamePrefix": "orbs-network",
-        "Image":  "orbsnetwork/node", // Docker image
-        "Tag":    "v1.1.0", // Docker tag
-        "Pull":   true, // Pull new Docker image during provisioning
-        "Resources": { // Docker limits (optional)
-          "Limits": { // maximum available values (optional)
-            "Memory": 1024, // in Mb
-            "CPUs": 1 // in shares, 1 being 100% of a single CPU
-          },
-          "Reservations": { // reserved resources (optional)
-            "Memory": 512,
-            "CPUs": 0.5
-          }
-        },
-        "Volumes": { // volume size settings (optional)
-          "Blocks": 5, // in Gb
-          "Logs": 1 // in Gb
-        }
-      },
-      "Config": { // configuration passed to the binary inside the container
-        "active-consensus-algo": 2
-      }
-    }
-  ],
   "services": { // list of auxilary services (mandatory)
     "signer": {
       "Port": 7777,
@@ -194,7 +162,7 @@ If autoupdate is enabled, it becomes crucial if you enable `--shutdown-after-upd
       "ExecutablePath": "/opt/orbs/service", // default (optional)
       "AllowAccessToSigner": false, // should be able communicate with the signer service, default false (optional)
       "AllowAccessToServices": true, // should be able to communicate with other services, default true (optional)
-      "MountNodeLogs": false, // mounts all service and vchain logs inside the container, default false (optional)
+      "MountNodeLogs": false, // mounts all service logs inside the container, default false (optional)
       "Disabled": false, // (optional)
       "PurgeData": false, // destroys all data related to the service (logs, cache, status), only works with EFS (optional)
       "DockerConfig": {

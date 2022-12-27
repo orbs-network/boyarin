@@ -72,19 +72,6 @@ func AssertManagementServiceUp(t helpers.TestingT, port int) {
 	require.NoError(t, err)
 }
 
-func GetVChainMetrics(t helpers.TestingT, port int, vc VChainArgument) JsonMap {
-	metrics := make(map[string]interface{})
-	resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/vchains/%d/metrics", port, vc.Id))
-	require.NoError(t, err)
-	require.Equal(t, http.StatusOK, resp.StatusCode)
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	require.NoError(t, err)
-	err = json.Unmarshal(body, &metrics)
-	require.NoError(t, err)
-	return JsonMap{value: metrics}
-}
-
 func AssertServiceStatusExists(t helpers.TestingT, port int, service string) {
 	status := make(map[string]interface{})
 	resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/services/%s/status", port, service))
@@ -97,44 +84,10 @@ func AssertServiceStatusExists(t helpers.TestingT, port int, service string) {
 	require.NoError(t, err)
 }
 
-func AssertVchainStatusExists(t helpers.TestingT, port int, vc VChainArgument) {
-	status := make(map[string]interface{})
-	resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/vchains/%d/status", port, vc.Id))
-	require.NoError(t, err)
-	require.Equal(t, http.StatusOK, resp.StatusCode)
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	require.NoError(t, err)
-	err = json.Unmarshal(body, &status)
-	require.NoError(t, err)
-}
-
-func AssertVchainLogsExist(t helpers.TestingT, port int, vc VChainArgument) {
-	resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/vchains/%d/logs", port, vc.Id))
-	require.NoError(t, err)
-	require.Equal(t, http.StatusOK, resp.StatusCode)
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	require.NoError(t, err)
-	require.NotEmpty(t, body)
-}
-
 func AssertServiceLogsExist(t helpers.TestingT, port int, service string) {
 	resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/services/%s/logs", port, service))
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	require.NoError(t, err)
-	require.NotEmpty(t, body)
-}
-
-func AssertVchainProfilingInfoExist(t helpers.TestingT, port int, vc VChainArgument) {
-	resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/vchains/%d/debug/pprof/goroutine?debug=2", port, vc.Id))
-	require.NoError(t, err)
-	require.Equal(t, http.StatusOK, resp.StatusCode)
-	require.Equal(t, "text/plain; charset=utf-8", resp.Header.Get("Content-Type"))
-
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)

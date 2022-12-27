@@ -50,22 +50,3 @@ func (d *dockerSwarmOrchestrator) PurgeServiceData(ctx context.Context, containe
 
 	return d.purgeMounts(mounts)
 }
-
-func (d *dockerSwarmOrchestrator) PurgeVirtualChainData(ctx context.Context, nodeAddress string, vcId uint32, containerName string) error {
-	if err := d.canPurgeData(containerName); err != nil {
-		return err
-	}
-
-	mounts, err := d.provisionServiceVolumes(ctx, containerName, nil)
-	if err != nil {
-		return err
-	}
-
-	if blocksMount, err := d.provisionVchainVolume(ctx, nodeAddress, vcId); err != nil {
-		return fmt.Errorf("failed to access volumes: %s", err)
-	} else {
-		mounts = append(mounts, blocksMount)
-	}
-
-	return d.purgeMounts(mounts)
-}

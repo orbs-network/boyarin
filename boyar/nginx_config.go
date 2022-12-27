@@ -16,14 +16,6 @@ func getDefaultNginxResponse(status string) string {
 	return fmt.Sprintf(`{"Status":"%s","Description":"ORBS blockchain node","Services":{"Boyar":{"Version":%s}}}`, status, string(rawVersion))
 }
 
-type nginxTemplateChainParams struct {
-	Id           config.VirtualChainId
-	ServiceId    string
-	Port         int // FIXME should be removed because it's always 8080
-	LogsVolume   string
-	StatusVolume string
-}
-
 type nginxTemplateServiceParams struct {
 	ServiceId    string
 	LogsVolume   string
@@ -31,7 +23,6 @@ type nginxTemplateServiceParams struct {
 }
 
 type nginxTemplateParams struct {
-	Chains     []nginxTemplateChainParams
 	Services   []nginxTemplateServiceParams
 	SslEnabled bool
 }
@@ -52,34 +43,7 @@ location / {
 location @error403 { return 403 '{{DefaultResponse "Forbidden"}}'; }
 location @error404 { return 404 '{{DefaultResponse "Not found"}}'; }
 location @error502 { return 502 '{{DefaultResponse "Bad gateway"}}'; }
-{{- range .Chains }}
-set $vc{{.Id}} {{.ServiceId}};
-location ~ ^/vchains/{{.Id}}/logs/(?<filename>.*) {
-	alias {{.LogsVolume}}/$filename;
-	error_page 404 = @error404;
-	error_page 403 = @error403;
-}
-location ~ ^/vchains/{{.Id}}/logs$ {
-	alias {{.LogsVolume}}/current;
-	error_page 404 = @error404;
-	error_page 403 = @error403;
-}
-location ~ ^/vchains/{{.Id}}/status/(?<filename>.*) {
-	alias {{.StatusVolume}}/$filename;
-	error_page 404 = @error404;
-	error_page 403 = @error403;
-}
-location ~ ^/vchains/{{.Id}}/status$ {
-{{ CORS }}
-	alias {{.StatusVolume}}/status.json;
-	error_page 404 = @error404;
-	error_page 403 = @error403;
-}
-location ~ ^/vchains/{{.Id}}(/?)(?<filename>.*) {
-	proxy_pass http://$vc{{.Id}}:{{.Port}}/$filename$is_args$args;
-	error_page 502 = @error502;
-}
-{{- end }} {{- /* range .Chains */ -}}
+
 {{- range .Services }}
 location ~ ^/services/{{.ServiceId}}/logs/(?<filename>.*) {
 	alias {{.LogsVolume}}/$filename;
@@ -123,20 +87,6 @@ ssl_certificate_key /var/run/secrets/ssl-key;
 {{template "locations" .}}
 }
 {{- end}} {{- /* if .SslEnabled */ -}}`))
-	var transformedChains []nginxTemplateChainParams
-
-	for _, chain := range cfg.Chains() {
-		if !chain.Disabled {
-			containerName := cfg.NamespacedContainerName(chain.GetContainerName())
-			transformedChains = append(transformedChains, nginxTemplateChainParams{
-				Id:           chain.Id,
-				ServiceId:    containerName,
-				Port:         chain.InternalHttpPort,
-				LogsVolume:   adapter.GetNestedLogsMountPath(chain.GetContainerName()),
-				StatusVolume: adapter.GetNginxStatusMountPath(chain.GetContainerName()),
-			})
-		}
-	}
 
 	var services []nginxTemplateServiceParams
 	for serviceName, _ := range cfg.Services() {
@@ -159,7 +109,6 @@ ssl_certificate_key /var/run/secrets/ssl-key;
 	})
 
 	err := tplNginxConf.Execute(&sb, nginxTemplateParams{
-		Chains:     transformedChains,
 		Services:   services,
 		SslEnabled: cfg.SSLOptions().SSLCertificatePath != "" && cfg.SSLOptions().SSLPrivateKeyPath != "",
 	})

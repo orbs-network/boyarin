@@ -84,7 +84,6 @@ func getNginxServiceSpec(namespace string, httpPort uint32, sslPort uint32, stor
 
 	secrets := []*swarm.SecretReference{
 		getSecretReference(namespace, storedSecrets.nginxConfId, NGINX_CONF, "nginx.conf"),
-		getSecretReference(namespace, storedSecrets.vchainConfId, VCHAINS_CONF, "vchains.conf"),
 	}
 
 	if storedSecrets.sslCertificateId != "" {

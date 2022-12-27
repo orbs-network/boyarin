@@ -19,7 +19,6 @@ type AppConfig struct {
 }
 
 type ServiceConfig struct {
-	// vchain only
 	Id          uint32
 	NodeAddress string
 	Name        string
@@ -65,7 +64,6 @@ type ContainerStatus struct {
 type Orchestrator interface {
 	PullImage(ctx context.Context, imageName string) error
 
-	RunVirtualChain(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) error
 	RunReverseProxy(ctx context.Context, config *ReverseProxyConfig) error
 	RunService(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) error
 
@@ -76,7 +74,6 @@ type Orchestrator interface {
 	GetStatus(ctx context.Context, since time.Duration) ([]*ContainerStatus, error)
 
 	PurgeServiceData(ctx context.Context, containerName string) error
-	PurgeVirtualChainData(ctx context.Context, nodeAddress string, vcId uint32, containerName string) error
 
 	Info(ctx context.Context) (interface{}, error)
 

@@ -9,21 +9,9 @@ import (
 	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
-	"net"
 	"net/http"
-	"strconv"
 	"time"
 )
-
-func AssertGossipServer(t helpers.TestingT, vc VChainArgument) {
-	timeout := time.Second
-	port := strconv.Itoa(vc.ExternalPort())
-	conn, err := net.DialTimeout("tcp", "127.0.0.1:"+port, timeout)
-	require.NoError(t, err, "error connecting to port %d vChainId %d", port, vc.Id)
-	require.NotNil(t, conn, "nil connection to port %d vChainId %d", port, vc.Id)
-	err = conn.Close()
-	require.NoError(t, err, "closing connection to port %d vChainId %d", port, vc.Id)
-}
 
 func AssertServiceUp(t helpers.TestingT, ctx context.Context, serviceName string) {
 	orchestrator, err := adapter.NewDockerSwarm(&adapter.OrchestratorOptions{}, helpers.DefaultTestLogger())
@@ -69,18 +57,6 @@ func AssertServiceDown(t helpers.TestingT, ctx context.Context, serviceName stri
 	}
 
 	require.True(t, ok, "service should be down")
-}
-
-func AssertVchainUp(t helpers.TestingT, port int, publickKey string, vc1 VChainArgument) {
-	metrics := GetVChainMetrics(t, port, vc1)
-	require.Equal(t, metrics.String("Node.Address"), publickKey)
-	AssertGossipServer(t, vc1)
-}
-
-func AssertVchainDown(t helpers.TestingT, port int, vc1 VChainArgument) {
-	res, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/vchains/%d/metrics", port, vc1.Id))
-	require.NoError(t, err)
-	require.EqualValues(t, http.StatusNotFound, res.StatusCode)
 }
 
 func AssertManagementServiceUp(t helpers.TestingT, port int) {

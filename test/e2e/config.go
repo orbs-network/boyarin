@@ -43,8 +43,7 @@ type KeyConfig struct {
 }
 
 type managementServiceConfig struct {
-	managementConfig       *string
-	vchainManagementConfig *string
+	managementConfig *string
 }
 
 func serveConfig(serviceConfig *managementServiceConfig) *httptest.Server {
@@ -56,10 +55,6 @@ func serveConfig(serviceConfig *managementServiceConfig) *httptest.Server {
 	handler := http.NewServeMux()
 	handler.HandleFunc("/node/management", func(w http.ResponseWriter, r *http.Request) {
 		_, _ = fmt.Fprint(w, *serviceConfig.managementConfig)
-	})
-
-	handler.HandleFunc("/vchains/any/management", func(w http.ResponseWriter, request *http.Request) {
-		_, _ = fmt.Fprint(w, *serviceConfig.vchainManagementConfig)
 	})
 
 	server := &httptest.Server{
@@ -87,57 +82,7 @@ func buildTopology(keyPairs []KeyConfig, vcId int) (topology []interface{}) {
 	return
 }
 
-type VChainArgument struct {
-	Id        int
-	Disabled  bool
-	PurgeData bool
-	BasePort  int
-}
-
-const basePort = 6000
-
-func (vc VChainArgument) ExternalPort() int {
-	port := basePort
-	if vc.BasePort != 0 {
-		port = vc.BasePort
-	}
-
-	return port + vc.Id
-}
-
-func managementConfigJson(deps boyarDependencies, vChains []VChainArgument, nodeManagementUrl string, vchainManagementFileUrl string) string {
-	var chains []map[string]interface{}
-	for _, vc := range vChains {
-		chains = append(chains, map[string]interface{}{
-			"Id":               vc.Id,
-			"InternalHttpPort": 8080,
-			"InternalPort":     4400,
-			"ExternalPort":     vc.ExternalPort(),
-			"Disabled":         vc.Disabled,
-			"PurgeData":        vc.PurgeData,
-			"DockerConfig": map[string]interface{}{
-				"Image": "orbsnetwork/node",
-				"Tag":   "v1.3.16",
-				"Pull":  false,
-				"Resources": map[string]interface{}{
-					"Reservations": map[string]interface{}{
-						"Memory": 128,
-						"CPUs":   0.01,
-					},
-				},
-			},
-			"Config": map[string]interface{}{
-				"active-consensus-algo": 2,
-				"management-file-path":  vchainManagementFileUrl,
-				"profiling":             true,
-				//"lean-helix-show-debug":                             true,
-				//"logger-full-log":                                   true,
-
-				// in case we want to enable benchmark consensus
-				//"benchmark-consensus-constant-leader":               genesisValidators[1],
-			},
-		})
-	}
+func managementConfigJson(deps boyarDependencies, nodeManagementUrl string) string {
 
 	model := map[string]interface{}{
 		"network": []string{},
@@ -156,7 +101,6 @@ func managementConfigJson(deps boyarDependencies, vChains []VChainArgument, node
 				"Sha256": deps.binarySha256,
 			},
 		},
-		"chains": chains,
 		"services": map[string]interface{}{
 			"signer": map[string]interface{}{
 				"InternalPort": 7777,
@@ -171,61 +115,4 @@ func managementConfigJson(deps boyarDependencies, vChains []VChainArgument, node
 
 	jsonStr, _ := json.MarshalIndent(model, "", "    ")
 	return string(jsonStr)
-}
-
-func vchainManagementConfig(deps boyarDependencies, vcArgument []VChainArgument) string {
-	var committee []map[string]interface{}
-	for _, validator := range deps.genesisValidators {
-		committee = append(committee, map[string]interface{}{
-			"OrbsAddress":  validator,
-			"Weight":       1000,
-			"IdentityType": 0,
-		})
-	}
-
-	chains := make(map[string]interface{})
-	for _, vc := range vcArgument {
-		chains[fmt.Sprintf("%d", vc.Id)] = map[string]interface{}{
-			"VirtualChainId":  vc.Id,
-			"GenesisRefTime":  0,
-			"CurrentTopology": deps.topology,
-			"CommitteeEvents": []interface{}{
-				map[string]interface{}{
-					"RefTime":   0,
-					"Committee": committee,
-				},
-			},
-			"SubscriptionEvents": []interface{}{
-				map[string]interface{}{
-					"RefTime": 0,
-					"Data": map[string]interface{}{
-						"Status":       "active",
-						"Tier":         "B0",
-						"RolloutGroup": "main",
-						"IdentityType": 0,
-						"Params":       make(map[string]interface{}),
-					},
-				},
-			},
-			"ProtocolVersionEvents": []interface{}{
-				map[string]interface{}{
-					"RefTime": 0,
-					"Data": map[string]interface{}{
-						"RolloutGroup": "main",
-						"Version":      1,
-					},
-				},
-			},
-		}
-	}
-
-	result := map[string]interface{}{
-		"CurrentRefTime":   1592834480,
-		"PageStartRefTime": 0,
-		"PageEndRefTime":   1592834480,
-		"VirtualChains":    chains,
-	}
-
-	rawJSON, _ := json.MarshalIndent(result, "", "    ")
-	return string(rawJSON)
 }

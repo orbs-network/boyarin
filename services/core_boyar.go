@@ -40,10 +40,6 @@ func (coreBoyar *BoyarService) OnConfigChange(ctx context.Context, cfg config.No
 		errors = append(errors, err)
 	}
 
-	if err := b.ProvisionVirtualChains(ctx); err != nil {
-		errors = append(errors, err)
-	}
-
 	if err := b.ProvisionHttpAPIEndpoint(ctx); err != nil {
 		errors = append(errors, err)
 	}

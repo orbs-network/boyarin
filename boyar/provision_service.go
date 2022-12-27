@@ -49,7 +49,6 @@ func (b *boyar) provisionService(ctx context.Context, serviceName string, servic
 
 		if key := serviceName + "-data"; service.PurgeData && b.cache.services.CheckNewJsonValue(key, removed) {
 			if err := b.orchestrator.PurgeServiceData(ctx, fullServiceName); err != nil {
-				b.cache.vChains.Clear(key)
 				logger.Error("failed to purge service data", log.Error(err))
 				return err
 			} else {

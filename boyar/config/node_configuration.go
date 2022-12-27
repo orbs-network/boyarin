@@ -10,7 +10,6 @@ import (
 
 type NodeConfiguration interface {
 	FederationNodes() []*FederationNode
-	Chains() []*VirtualChain
 	OrchestratorOptions() *adapter.OrchestratorOptions
 	KeyConfigPath() string
 	KeyConfig() KeyConfig
@@ -36,7 +35,6 @@ type MutableNodeConfiguration interface {
 }
 
 type nodeConfiguration struct {
-	Chains              []*VirtualChain              `json:"chains"`
 	FederationNodes     []*FederationNode            `json:"network"`
 	OrchestratorOptions *adapter.OrchestratorOptions `json:"orchestrator"`
 	Services            Services                     `json:"services"`
@@ -48,10 +46,6 @@ type nodeConfigurationContainer struct {
 	ethereumEndpoint string
 	sslOptions       adapter.SSLOptions
 	withNamespace    bool
-}
-
-func (c *nodeConfigurationContainer) Chains() []*VirtualChain {
-	return c.value.Chains
 }
 
 func (c *nodeConfigurationContainer) FederationNodes() []*FederationNode {
@@ -93,21 +87,12 @@ func (c *nodeConfigurationContainer) VerifyConfig() error {
 	return nil
 }
 
-func (n *nodeConfiguration) overrideValues(key string, value string) {
-	if value != "" {
-		for _, chain := range n.Chains {
-			chain.Config[key] = value
-		}
-	}
-}
-
 func (c *nodeConfigurationContainer) EthereumEndpoint() string {
 	return c.ethereumEndpoint
 }
 
 func (c *nodeConfigurationContainer) SetEthereumEndpoint(ethereumEndpoint string) MutableNodeConfiguration {
 	c.ethereumEndpoint = ethereumEndpoint
-	c.value.overrideValues("ethereum-endpoint", ethereumEndpoint)
 	return c
 }
 
@@ -124,7 +109,6 @@ func (c *nodeConfigurationContainer) SetSSLOptions(options adapter.SSLOptions) M
 func (c *nodeConfigurationContainer) SetSignerEndpoint() {
 	if signer := c.Services().Signer(); signer != nil { // FIXME this should become mandatory
 		value := fmt.Sprintf("http://%s:%d", c.NamespacedContainerName(SIGNER), signer.InternalPort)
-		c.value.overrideValues("signer-endpoint", value)
 	}
 }
 

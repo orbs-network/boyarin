@@ -15,8 +15,6 @@ import (
 	"time"
 )
 
-const DEFAULT_VCHAIN_TIMEOUT = 120 * time.Second
-
 type boyarDependencies struct {
 	keyPair           KeyConfig
 	topology          []interface{}
@@ -30,16 +28,9 @@ type boyarDependencies struct {
 	binarySha256 string
 }
 
-func readOnlyChannel(vChains ...VChainArgument) chan []VChainArgument {
-	vChainsChannel := make(chan []VChainArgument, 1)
-	vChainsChannel <- vChains
-	close(vChainsChannel)
-	return vChainsChannel
-}
-
-func SetupDynamicBoyarDependencies(t *testing.T, keyPair KeyConfig, genesisValidators []string, vChains <-chan []VChainArgument) (*config.Flags, func()) {
+func SetupDynamicBoyarDependencies(t *testing.T, keyPair KeyConfig, genesisValidators []string) (*config.Flags, func()) {
 	deps := defaultBoyarDependencies(keyPair, genesisValidators)
-	return SetupDynamicBoyarDepencenciesForNetwork(t, deps, vChains)
+	return SetupDynamicBoyarDepencenciesForNetwork(t, deps)
 }
 
 func defaultBoyarDependencies(keyPair KeyConfig, genesisValidators []string) boyarDependencies {
@@ -57,25 +48,16 @@ func defaultBoyarDependencies(keyPair KeyConfig, genesisValidators []string) boy
 	}
 }
 
-func SetupDynamicBoyarDepencenciesForNetwork(t *testing.T, deps boyarDependencies, vChains <-chan []VChainArgument) (*config.Flags, func()) {
-	return SetupConfigServer(t, deps.keyPair, func(managementUrl string, vchainManagementUrl string) (*string, *string) {
-		configStr := managementConfigJson(deps, []VChainArgument{}, managementUrl, vchainManagementUrl)
+func SetupDynamicBoyarDepencenciesForNetwork(t *testing.T, deps boyarDependencies) (*config.Flags, func()) {
+	return SetupConfigServer(t, deps.keyPair, func(managementUrl string) (*string, *string) {
+		configStr := managementConfigJson(deps, managementUrl)
 		managementStr := "{}"
-
-		go func() {
-			for currentChains := range vChains {
-				configStr = managementConfigJson(deps, currentChains, managementUrl, vchainManagementUrl)
-				managementStr = vchainManagementConfig(deps, currentChains)
-				fmt.Println(configStr)
-				fmt.Println(managementStr)
-			}
-		}()
 
 		return &configStr, &managementStr
 	})
 }
 
-func SetupConfigServer(t *testing.T, keyPair KeyConfig, configBuilder func(managementUrl string, vchainManagementUrl string) (*string, *string)) (*config.Flags, func()) {
+func SetupConfigServer(t *testing.T, keyPair KeyConfig, configBuilder func(managementUrl string) (*string, *string)) (*config.Flags, func()) {
 	keyPairJson, err := json.Marshal(keyPair)
 	require.NoError(t, err)
 	file := TempFile(t, keyPairJson)
@@ -85,13 +67,12 @@ func SetupConfigServer(t *testing.T, keyPair KeyConfig, configBuilder func(manag
 	ts := serveConfig(cfg)
 
 	managementUrl := ts.URL + "/node/management"
-	vchainsManagentUrl := ts.URL + "/vchains/any/management"
 
-	managementStr, vchainsManagementStr := configBuilder(managementUrl, vchainsManagentUrl)
-	fmt.Println(*managementStr, *vchainsManagementStr)
+	managementStr, _ := configBuilder(managementUrl)
+
+	fmt.Println(*managementStr)
 
 	cfg.managementConfig = managementStr
-	cfg.vchainManagementConfig = vchainsManagementStr
 
 	flags := &config.Flags{
 		Timeout:           time.Minute,

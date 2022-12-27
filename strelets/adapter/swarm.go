@@ -26,7 +26,6 @@ type dockerSwarmSecretsConfig struct {
 
 type dockerSwarmNginxSecretsConfig struct {
 	nginxConfId      string
-	vchainConfId     string
 	sslCertificateId string
 	sslPrivateKeyId  string
 }

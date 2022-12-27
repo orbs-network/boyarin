@@ -16,11 +16,6 @@ func (a *OrchestratorMock) PullImage(ctx context.Context, imageName string) erro
 	return nil
 }
 
-func (a *OrchestratorMock) RunVirtualChain(ctx context.Context, serviceConfig *ServiceConfig, appConfig *AppConfig) error {
-	res := a.MethodCalled("RunVirtualChain", ctx, serviceConfig, appConfig)
-	return res.Error(0)
-}
-
 func (a *OrchestratorMock) RemoveService(ctx context.Context, containerName string) error {
 	res := a.MethodCalled("RemoveService", ctx, containerName)
 	return res.Error(0)
@@ -53,11 +48,6 @@ func (a *OrchestratorMock) GetOverlayNetwork(ctx context.Context, name string) (
 
 func (a *OrchestratorMock) PurgeServiceData(ctx context.Context, containerName string) error {
 	res := a.MethodCalled("PurgeServiceData", ctx, containerName)
-	return res.Error(1)
-}
-
-func (a *OrchestratorMock) PurgeVirtualChainData(ctx context.Context, nodeAddress string, vcId uint32, containerName string) error {
-	res := a.MethodCalled("PurgeVirtualChainData", ctx, nodeAddress, vcId, containerName)
 	return res.Error(1)
 }
 

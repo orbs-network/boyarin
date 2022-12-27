@@ -16,8 +16,7 @@ func Test_getNginxServiceSpec(t *testing.T) {
 	sslPort := uint32(443)
 
 	secrets := &dockerSwarmNginxSecretsConfig{
-		vchainConfId: "vchain-config-id",
-		nginxConfId:  "nginx-config-id",
+		nginxConfId: "nginx-config-id",
 	}
 	spec := getNginxServiceSpec(namespace, httpPort, sslPort, secrets, nil, nil)
 
@@ -36,15 +35,6 @@ func Test_getNginxServiceSpec(t *testing.T) {
 					SecretID:   "nginx-config-id",
 					File: &swarm.SecretReferenceFileTarget{
 						Name: "nginx.conf",
-						UID:  "0",
-						GID:  "0",
-					},
-				},
-				{
-					SecretName: "node123-proxy-vchains.conf",
-					SecretID:   "vchain-config-id",
-					File: &swarm.SecretReferenceFileTarget{
-						Name: "vchains.conf",
 						UID:  "0",
 						GID:  "0",
 					},

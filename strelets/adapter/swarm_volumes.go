@@ -20,16 +20,8 @@ const LOCAL_DRIVER = "local"
 
 const DEFAULT_EFS_PATH = "/var/efs/"
 
-func getVchainVolumeName(nodeAddress string, vcId uint32, postfix string) string {
-	return fmt.Sprintf("%s-%d-%s", nodeAddress, vcId, postfix)
-}
-
 func getServiceVolumeName(serviceName string, postfix string) string {
 	return fmt.Sprintf("%s-%s", serviceName, postfix)
-}
-
-func (d *dockerSwarmOrchestrator) provisionVchainVolume(ctx context.Context, nodeAddress string, vcId uint32) (mount.Mount, error) {
-	return d.provisionVolume(ctx, getVchainVolumeName(nodeAddress, vcId, "blocks"), ORBS_BLOCKS_TARGET, d.options)
 }
 
 func (d *dockerSwarmOrchestrator) provisionLogsVolume(ctx context.Context, serviceName string, mountTarget string) (mount.Mount, error) {

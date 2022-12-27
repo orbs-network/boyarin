@@ -11,21 +11,18 @@ import (
 )
 
 type Cache struct {
-	vChains  *utils.CacheMap
 	nginx    *utils.CacheFilter
 	services *utils.CacheMap
 }
 
 func NewCache() *Cache {
 	return &Cache{
-		vChains:  utils.NewCacheMap(),
 		nginx:    utils.NewCacheFilter(),
 		services: utils.NewCacheMap(),
 	}
 }
 
 type Boyar interface {
-	ProvisionVirtualChains(ctx context.Context) error
 	ProvisionHttpAPIEndpoint(ctx context.Context) error
 	ProvisionServices(ctx context.Context) error
 }

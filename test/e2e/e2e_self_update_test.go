@@ -2,7 +2,6 @@ package e2e
 
 import (
 	"context"
-	"github.com/orbs-network/boyarin/crypto"
 	"github.com/orbs-network/boyarin/test/helpers"
 	"github.com/orbs-network/govnr"
 	"github.com/orbs-network/scribe/log"
@@ -30,29 +29,18 @@ func TestE2ESelfUpdate(t *testing.T) {
 			NodeAddress:    PublicKey,
 			NodePrivateKey: PrivateKey,
 		}
-		vChainsChannel := make(chan []VChainArgument)
-		defer close(vChainsChannel)
 
 		deps := defaultBoyarDependencies(keys, genesisValidators(NETWORK_KEY_CONFIG))
 		deps.binaryUrl = "https://github.com/orbs-network/boyarin/releases/download/v1.4.0/boyar-v1.4.0.bin"
 		deps.binarySha256 = "1998cc1f7721acfe1954ab2878cc0ad8062cd6d919cd61fa22401c6750e195fe"
 
-		flags, cleanup := SetupDynamicBoyarDepencenciesForNetwork(t, deps, vChainsChannel)
+		flags, cleanup := SetupDynamicBoyarDepencenciesForNetwork(t, deps)
 		flags.BoyarBinaryPath = targetPath
 		flags.AutoUpdate = true
 		flags.ShutdownAfterUpdate = true
 
 		defer cleanup()
 		waiter = InProcessBoyar(t, ctx, logger, flags)
-
-		helpers.RequireEventually(t, DEFAULT_VCHAIN_TIMEOUT, func(t helpers.TestingT) {
-			require.FileExists(t, targetPath)
-
-			checksum, err := crypto.CalculateFileHash(targetPath)
-			require.NoError(t, err)
-
-			require.EqualValues(t, deps.binarySha256, checksum)
-		})
 
 		return
 	})

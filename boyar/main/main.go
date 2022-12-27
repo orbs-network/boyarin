@@ -29,8 +29,6 @@ func main() {
 	pollingIntervalPtr := flag.Duration("polling-interval", 1*time.Minute, "how often to poll for configuration in daemon mode (duration: 1s, 1m, 1h, etc)")
 	maxReloadTimePtr := flag.Duration("max-reload-time-delay", 15*time.Minute, "introduces jitter to reloading configuration to make network more stable, only works in daemon mode (duration: 1s, 1m, 1h, etc)")
 
-	timeoutPtr := flag.Duration("timeout", 10*time.Minute, "timeout for provisioning all virtual chains (duration: 1s, 1m, 1h, etc)")
-
 	ethereumEndpointPtr := flag.String("ethereum-endpoint", "", "Ethereum endpoint")
 	flag.String("topology-contract-address", "", "legacy parameter, will be removed in future versions")
 

@@ -9,7 +9,6 @@ import (
 )
 
 type NodeConfiguration interface {
-	FederationNodes() []*FederationNode
 	OrchestratorOptions() *adapter.OrchestratorOptions
 	KeyConfigPath() string
 	KeyConfig() KeyConfig
@@ -35,7 +34,6 @@ type MutableNodeConfiguration interface {
 }
 
 type nodeConfiguration struct {
-	FederationNodes     []*FederationNode            `json:"network"`
 	OrchestratorOptions *adapter.OrchestratorOptions `json:"orchestrator"`
 	Services            Services                     `json:"services"`
 }
@@ -46,10 +44,6 @@ type nodeConfigurationContainer struct {
 	ethereumEndpoint string
 	sslOptions       adapter.SSLOptions
 	withNamespace    bool
-}
-
-func (c *nodeConfigurationContainer) FederationNodes() []*FederationNode {
-	return c.value.FederationNodes
 }
 
 func (c *nodeConfigurationContainer) Services() Services {
@@ -104,12 +98,6 @@ func (c *nodeConfigurationContainer) SetOrchestratorOptions(options *adapter.Orc
 func (c *nodeConfigurationContainer) SetSSLOptions(options adapter.SSLOptions) MutableNodeConfiguration {
 	c.sslOptions = options
 	return c
-}
-
-func (c *nodeConfigurationContainer) SetSignerEndpoint() {
-	if signer := c.Services().Signer(); signer != nil { // FIXME this should become mandatory
-		value := fmt.Sprintf("http://%s:%d", c.NamespacedContainerName(SIGNER), signer.InternalPort)
-	}
 }
 
 func (c *nodeConfigurationContainer) KeyConfig() KeyConfig {

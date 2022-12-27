@@ -59,14 +59,6 @@ func getReverseProxyServices(cfg config.NodeConfiguration) (services []adapter.R
 		})
 	}
 
-	// both services and vchains use the same volumes for logs and status
-	for _, vchain := range cfg.Chains() {
-		services = append(services, adapter.ReverseProxyConfigService{
-			Name:        vchain.GetContainerName(),
-			ServiceName: cfg.NamespacedContainerName(vchain.GetContainerName()),
-		})
-	}
-
 	// special case to pass boyar logs from the outside	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     \'
 	services = append(services, adapter.ReverseProxyConfigService{
 		Name:        BOYAR_SERVICE,

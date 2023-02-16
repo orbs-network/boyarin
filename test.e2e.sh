@@ -37,6 +37,7 @@ fi
 if ! [ -x "$(command -v gotestsum)" ]; then
   echo "gotestsum not installed. Installing"
   GO111MODULE=off go get gotest.tools/gotestsum
+  export PATH=$PATH:~/go/bin
 fi
 
 .circleci/setup-e2e.sh

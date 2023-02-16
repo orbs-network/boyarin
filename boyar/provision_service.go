@@ -95,6 +95,14 @@ func (b *boyar) provisionService(ctx context.Context, serviceName string, servic
 	}
 
 	if key := serviceName; b.cache.services.CheckNewJsonValue(key, serviceConfig) {
+
+		// pull and run a new service
+
+		// pruning unused docker resources
+		if err := b.orchestrator.PruneUnusedResources(ctx); err != nil {
+			return fmt.Errorf("could not prune docker resources: %s", err)
+		}
+
 		if service.DockerConfig.Pull {
 			if err := b.orchestrator.PullImage(ctx, imageName); err != nil {
 				return fmt.Errorf("could not pull docker image: %s", err)

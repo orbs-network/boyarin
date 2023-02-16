@@ -63,7 +63,7 @@ func (a *OrchestratorMock) PurgeVirtualChainData(ctx context.Context, nodeAddres
 
 func (a *OrchestratorMock) PruneUnusedResources(ctx context.Context) error {
 	res := a.MethodCalled("PruneUnusedResources", ctx)
-	return res.Error(1)
+	return res.Error(0)
 }
 
 func (a *OrchestratorMock) Info(ctx context.Context) (interface{}, error) {

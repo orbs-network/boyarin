@@ -19,6 +19,7 @@ func Test_BoyarProvisionServices(t *testing.T) {
 
 	orchestrator.On("GetOverlayNetwork", mock.Anything, mock.Anything).Return("fake-network-id", nil)
 	orchestrator.On("RunService", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	orchestrator.On("PruneUnusedResources", mock.Anything).Return(nil)
 
 	err := b.ProvisionServices(context.Background())
 
@@ -37,6 +38,7 @@ func Test_BoyarSignerChangeTags(t *testing.T) {
 
 	orchestrator.On("GetOverlayNetwork", mock.Anything, mock.Anything, mock.Anything).Return("fake-network-id", nil).Once()
 	orchestrator.On("RunService", mock.Anything, mock.Anything, mock.Anything).Return(nil).Twice() // signer + custom service
+	orchestrator.On("PruneUnusedResources", mock.Anything).Return(nil)
 
 	err := boyarWithoutSigner.ProvisionServices(context.Background())
 	require.NoError(t, err)
@@ -64,6 +66,7 @@ func Test_BoyarSignerOnOffOnAgain(t *testing.T) {
 
 	orchestrator.On("GetOverlayNetwork", mock.Anything, mock.Anything, mock.Anything).Return("fake-network-id", nil).Once()
 	orchestrator.On("RunService", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+	orchestrator.On("PruneUnusedResources", mock.Anything).Return(nil)
 
 	boyarWithSigner := NewBoyar(orchestrator, sourceWithSigner, cache, helpers.DefaultTestLogger())
 

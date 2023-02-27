@@ -25,7 +25,10 @@ func (d *dockerSwarmOrchestrator) PruneUnusedResources(ctx context.Context) erro
 	}
 	fmt.Printf("pruned docker networks: %v\n", len(networksPrune.NetworksDeleted))
 
-	imagePrune, err := client.ImagesPrune(ctx, filters.Args{})
+	args := filters.NewArgs()
+	args.Add("dangling", "false")
+
+	imagePrune, err := client.ImagesPrune(ctx, args)
 	if err != nil {
 		return err
 	}

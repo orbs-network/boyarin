@@ -67,8 +67,7 @@ func Test_BoyarSignerOnOffOnAgain(t *testing.T) {
 	orchestrator.On("GetOverlayNetwork", mock.Anything, mock.Anything, mock.Anything).Return("fake-network-id", nil).Once()
 	orchestrator.On("RunService", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 	orchestrator.On("PruneUnusedResources", mock.Anything).Return(nil)
-	GOARCH = amd64
-	GOOS = linux./build - binaries.sh
+
 	boyarWithSigner := NewBoyar(orchestrator, sourceWithSigner, cache, helpers.DefaultTestLogger())
 
 	err := boyarWithSigner.ProvisionServices(context.Background())
